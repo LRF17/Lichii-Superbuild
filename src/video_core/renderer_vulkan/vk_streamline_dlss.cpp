@@ -232,7 +232,7 @@ bool StreamlineDlssUpscaler::Upscale(const Inputs& in) {
     hdr_input = in.hdr;
 
     // Keep the existing HDR controls for linear input such as Fortune's Weave. Tonemapped
-    // input such as Ocarina's already has its exposure applied.
+    // input such as Ocarina's SDR picture already has its exposure applied.
     sl::DLSSOptions options{};
     options.mode = ModeFor(in.render_size, in.upscale_size);
     options.outputWidth = in.upscale_size.width;
