@@ -41,6 +41,8 @@ public:
     ~OcarinaUpscaler();
 
     [[nodiscard]] bool EvaluationFailed() const;
+    /// The scene goes through the upscaler as linear HDR, so the 4K composite is HDR10.
+    [[nodiscard]] bool HdrScene() const;
     /// Save the 1440p temporal scene copy before the game adds its HUD.
     void SaveSceneReference(VkImageView color);
     /// Composite the HUD from the guest image over the matching 4K scene.
