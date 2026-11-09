@@ -2,6 +2,26 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v40
+
+- **NVIDIA DLSS now takes Ocarina of Time's scene as HDR when native HDR is
+  on (PR #7, contributed by LRF17).** With HDR on and DLSS replacing the
+  game's upscaler, highlights used to stop at the HDR reference white (200 nits
+  by default) instead of reaching the configured peak: the guest's
+  square-root-encoded scene was handed to DLSS with `.hdr = false`, so DLSS
+  clipped it as LDR at 1.0. The scene is now squared into linear HDR for DLSS,
+  DLSS runs with HDR colour buffers and auto exposure, and its linear output is
+  written back without squaring again. SDR and the FSR 3.1/FSR 4 paths are
+  unchanged.
+- Based on the same zortos `nx2` `f1932bc9a9` as v39 — `nx2` has not moved —
+  so everything from v39 stays: the shutdown hang fix (#1058), the nxformat
+  delay-load startup fix (#1127), nxformat 1.0.1 (#1078), the brighter
+  pipeline-failure diagnostics (#807), the UI translations, #1094/#1095 OoT
+  speedups, #1061 FSR jitter, #1062 FSR 4, #1056 back macros, #1060 OoT FSR
+  3.1, shader cache v2 #1036, async read-back #1028, #874, native HDR, DLSS
+  presets E/F, the safe Fritchii ports and the optional white-flash mitigation.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
 ## v39
 
 - Based on latest zortos `nx2` `f1932bc9a9`, fifteen merged changes on top of

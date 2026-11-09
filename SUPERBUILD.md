@@ -1,8 +1,8 @@
 # Lichii Superbuild (unofficial)
 
-> ## ✅ v39 recommended
+> ## ✅ v40 recommended
 >
-> v39 is based on zortos `nx2` `f1932bc9a9`, plus jpkto's open PRs #1094 and #1095 (command-list waits and state-register writes). Upstream now carries our #1045, #1098 and #1101 fixes; #874 and the rest of the superbuild layer stay local. v32 was removed for AMD graphics issues; v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
+> v40 is based on zortos `nx2` `f1932bc9a9` (unchanged from v39) plus PR #7 (DLSS takes OoT as HDR when native HDR is on) and jpkto's #1094/#1095. Upstream carries our #1045, #1098 and #1101 fixes; #874 and the rest of the superbuild layer stay local. v32 was removed for AMD graphics issues; v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 
 ## Credits
 

@@ -180,10 +180,10 @@ index 873b99bec2..67960c7f41 100644
 +dist-local/
 +tools/superbuild/local/
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index bc40878ce6..3d2c3a5fb8 100644
+index bc40878ce6..5a8ac55693 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
-@@ -1,11 +1,374 @@
+@@ -1,11 +1,394 @@
  # Changelog
  
 -All notable changes to Eglantine are documented here. Each release's notes are taken from its
@@ -192,9 +192,30 @@ index bc40878ce6..3d2c3a5fb8 100644
 +All releases are unofficial builds. See the GitHub releases for assets and checksums.
  
 -## [Unreleased]
-+## v39
++## v40
  
 -## [0.1.0]
++- **NVIDIA DLSS now takes Ocarina of Time's scene as HDR when native HDR is
++  on (PR #7, contributed by LRF17).** With HDR on and DLSS replacing the
++  game's upscaler, highlights used to stop at the HDR reference white (200 nits
++  by default) instead of reaching the configured peak: the guest's
++  square-root-encoded scene was handed to DLSS with `.hdr = false`, so DLSS
++  clipped it as LDR at 1.0. The scene is now squared into linear HDR for DLSS,
++  DLSS runs with HDR colour buffers and auto exposure, and its linear output is
++  written back without squaring again. SDR and the FSR 3.1/FSR 4 paths are
++  unchanged.
++- Based on the same zortos `nx2` `f1932bc9a9` as v39 — `nx2` has not moved —
++  so everything from v39 stays: the shutdown hang fix (#1058), the nxformat
++  delay-load startup fix (#1127), nxformat 1.0.1 (#1078), the brighter
++  pipeline-failure diagnostics (#807), the UI translations, #1094/#1095 OoT
++  speedups, #1061 FSR jitter, #1062 FSR 4, #1056 back macros, #1060 OoT FSR
++  3.1, shader cache v2 #1036, async read-back #1028, #874, native HDR, DLSS
++  presets E/F, the safe Fritchii ports and the optional white-flash mitigation.
++- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+ 
+-- Initial release candidate
++## v39
++
 +- Based on latest zortos `nx2` `f1932bc9a9`, fifteen merged changes on top of
 +  v38: **shutdown no longer hangs (#1058)** when a guest thread is waiting on a
 +  GPU sync operation as the GPU threads stop — the queued requests are dropped
@@ -215,8 +236,7 @@ index bc40878ce6..3d2c3a5fb8 100644
 +  async read-back #1028, #874, native HDR, DLSS presets E/F, the safe Fritchii
 +  ports and the optional white-flash mitigation.
 +- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
- 
--- Initial release candidate
++
 +## v38
 +
 +- **Big frame-rate gain.** Two OoT split-GPU-thread changes by jpkto, the
@@ -700,16 +720,16 @@ index 0000000000..a0496b95b6
 +expose the port to a network. Dumps and captures can contain game assets; keep
 +them local and do not upload `.rdc` captures or dumps publicly.
 diff --git a/README.md b/README.md
-index 9230cf33b0..bb80b5c720 100644
+index 9230cf33b0..e5f8d483f3 100644
 --- a/README.md
 +++ b/README.md
 @@ -17,6 +17,16 @@
  
  # Lichii
  
-+> ## ✅ v39 recommended
++> ## ✅ v40 recommended
 +>
-+> v39 includes the #874 payload-release fix, based on zortos `nx2` `f1932bc9a9` plus jpkto's #1094 and #1095 OoT speedups, with the shutdown and nxformat startup fixes, FSR jitter, FSR 4, the texture-cache join skip, the back-macro speedup and OoT FSR 3.1. v32 was removed for AMD graphics issues; v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
++> v40 includes the #874 payload-release fix, based on zortos `nx2` `f1932bc9a9` plus PR #7 (HDR DLSS) and jpkto's #1094/#1095 OoT speedups, with the shutdown and nxformat startup fixes, FSR jitter, FSR 4, the texture-cache join skip, the back-macro speedup and OoT FSR 3.1. v32 was removed for AMD graphics issues; v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 +
 +> **Unofficial superbuild fork.** This repository is not official Lichii and is
 +> not affiliated with zortos293. It carries a curated set of performance and
@@ -722,15 +742,15 @@ index 9230cf33b0..bb80b5c720 100644
  This is an independent fork, not an official release of those upstream projects. Lichii is not affiliated with Nintendo.
 diff --git a/SUPERBUILD.md b/SUPERBUILD.md
 new file mode 100644
-index 0000000000..2eba9c14b5
+index 0000000000..d252ad80ee
 --- /dev/null
 +++ b/SUPERBUILD.md
 @@ -0,0 +1,215 @@
 +# Lichii Superbuild (unofficial)
 +
-+> ## ✅ v39 recommended
++> ## ✅ v40 recommended
 +>
-+> v39 is based on zortos `nx2` `f1932bc9a9`, plus jpkto's open PRs #1094 and #1095 (command-list waits and state-register writes). Upstream now carries our #1045, #1098 and #1101 fixes; #874 and the rest of the superbuild layer stay local. v32 was removed for AMD graphics issues; v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
++> v40 is based on zortos `nx2` `f1932bc9a9` (unchanged from v39) plus PR #7 (DLSS takes OoT as HDR when native HDR is on) and jpkto's #1094/#1095. Upstream carries our #1045, #1098 and #1101 fixes; #874 and the rest of the superbuild layer stay local. v32 was removed for AMD graphics issues; v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 +
 +## Credits
 +
