@@ -274,7 +274,12 @@ void RendererVulkan::Composite(std::span<const Tegra::FramebufferConfig> framebu
                               present_manager.SwapchainImageCount(), output_format, hdr_output);
 
 #ifdef HAS_LSFG
-    if (hdr_output) {
+    // FSR 3 interpolates HDR10's PQ-encoded frames as it does SDR's. scRGB's linear frames and
+    // the Lossless Scaling shaders stay SDR-only.
+    const bool hdr_frame_gen =
+        frame->color_space == VK_COLOR_SPACE_HDR10_ST2084_EXT &&
+        Settings::values.frame_gen_type.GetValue() == Settings::FrameGenType::Fsr3;
+    if (hdr_output && !hdr_frame_gen) {
         frame_gen.Pause();
     } else {
         void(frame_gen.WantedGenerations(present_manager.MaxExtraFrames()));
@@ -284,6 +289,7 @@ void RendererVulkan::Composite(std::span<const Tegra::FramebufferConfig> framebu
         const size_t generated_frames = frame_gen.GeneratedFrameCount();
         for (size_t generation = 0; generation < generated_frames; ++generation) {
             Frame* generated = present_manager.GetRenderFrame();
+            generated->color_space = frame->color_space;
             blit_swapchain.PrepareFrame(device, generated, render_window.GetFramebufferLayout());
             frame_gen.GenerateInto(device, generated, generation);
             scheduler.Flush(*generated->render_ready);

@@ -145,7 +145,8 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
     INSERT(Settings, hdr, tr("HDR"),
            tr("Enables HDR output. Requires Vulkan and an HDR-enabled display.\n"
               "Supports native HDR10 and scRGB output; SDR content is not converted to HDR.\n"
-              "HDR uses bilinear presentation without post-processing or frame generation.\n"
+              "HDR uses bilinear presentation without post-processing. Frame generation works "
+              "with HDR10 and the FSR 3 type only.\n"
               "Takes effect when a game starts."));
     INSERT(Settings, hdr_reference_white, tr("HDR Reference White"),
            tr("Reference white in nits reported to the game. Default: 200 nits, matching the "
