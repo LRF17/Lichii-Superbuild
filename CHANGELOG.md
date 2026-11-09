@@ -2,6 +2,29 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v39
+
+- Based on latest zortos `nx2` `f1932bc9a9`, fifteen merged changes on top of
+  v38: **shutdown no longer hangs (#1058)** when a guest thread is waiting on a
+  GPU sync operation as the GPU threads stop — the queued requests are dropped
+  and their waiters released (tested 30 of 30 runs; without it 5 of 5 hung);
+  **Lichii starts again when Windows blocks `nxformat.dll` (#1127)** —
+  Smart App Control and code-integrity policies refuse the unsigned DLL, so it
+  is now delay-loaded with a clear error instead of stopping `lichii.exe`;
+  **nxformat 1.0.1 (#1078)** reads a range across blocks in one go and uses the
+  archive's binary search for directory lookups; out-of-host-memory pipeline
+  failures now say why (#807); and the UI translations are built into releases
+  and cover the nx2 contexts (#743, #819, #826, #827, #893).
+- **Our own fixes are now upstream:** #1045 (stutter-trace shadow), #1098
+  (DLSS presets E/F and the one-shot VRAM log) and #1101 (updater retries)
+  merged into `nx2`, so the superbuild layer no longer carries them.
+- Keeps v38's #1094 and #1095 OoT split speedups (command-list word waits and
+  3D state-register writes), #1061 FSR jitter, #1079 texture-cache joins,
+  #1062 FSR 4, #1056 back macros, #1060 OoT FSR 3.1, shader cache v2 #1036,
+  async read-back #1028, #874, native HDR, DLSS presets E/F, the safe Fritchii
+  ports and the optional white-flash mitigation.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
 ## v38
 
 - **Big frame-rate gain.** Two OoT split-GPU-thread changes by jpkto, the

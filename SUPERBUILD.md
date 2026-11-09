@@ -1,8 +1,8 @@
 # Lichii Superbuild (unofficial)
 
-> ## ✅ v38 recommended
+> ## ✅ v39 recommended
 >
-> v38 is based on zortos `nx2` `7afad5494e` plus jpkto's open PRs #1094 and #1095 (command-list waits and state-register writes), with #1061 FSR jitter, #1079 texture-cache joins, #1062 FSR 4, #1056 back macros, #1060 FSR 3.1, #1036 shader cache v2, #1028 async read-back and #874. v32 was removed for AMD graphics issues; v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
+> v39 is based on zortos `nx2` `f1932bc9a9`, plus jpkto's open PRs #1094 and #1095 (command-list waits and state-register writes). Upstream now carries our #1045, #1098 and #1101 fixes; #874 and the rest of the superbuild layer stay local. v32 was removed for AMD graphics issues; v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 
 ## Credits
 
@@ -29,7 +29,7 @@ a stock build as fallback.
 
 - Upstream: `zortos293/Lichii`
 - Branch: `nx2`
-- Base commit: `7afad5494e650edfc169624be54e606f54b079ec` (2026-11-08).
+- Base commit: `f1932bc9a9731a12ab2f3b29ee240b4d8e742cc6` (2026-11-08).
   The grass/foliage fix is now upstream as #551, so the 14-commit
   `capy/oot-hyrule-grass-fix` series is no longer carried.
 - Upstream `nx2` already contains #303, #287, #314, #224, #273, #284, #290,
