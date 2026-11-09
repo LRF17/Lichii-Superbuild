@@ -1,8 +1,8 @@
 # Lichii Superbuild (unofficial)
 
-> ## ✅ v40 recommended
+> ## ✅ v41 recommended
 >
-> v40 is based on zortos `nx2` `f1932bc9a9` (unchanged from v39) plus PR #7 (DLSS takes OoT as HDR when native HDR is on) and jpkto's #1094/#1095. Upstream carries our #1045, #1098 and #1101 fixes; #874 and the rest of the superbuild layer stay local. v32 was removed for AMD graphics issues; v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
+> v41 is based on zortos `nx2` `d2eaae4f3a` plus the water fixes #1152/#1147, the 4K HDR DLSS PR #9 and frame-generation HDR PR #8, with jpkto's #1094/#1095. Upstream carries our #1045, #1098 and #1101 fixes; #874 and the rest of the superbuild layer stay local. v32 was removed for AMD graphics issues; v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 
 ## Credits
 
@@ -29,7 +29,7 @@ a stock build as fallback.
 
 - Upstream: `zortos293/Lichii`
 - Branch: `nx2`
-- Base commit: `f1932bc9a9731a12ab2f3b29ee240b4d8e742cc6` (2026-11-08).
+- Base commit: `d2eaae4f3abca636b030b726f107bace06f61079` (2026-11-08).
   The grass/foliage fix is now upstream as #551, so the 14-commit
   `capy/oot-hyrule-grass-fix` series is no longer carried.
 - Upstream `nx2` already contains #303, #287, #314, #224, #273, #284, #290,

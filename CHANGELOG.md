@@ -2,6 +2,41 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v41
+
+- **Water fixes.** Two open upstream PRs taken ahead of merge because they
+  address the water reports:
+  - **OoT water ripples keep moving above 60 fps with FPS Unlock (#1152).**
+    The game's water renderer ran its ripple simulation `trunc(step) x substeps`
+    times per frame; above 60 fps the step is below 1, so it ran zero times and
+    the rings Link makes stuck to the camera. A built-in patch adds an
+    accumulator that carries the fractional step between frames (with a unit
+    test on the patched instructions).
+  - **Water Temple occlusion windows are no longer dropped (#1147).** The
+    central chamber reports 1,025-1,035-slot windows; the 4-bank (1,024-slot)
+    cap reset the counter mid-window and the chamber walls went missing
+    (#1142). The bound is now 8 banks (2,048 slots), still far below the
+    64-bank menu case, with Catch2 boundary tests.
+- **Ocarina's 4K NVIDIA DLSS image now reaches the screen with HDR output
+  (PR #9, LRF17).** HDR uses another last-pass shader and a 10-bit target, so
+  the 3840x2160 DLSS result was being scaled back to the game's 1440p target.
+  New HDR10 reference/composite shaders encode the game's own PQ (203 nits,
+  BT.709->BT.2020) and the 4K composite is presented when its encoding matches
+  the frame. SDR and FSR are unchanged.
+- **Frame generation runs with HDR10 output, Optical Flow type (PR #8, LRF17).**
+  Generated frames now carry the presented frame's colour space instead of
+  being reset to sRGB, and the interpolation shader writes A2B10G10R10 as well
+  as BGRA8. scRGB and Lossless Scaling stay paused in HDR.
+- Based on latest zortos `nx2` `d2eaae4f3a`: **#1143** keeps an evicted
+  graphics pipeline's storage buffer pointers when it is translated again.
+- Everything from v40 stays: the HDR DLSS scene fix (#7), shutdown hang fix
+  (#1058), nxformat delay-load (#1127), nxformat 1.0.1 (#1078), #1094/#1095
+  OoT speedups, #1061 FSR jitter, #1062 FSR 4, #1056 back macros, #1060 OoT
+  FSR 3.1, shader cache v2 #1036, async read-back #1028, #874, native HDR,
+  DLSS presets E/F, the safe Fritchii ports and the optional white-flash
+  mitigation.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
 ## v40
 
 - **NVIDIA DLSS now takes Ocarina of Time's scene as HDR when native HDR is

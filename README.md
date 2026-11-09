@@ -17,9 +17,9 @@
 
 # Lichii
 
-> ## ✅ v40 recommended
+> ## ✅ v41 recommended
 >
-> v40 includes the #874 payload-release fix, based on zortos `nx2` `f1932bc9a9` plus PR #7 (HDR DLSS) and jpkto's #1094/#1095 OoT speedups, with the shutdown and nxformat startup fixes, FSR jitter, FSR 4, the texture-cache join skip, the back-macro speedup and OoT FSR 3.1. v32 was removed for AMD graphics issues; v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
+> v41 includes the #874 payload-release fix, based on zortos `nx2` `d2eaae4f3a` plus the water fixes #1152/#1147, the 4K HDR DLSS fix (PR #9), frame-generation HDR (PR #8), HDR DLSS (PR #7) and jpkto's #1094/#1095 OoT speedups. v32 was removed for AMD graphics issues; v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 
 > **Unofficial superbuild fork.** This repository is not official Lichii and is
 > not affiliated with zortos293. It carries a curated set of performance and
