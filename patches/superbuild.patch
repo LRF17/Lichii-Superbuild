@@ -1913,19 +1913,6 @@ index 4971aff31c..a6de32a37c 100644
  TEST_CASE("Native uniform banks upload directly without overwriting GPU-owned bytes",
            "[buffer_ports]") {
      Fixture f;
-diff --git a/src/tests/video_core/nx2_written_pages.cpp b/src/tests/video_core/nx2_written_pages.cpp
-index 4fcf05e95e..45c283667c 100644
---- a/src/tests/video_core/nx2_written_pages.cpp
-+++ b/src/tests/video_core/nx2_written_pages.cpp
-@@ -58,7 +58,7 @@ TEST_CASE("GPU-written page marking preserves boundaries and wrapping arithmetic
-         {AddressLimit + PageSize, PageSize}, {Max, 0}, {Max, 1}, {Max, 2},
-         {PageSize, Max}, {0, Max}, {1, Max}, {2, Max},
-     };
--    for (const auto& [address, size] : ranges) {
-+    for (const auto [address, size] : ranges) {
-         CAPTURE(address, size);
-         WrittenPages pages;
-         pages.MarkReference(address, size);
 diff --git a/src/video_core/CMakeLists.txt b/src/video_core/CMakeLists.txt
 index 50287cc225..f09e942ca7 100644
 --- a/src/video_core/CMakeLists.txt
