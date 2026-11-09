@@ -3728,6 +3728,22 @@ index 5bc8be1010..cacc8cb69b 100644
      /// Save the 1440p temporal scene copy before the game adds its HUD.
      void SaveSceneReference(VkImageView color);
      /// Composite the HUD from the guest image over the matching 4K scene.
+diff --git a/src/video_core/renderer_vulkan/vk_pipeline_cache.cpp b/src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+index 9a0c8f69bc..22831f329a 100644
+--- a/src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
++++ b/src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+@@ -2583,9 +2583,9 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
+     }
+     static_assert(VideoCommon::EvictedPointerSlots::NumPrograms == Maxwell::MaxShaderProgram);
+     VideoCommon::EvictedPointerSlots::Slots mapped_pointers;
+-    for (size_t index = 0, env_index = 0; index < Maxwell::MaxShaderProgram; ++index) {
++    for (size_t index = 0, mapped_env = 0; index < Maxwell::MaxShaderProgram; ++index) {
+         if (key.unique_hashes[index] != 0) {
+-            mapped_pointers[index] = envs[env_index++]->MappedStoragePointerKeys();
++            mapped_pointers[index] = envs[mapped_env++]->MappedStoragePointerKeys();
+         }
+     }
+     auto pipeline = std::make_unique<GraphicsPipeline>(
 diff --git a/src/video_core/renderer_vulkan/vk_present_manager.cpp b/src/video_core/renderer_vulkan/vk_present_manager.cpp
 index ea2a913ad8..25d4b5a4fd 100644
 --- a/src/video_core/renderer_vulkan/vk_present_manager.cpp
