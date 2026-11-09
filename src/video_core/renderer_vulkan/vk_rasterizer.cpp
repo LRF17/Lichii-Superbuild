@@ -1108,14 +1108,20 @@ void RasterizerVulkan::PrepareDraw(bool is_indexed, Func&& draw_func, bool is_in
     buffer_cache.NoteWorkRecorded(false);
     constexpr u64 final_vertex = 0x16aff33d999f993fULL;
     constexpr u64 final_fragment = 0x52402d8e8ab55263ULL;
+    // With HDR output the game's last pass encodes HDR10 into a 10-bit target.
+    constexpr u64 final_fragment_hdr = 0x5b1e35e21d880a91ULL;
     const auto hashes = pipeline->ShaderHashes();
-    if (oot_4k_scene_frame == render_trace_frame && hashes[5] == final_fragment &&
+    if (oot_4k_scene_frame == render_trace_frame &&
+        (hashes[5] == final_fragment || hashes[5] == final_fragment_hdr) &&
         std::ranges::find(hashes, final_vertex) != hashes.end()) {
         const auto target_id = texture_cache.GetRenderTargets().color_buffer_ids[0];
         if (target_id) {
             const auto& target = texture_cache.GetImageView(target_id);
+            const auto final_format = hashes[5] == final_fragment_hdr
+                                          ? VideoCore::Surface::PixelFormat::A2B10G10R10_UNORM
+                                          : VideoCore::Surface::PixelFormat::A8B8G8R8_SRGB;
             if (target.size.width == 2560 && target.size.height == 1440 &&
-                target.format == VideoCore::Surface::PixelFormat::A8B8G8R8_SRGB) {
+                target.format == final_format) {
                 oot_4k_guest_present = target.ImageHandle();
             }
         }
@@ -3471,7 +3477,11 @@ std::optional<FramebufferTextureInfo> RasterizerVulkan::AccelerateDisplay(
     if (oot_4k_scene_frame == render_trace_frame && info.image &&
         info.image == oot_4k_guest_present && info.image_view &&
         info.width == 2560 && info.height == 1440 && !scaled &&
-        image_view->format == VideoCore::Surface::PixelFormat::A8B8G8R8_UNORM &&
+        // The composite is built for one encoding: SDR's, or HDR10 when the scene went through
+        // the upscaler as HDR.
+        image_view->format == (oot_live_dlss->HdrScene()
+                                   ? VideoCore::Surface::PixelFormat::A2B10G10R10_UNORM
+                                   : VideoCore::Surface::PixelFormat::A8B8G8R8_UNORM) &&
         !oot_live_dlss->EvaluationFailed() && !frame_dump.Capturing()) {
         try {
             oot_live_dlss->Composite4k(info.image_view, render_trace_frame);
