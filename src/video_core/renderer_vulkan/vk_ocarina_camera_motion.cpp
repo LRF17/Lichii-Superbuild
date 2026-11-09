@@ -15,7 +15,9 @@
 #include "video_core/renderer_vulkan/vk_fsr3_upscaler.h"
 #include "video_core/renderer_vulkan/vk_fsr4_upscaler.h"
 #include "video_core/host_shaders/ocarina_dlss_color_comp_spv.h"
+#include "video_core/host_shaders/ocarina_dlss_color_hdr_comp_spv.h"
 #include "video_core/host_shaders/ocarina_dlss_output_comp_spv.h"
+#include "video_core/host_shaders/ocarina_dlss_output_hdr_comp_spv.h"
 #include "video_core/host_shaders/ocarina_dlss_4k_composite_comp_spv.h"
 #include "video_core/host_shaders/ocarina_dlss_4k_reference_comp_spv.h"
 #include "video_core/host_shaders/ocarina_dlss_bias_comp_spv.h"
@@ -704,9 +706,14 @@ struct OcarinaUpscaler::Impl {
          ComputePassDescriptorQueue& queue_, MemoryAllocator& allocator_, StagingBufferPool& staging,
          VideoCommon::OcarinaUpscaleBackend backend)
         : device{device_}, scheduler{scheduler_}, queue{queue_}, allocator{allocator_}, pool{pool},
+          hdr_scene{HdrScene(backend)},
           motion_pass{device, scheduler, pool},
-          color_pass{device, scheduler, pool},
-          output_pass{device, scheduler, pool, OCARINA_DLSS_OUTPUT_COMP_SPV} {
+          color_pass{device, scheduler, pool,
+                     hdr_scene ? std::span<const u32>{OCARINA_DLSS_COLOR_HDR_COMP_SPV}
+                               : std::span<const u32>{OCARINA_DLSS_COLOR_COMP_SPV}},
+          output_pass{device, scheduler, pool,
+                      hdr_scene ? std::span<const u32>{OCARINA_DLSS_OUTPUT_HDR_COMP_SPV}
+                                : std::span<const u32>{OCARINA_DLSS_OUTPUT_COMP_SPV}} {
 #ifdef EGLANTINE_STREAMLINE
         if (backend == VideoCommon::OcarinaUpscaleBackend::Dlss) {
             dlss = std::make_unique<StreamlineDlssUpscaler>(device, scheduler, allocator);
@@ -730,11 +737,23 @@ struct OcarinaUpscaler::Impl {
                                            Fsr3Upscaler::Profile::OcarinaLdr);
     }
 
+    /// With HDR output the game's scene color goes above 1.0 (reference white), where NVIDIA DLSS
+    /// clips LDR input: DLSS then takes the scene as linear HDR. The FSR profiles are unchanged.
+    static bool HdrScene([[maybe_unused]] VideoCommon::OcarinaUpscaleBackend backend) {
+#ifdef EGLANTINE_STREAMLINE
+        return backend == VideoCommon::OcarinaUpscaleBackend::Dlss &&
+               Settings::values.hdr.GetValue();
+#else
+        return false;
+#endif
+    }
+
     const Device& device;
     Scheduler& scheduler;
     ComputePassDescriptorQueue& queue;
     MemoryAllocator& allocator;
     DescriptorPool& pool;
+    const bool hdr_scene;
 #ifdef EGLANTINE_STREAMLINE
     std::unique_ptr<StreamlineDlssUpscaler> dlss;
 #endif
@@ -1004,7 +1023,7 @@ bool OcarinaUpscaler::Record(VkImageView color, VkImageView depth, VkImageView t
             .motion_vector_scale = {1.0f, 1.0f},
             .reset = reset,
             .depth_inverted = false,
-            .hdr = false,
+            .hdr = state.hdr_scene,
         })) {
         state.scheduler.InvalidateState();
         return false;
