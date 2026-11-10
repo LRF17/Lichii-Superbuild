@@ -924,7 +924,7 @@ index 0000000000..a0496b95b6
 +expose the port to a network. Dumps and captures can contain game assets; keep
 +them local and do not upload `.rdc` captures or dumps publicly.
 diff --git a/README.md b/README.md
-index 9230cf33b0..7dbfdc1033 100644
+index 9230cf33b0..3ce08bf634 100644
 --- a/README.md
 +++ b/README.md
 @@ -9,7 +9,7 @@
@@ -962,6 +962,47 @@ index 9230cf33b0..7dbfdc1033 100644
  
  On Windows, extract the entire build archive and run **lichii.exe**. Only use games and system files you have legally obtained. Games, keys and firmware are not included.
  
+@@ -61,40 +71,6 @@ Keep changes focused and distinguish code-level checks from actual gameplay test
+ Art created by YOB (yobslab)
+ The supplied Lichii logo, icon and library artwork are in [dist/branding](dist/branding). Windows, Linux and macOS icon resources are generated from that artwork by [Generate-LichiiIcons.ps1](tools/Generate-LichiiIcons.ps1).
+ 
+-## Support Lichii
+-
+-Lichii is free and stays free. If you want to help, you can donate in crypto. Donations help pay for the AI tools and build machines used to develop this open-source project faster.
+-
+-**Solana (SOL)**
+-```text
+-JepEjfyWjGjhJvHSrqj52KtLjcbbbmUh1iGqerYBF4w
+-```
+-
+-**Ethereum (ETH)**
+-```text
+-0x055ABa1b80Bc35C836Ce7E9F47c2b3d6C75b5534
+-```
+-
+-**Bitcoin (BTC)**
+-```text
+-bc1qcvxdpf4qvdhqp8ee4s355cjmxrzsphsdwpl8w4
+-```
+-
+-**BNB Smart Chain (BNB)**
+-```text
+-0x055ABa1b80Bc35C836Ce7E9F47c2b3d6C75b5534
+-```
+-
+-**Polygon**
+-```text
+-0x055ABa1b80Bc35C836Ce7E9F47c2b3d6C75b5534
+-```
+-
+-Send each coin on its matching network. Coins sent on the wrong network can't be recovered.
+-
+-> [!NOTE]
+-> Donations are voluntary gifts and are non-refundable. A donation does not buy any product, service, perk, early access, exclusive build, priority support or say in the project. Every release stays free and public for everyone.
+-
+ ## Credits and license
+ 
+ Lichii inherits the work of the Eglantine, Eden, yuzu and Sudachi projects and their contributors, including Eglantine's original developer Camille LaVey. Original copyright notices and third-party licenses are retained.
 diff --git a/SUPERBUILD.md b/SUPERBUILD.md
 new file mode 100644
 index 0000000000..78a00f24cb
@@ -1184,6 +1225,18 @@ index 0000000000..78a00f24cb
 +git checkout 0ab7736d
 +git apply patches/superbuild.patch
 +```
+diff --git a/dist/dev.eden_emu.eden.metainfo.xml b/dist/dev.eden_emu.eden.metainfo.xml
+index ce5cc9a905..f43c438ac2 100644
+--- a/dist/dev.eden_emu.eden.metainfo.xml
++++ b/dist/dev.eden_emu.eden.metainfo.xml
+@@ -30,7 +30,6 @@ SPDX-License-Identifier: CC0-1.0
+   <url type="bugtracker">https://git.eden-emu.dev/eden-emu/eden/issues</url>
+   <url type="faq">https://eden-emu.dev/about</url>
+   <url type="help">https://git.eden-emu.dev/eden-emu/eden/src/branch/master/docs/user/README.md</url>
+-  <url type="donation">https://liberapay.com/crueter</url>
+   <url type="translate">https://explore.transifex.com/edenemu/eden-emulator</url>
+   <url type="contact">https://discord.gg/HstXbPch7X</url>
+   <url type="vcs-browser">https://git.eden-emu.dev</url>
 diff --git a/dist/nx2_switches.txt b/dist/nx2_switches.txt
 index 095ecdede4..8d7c4f9f23 100644
 --- a/dist/nx2_switches.txt
@@ -1290,6 +1343,152 @@ index 4928eb47ff..3be40fe991 100644
  ### Anti-aliasing
  
  Enhancements aimed at removing jagged lines/sharp edges and/or masking artifacts.
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index c378b3fa96..92ea5b16c7 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -87,40 +87,6 @@ if (MSVC AND NOT CXX_CLANG)
+     # /Zc:preprocessor    - Enable standards-conforming preprocessor
+     # /Zc:throwingNew     - Let codegen assume `operator new` (without std::nothrow) will never return null
+     # /GT                 - Supports fiber safety for data allocated using static thread-local storage
+-
+-    # Diagnostics the project does not accept. ENABLE_WERROR decides whether they are
+-    # errors (/we) or warnings at level 4 (/w4), the same way it decides between
+-    # -Werror=... and -W... for GCC and Clang below.
+-    set(YUZU_MSVC_DIAGNOSTIC_CODES
+-        4062 # Enumerator 'identifier' in a switch of enum 'enumeration' is not handled
+-        4189 # 'identifier': local variable is initialized but not referenced
+-        4265 # 'class': class has virtual functions, but destructor is not virtual
+-        4388 # 'expression': signed/unsigned mismatch
+-        4389 # 'operator': signed/unsigned mismatch
+-        4456 # Declaration of 'identifier' hides previous local declaration
+-        4457 # Declaration of 'identifier' hides function parameter
+-        4458 # Declaration of 'identifier' hides class member
+-        4459 # Declaration of 'identifier' hides global declaration
+-        4547 # 'operator': operator before comma has no effect; expected operator with side-effect
+-        4549 # 'operator1': operator before comma has no effect; did you intend 'operator2'?
+-        4555 # Expression has no effect; expected expression with side-effect
+-        4826 # Conversion from 'type1' to 'type2' is sign-extended. This may cause unexpected runtime behavior.
+-        5038 # data member 'member1' will be initialized after data member 'member2'
+-        5233 # explicit lambda capture 'identifier' is not used
+-        5245 # 'function': unreferenced function with internal linkage has been removed
+-    )
+-
+-    if (ENABLE_WERROR)
+-        set(YUZU_MSVC_DIAGNOSTIC_LEVEL /we)
+-    else()
+-        set(YUZU_MSVC_DIAGNOSTIC_LEVEL /w4)
+-    endif()
+-
+-    unset(YUZU_MSVC_DIAGNOSTICS)
+-    foreach (code IN LISTS YUZU_MSVC_DIAGNOSTIC_CODES)
+-        list(APPEND YUZU_MSVC_DIAGNOSTICS ${YUZU_MSVC_DIAGNOSTIC_LEVEL}${code})
+-    endforeach()
+-
+     add_compile_options(
+         /MP
+         /Zm200
+@@ -140,8 +106,23 @@ if (MSVC AND NOT CXX_CLANG)
+         /external:anglebrackets # Treats all headers included by #include <header>, where the header file is enclosed in angle brackets (< >), as external headers
+         /external:W0            # Sets the default warning level to 0 for external headers, effectively disabling warnings for them.
+ 
+-        ${YUZU_MSVC_DIAGNOSTICS} # /we or /w4, see above
++        /we4062 # Enumerator 'identifier' in a switch of enum 'enumeration' is not handled
++        /we4189 # 'identifier': local variable is initialized but not referenced
++        /we4265 # 'class': class has virtual functions, but destructor is not virtual
++        /we4388 # 'expression': signed/unsigned mismatch
++        /we4389 # 'operator': signed/unsigned mismatch
++        /we4456 # Declaration of 'identifier' hides previous local declaration
++        /we4457 # Declaration of 'identifier' hides function parameter
++        /we4458 # Declaration of 'identifier' hides class member
++        /we4459 # Declaration of 'identifier' hides global declaration
+         /w44505 # 'function': unreferenced local function has been removed
++        /we4547 # 'operator': operator before comma has no effect; expected operator with side-effect
++        /we4549 # 'operator1': operator before comma has no effect; did you intend 'operator2'?
++        /we4555 # Expression has no effect; expected expression with side-effect
++        /we4826 # Conversion from 'type1' to 'type2' is sign-extended. This may cause unexpected runtime behavior.
++        /we5038 # data member 'member1' will be initialized after data member 'member2'
++        /we5233 # explicit lambda capture 'identifier' is not used
++        /we5245 # 'function': unreferenced function with internal linkage has been removed
+ 
+         /wd4100 # 'identifier': unreferenced formal parameter
+         /wd4324 # 'struct_name': structure was padded due to __declspec(align())
+diff --git a/src/audio_core/sink/sink_stream.cpp b/src/audio_core/sink/sink_stream.cpp
+index ac0ef0dae0..45c72dd448 100644
+--- a/src/audio_core/sink/sink_stream.cpp
++++ b/src/audio_core/sink/sink_stream.cpp
+@@ -91,24 +91,11 @@ void SinkStream::AppendBuffer(SinkBuffer& buffer, std::span<s16> samples) {
+     }
+ }
+ 
+-/// Blocks a sysmix stream may queue: enough for the host's largest callback plus one block.
+-/// A host that asks for more than the queue holds (PipeWire's default 1024 frames against three
+-/// 240-frame blocks) gets silence for the rest of every callback. The sample ring must hold the
+-/// queued blocks and the one playing, at the device's channel count.
+-u32 SinkStream::SysmixQueueLimit() const {
+-    constexpr u64 MinimumBlocks = 3;
+-    const u64 ring_blocks = SampleRingCapacity / (u64{TargetSampleCount} * device_channels) - 1;
+-    const u64 request = largest_request_frames.load(std::memory_order_relaxed);
+-    const u64 blocks = (request + TargetSampleCount - 1) / TargetSampleCount + 1;
+-    return static_cast<u32>(std::clamp<u64>(blocks, MinimumBlocks, (std::min<u64>)(ring_blocks, 64)));
+-}
+-
+ bool SinkStream::TryAppendOutputBlock(SinkBuffer& buffer, std::span<s16> samples) {
+     if (type != StreamType::Sysmix || !IsReady() || buffer.frames != TargetSampleCount ||
+         buffer.frames_played != 0 || buffer.consumed || system_channels != 2 ||
+         (device_channels != 2 && device_channels != 6) ||
+-        samples.size() != TargetSampleCount * system_channels ||
+-        queued_buffers.load() >= SysmixQueueLimit()) {
++        samples.size() != TargetSampleCount * system_channels || queued_buffers.load() >= 3) {
+         return false;
+     }
+     AppendBuffer(buffer, samples);
+@@ -227,12 +214,6 @@ void SinkStream::ProcessAudioOutAndRender(std::span<s16> output_buffer, std::siz
+         return;
+     }
+ 
+-    if (type == StreamType::Sysmix && num_frames > largest_request_frames.load()) {
+-        largest_request_frames.store(num_frames);
+-        LOG_INFO(Audio, "sysmix {}: host asks for {} frames per callback, queue limit {} blocks",
+-                 name, num_frames, SysmixQueueLimit());
+-    }
+-
+     while (frames_written < num_frames) {
+         if (playing_buffer.consumed || playing_buffer.frames == 0) {
+             std::unique_lock lk{release_mutex};
+diff --git a/src/audio_core/sink/sink_stream.h b/src/audio_core/sink/sink_stream.h
+index c8f14821e0..da13243e63 100644
+--- a/src/audio_core/sink/sink_stream.h
++++ b/src/audio_core/sink/sink_stream.h
+@@ -90,8 +90,6 @@ public:
+ 
+     virtual bool TryAppendOutputBlock(SinkBuffer& buffer, std::span<s16> samples);
+ 
+-    u32 SysmixQueueLimit() const;
+-
+     /**
+      * Check if the stream is paused.
+      *
+@@ -276,9 +274,7 @@ protected:
+ 
+ private:
+     /// Ring buffer of the samples waiting to be played or consumed
+-    /// Samples the ring below holds, across all channels
+-    static constexpr std::size_t SampleRingCapacity = 0x10000;
+-    Common::RingBuffer<s16, SampleRingCapacity> samples_buffer;
++    Common::RingBuffer<s16, 0x10000> samples_buffer;
+     bool input_preview{};
+     std::atomic<float> input_preview_gain{1.0f};
+     std::atomic<u32> input_peak{};
+@@ -293,8 +289,6 @@ private:
+     u64 level_frames{};
+     /// Number of buffers waiting to be played
+     std::atomic<u32> queued_buffers{};
+-    /// Largest number of frames the host device has asked for in one callback (sysmix streams)
+-    std::atomic<u64> largest_request_frames{};
+     /// The ring size for audio out buffers (usually 4, rarely 2 or 8)
+     u32 max_queue_size{};
+     /// Locks access to sample count tracking info
 diff --git a/src/common/game_presets.h b/src/common/game_presets.h
 index 83dd4d3c3f..afcd5972c9 100644
 --- a/src/common/game_presets.h
@@ -1558,10 +1757,38 @@ index e1e50a62dc..0d8ad486c3 100644
 +
  } // namespace Common::Windows
 diff --git a/src/core/core.cpp b/src/core/core.cpp
-index df8317f7c8..2508fa5e44 100644
+index 2a39bf0ca4..2508fa5e44 100644
 --- a/src/core/core.cpp
 +++ b/src/core/core.cpp
-@@ -351,6 +351,12 @@ struct System::Impl {
+@@ -254,22 +254,14 @@ struct System::Impl {
+             return;
+         }
+ 
+-        // The settings and time services start on the emulated cores, which only run once the
+-        // game has finished loading (shaders included). Waiting for them here froze the UI
+-        // thread for the whole loading screen when settings were applied during it. If they
+-        // are not up yet there is nothing to refresh: they read the current settings when
+-        // they start.
+-        auto& service_manager = system.ServiceManager();
+         auto settings_service =
+-            service_manager.GetService<Service::Set::ISystemSettingsServer>("set:sys");
++            system.ServiceManager().GetService<Service::Set::ISystemSettingsServer>("set:sys",
++                                                                                    true);
+         auto static_service_a =
+-            service_manager.GetService<Service::Glue::Time::StaticService>("time:a");
++            system.ServiceManager().GetService<Service::Glue::Time::StaticService>("time:a", true);
++
+         auto static_service_s =
+-            service_manager.GetService<Service::PSC::Time::StaticService>("time:s");
+-        if (!settings_service || !static_service_a || !static_service_s) {
+-            LOG_INFO(Core, "Time services not started yet, they will use the current settings");
+-            return;
+-        }
++            system.ServiceManager().GetService<Service::PSC::Time::StaticService>("time:s", true);
+ 
+         std::shared_ptr<Service::PSC::Time::SystemClock> user_clock;
+         static_service_a->GetStandardUserSystemClock(&user_clock);
+@@ -359,6 +351,12 @@ struct System::Impl {
      SystemResultStatus InitializeKernel(System& system) {
          LOG_DEBUG(Core, "initialized OK");
  
@@ -1574,7 +1801,17 @@ index df8317f7c8..2508fa5e44 100644
          // Setting changes may require a full system reinitialization (e.g., disabling multicore).
          ReinitializeIfNecessary(system);
          if (!device_memory) {
-@@ -573,6 +579,13 @@ struct System::Impl {
+@@ -460,9 +458,6 @@ struct System::Impl {
+ 
+         if (!app_loader) {
+             LOG_CRITICAL(Core, "Failed to obtain loader for {}!", filepath);
+-            // The kernel is already initialized. Left running, it is destroyed with the global
+-            // System after main() returns, when device memory is already gone, and exit crashes.
+-            ShutdownMainProcess();
+             return SystemResultStatus::ErrorGetLoader;
+         }
+ 
+@@ -584,6 +579,13 @@ struct System::Impl {
          // Reset all glue registrations
          arp_manager.ResetAll();
  
@@ -1724,6 +1961,20 @@ index 536b9bc190..04b2df9510 100644
      u64 event_fifo_id = 0;
      std::atomic<s64> pause_end_time{};
      /// Cycle timing
+diff --git a/src/core/file_sys/ips_layer.cpp b/src/core/file_sys/ips_layer.cpp
+index 4bb4f442e6..718a3a46f0 100644
+--- a/src/core/file_sys/ips_layer.cpp
++++ b/src/core/file_sys/ips_layer.cpp
+@@ -128,8 +128,7 @@ static IPSwitchRecord EscapeStringSequences(std::string_view sv) {
+                 switch (it[1]) {
+                 case 'a': return '\a';
+                 case 'b': return '\b';
+-                // '\e' is a GNU extension: MSVC compiles it as 'e' (0x65), not ESC (0x1b).
+-                case 'e': return '\x1b';
++                case 'e': return '\e';
+                 case 'f': return '\f';
+                 case 'n': return '\n';
+                 case 'r': return '\r';
 diff --git a/src/core/file_sys/patch_manager.cpp b/src/core/file_sys/patch_manager.cpp
 index 84643b1fe2..acb72b3b9e 100644
 --- a/src/core/file_sys/patch_manager.cpp
@@ -1783,122 +2034,38 @@ index 84643b1fe2..acb72b3b9e 100644
  };
  
 diff --git a/src/core/hle/service/nvdrv/devices/nvhost_as_gpu.cpp b/src/core/hle/service/nvdrv/devices/nvhost_as_gpu.cpp
-index 9c2d890a48..d8cdbe7843 100644
+index 64de5485d2..d8cdbe7843 100644
 --- a/src/core/hle/service/nvdrv/devices/nvhost_as_gpu.cpp
 +++ b/src/core/hle/service/nvdrv/devices/nvhost_as_gpu.cpp
-@@ -6,6 +6,8 @@
- // SPDX-License-Identifier: GPL-3.0-or-later
- 
- #include <algorithm>
-+#include <atomic>
-+#include <cstdint>
+@@ -10,7 +10,6 @@
+ #include <cstdint>
  #include <cstdlib>
  #include <cstring>
+-#include <memory>
  #include <utility>
-@@ -16,6 +18,7 @@
- #include "common/common_types.h"
- #include "common/logging.h"
- #include "core/core.h"
-+#include "core/hle/kernel/k_process.h"
- #include "core/hle/service/nvdrv/core/container.h"
- #include "core/hle/service/nvdrv/core/heap_mapper.h"
- #include "core/hle/service/nvdrv/core/nvmap.h"
-@@ -24,6 +27,7 @@
- #include "core/hle/service/nvdrv/devices/nvhost_gpu.h"
- #include "core/hle/service/nvdrv/devices/nx2_stub_device.h"
- #include "core/hle/service/nvdrv/nvdrv.h"
-+#include "core/memory.h"
- #include "video_core/control/channel_state.h"
- #include "video_core/gpu.h"
- #include "video_core/host1x/host1x.h"
-@@ -33,6 +37,53 @@
  
- namespace Service::Nvidia::Devices {
- 
-+namespace {
-+
-+// A device (SMMU) range keeps the host pages that backed its CPU range when it was mapped. The
-+// ranges are reused by CPU address and size: when nx2:gpu 102 destroyed the memory, the game
-+// can unmap it and map new pages at the same address, register it again, and get the old device
-+// range back. The GPU then reads the old pages, which the kernel may already have given to other
-+// data (Ocarina of Time: meshes whose index and vertex bytes were an actor pack and texture
-+// blocks, white areas after area changes). Points the range at the current pages again.
-+void Nx2RefreshBacking(Tegra::MaxwellDeviceMemoryManager& smmu, Core::Memory::Memory& memory,
-+                       Core::Asid asid, DAddr device_address, u64 cpu_address, u64 size) {
-+    constexpr u64 PageSize = Core::Memory::YUZU_PAGESIZE;
-+    constexpr uintptr_t PageMask = static_cast<uintptr_t>(Core::Memory::YUZU_PAGEMASK);
-+    if ((cpu_address & Core::Memory::YUZU_PAGEMASK) != 0 ||
-+        (device_address & Core::Memory::YUZU_PAGEMASK) != 0) {
-+        return;
-+    }
-+    u64 stale_pages = 0;
-+    u64 first_stale = 0;
-+    for (u64 offset = 0; offset < size; offset += PageSize) {
-+        const auto device_page =
-+            reinterpret_cast<uintptr_t>(smmu.GetPointer<u8>(device_address + offset));
-+        const auto cpu_page = reinterpret_cast<uintptr_t>(
-+            memory.GetPointerSilent(Common::ProcessAddress{cpu_address + offset}));
-+        if ((device_page & ~PageMask) != (cpu_page & ~PageMask)) {
-+            if (stale_pages++ == 0) {
-+                first_stale = offset;
-+            }
-+        }
-+    }
-+    if (stale_pages == 0) {
-+        return;
-+    }
-+    static std::atomic<u32> reports{};
-+    if (reports.fetch_add(1, std::memory_order_relaxed) < 256) {
-+        LOG_WARNING(Service_NVDRV,
-+                    "Switch 2 device range {:#x} of CPU {:#x}+{:#x}: {} of {} pages point at old "
-+                    "memory (first at +{:#x}), mapped again",
-+                    device_address, cpu_address, size, stale_pages,
-+                    (size + PageSize - 1) / PageSize, first_stale);
-+    }
-+    // Unmapping drops the old pages from the reverse map and invalidates the caches over the range.
-+    smmu.Unmap(device_address, size);
-+    smmu.Map(device_address, cpu_address, size, asid, true);
-+}
-+
-+} // namespace
-+
- nvhost_as_gpu::nvhost_as_gpu(Core::System& system_, Module& module_, NvCore::Container& core)
-     : nvdevice{system_}, module{module_}, container{core}, nvmap{core.GetNvMapFile()}, vm{},
-       gmmu{} {}
-@@ -146,6 +197,7 @@ void nvhost_as_gpu::Nx2Map(u64 gpu_address, u64 cpu_address, u64 size) {
-     // The same CPU range is often mapped twice (at its own address and in a sparse region), so
-     // reuse its SMMU mapping.
-     Nx2DeviceRange range{};
-+    bool fresh = false; ///< Mapped to the current pages just now
-     if (const auto it = nx2_device_ranges.find({cpu_address, size}); it != nx2_device_ranges.end()) {
-         range = it->second;
-     } else if (session->has_preallocated_area && session->mapper->IsInBounds(cpu_address, size)) {
-@@ -156,6 +208,7 @@ void nvhost_as_gpu::Nx2Map(u64 gpu_address, u64 cpu_address, u64 size) {
-             const DAddr address = smmu.Allocate(Common::AlignUp(size, 0x20000));
-             if (address != 0) {
-                 smmu.Map(address, cpu_address, size, session->asid, true);
-+                fresh = true;
-             }
-             return address;
-         };
-@@ -179,8 +232,16 @@ void nvhost_as_gpu::Nx2Map(u64 gpu_address, u64 cpu_address, u64 size) {
-     Nx2GpuMemoryRegistry::Get().RecordDeviceRange(cpu_address, size, device_address);
-     // On the GPU thread, like unmaps: a GMMU map takes the texture cache lock, and the callers hold
+ #include "common/alignment.h"
+@@ -235,16 +234,13 @@ void nvhost_as_gpu::Nx2Map(u64 gpu_address, u64 cpu_address, u64 size) {
      // nx2:gpu locks that the GPU thread takes under that lock (sparse blocks backed on write).
-+    // A reused range is checked there too, before the GMMU map, against the pages the CPU range
-+    // has now (Nx2RefreshBacking).
+     // A reused range is checked there too, before the GMMU map, against the pages the CPU range
+     // has now (Nx2RefreshBacking).
+-    auto process = fresh ? nullptr
+-                         : std::make_shared<Kernel::KScopedAutoObject<Kernel::KProcess>>(
+-                               system.Kernel(), session->process);
 +    auto* const memory = fresh ? nullptr : &session->process->GetMemory();
      system.GPU().MapInOrder(
--        gpu_address, size, [gmmu = gmmu.get(), gpu_address, device_address, size] {
-+        gpu_address, size,
+         gpu_address, size,
+-        [gmmu = gmmu.get(), &smmu = system.Host1x().MemoryManager(), process = std::move(process),
 +        [gmmu = gmmu.get(), &smmu = system.Host1x().MemoryManager(), memory,
-+         asid = session->asid, gpu_address, cpu_address, device_address, size] {
+          asid = session->asid, gpu_address, cpu_address, device_address, size] {
+-            if (process) {
+-                Nx2RefreshBacking(smmu, process->GetPointerUnsafe()->GetMemory(), asid,
+-                                  device_address, cpu_address, size);
 +            if (memory != nullptr) {
 +                Nx2RefreshBacking(smmu, *memory, asid, device_address, cpu_address, size);
-+            }
+             }
              gmmu->Map(gpu_address, device_address, size, Tegra::PTEKind::PITCH, false);
          });
-     LOG_DEBUG(Service_NVDRV, "Switch 2 GPU mapping {:#x}+{:#x} -> CPU {:#x}", gpu_address, size,
 diff --git a/src/core/hle/service/nvnflinger/pixel_format.h b/src/core/hle/service/nvnflinger/pixel_format.h
 index a38c8be777..a4f8a53c72 100644
 --- a/src/core/hle/service/nvnflinger/pixel_format.h
@@ -1912,7 +2079,7 @@ index a38c8be777..a4f8a53c72 100644
  };
  
 diff --git a/src/core/hle/service/nx2_gsv.h b/src/core/hle/service/nx2_gsv.h
-index 2bf9854204..5a03942f16 100644
+index 3a71db3a7f..5a03942f16 100644
 --- a/src/core/hle/service/nx2_gsv.h
 +++ b/src/core/hle/service/nx2_gsv.h
 @@ -81,6 +81,21 @@
@@ -1937,17 +2104,7 @@ index 2bf9854204..5a03942f16 100644
  // Creates a session served by `iface` and returns its client end. Unlike PushIpcInterface this
  // works from a domain too, for callers that want a raw session handle.
  template <class T>
-@@ -635,6 +650,9 @@ private:
-                                     m_destroy_leftovers);
-                     }
-                 }
-+                // No GPU range reaches the memory any more: free its device range, so registering
-+                // the address again gets a new one on the pages it has then.
-+                registry.ReleaseBacking(address, size);
-             }
-             if (size == 0x2000) {
-                 Tegra::Nx2RemoveSemaphoreRegion(address);
-@@ -1553,6 +1571,8 @@ struct Nx2NativeObjects {
+@@ -1556,6 +1571,8 @@ struct Nx2NativeObjects {
          std::shared_ptr<std::mutex> decoder_mutex;
          u32 gpu_maps{};     // outstanding 426 maps
          bool mapped_here{}; // 426 added its GPU mapping (no other mapping covered it)
@@ -1956,7 +2113,7 @@ index 2bf9854204..5a03942f16 100644
      };
      std::mutex mutex;
      std::map<u32, Memory> memories;
-@@ -1966,6 +1986,7 @@ private:
+@@ -1969,6 +1986,7 @@ private:
      // Eden's GPU thread has processed the frame. Otherwise the game laps the GPU thread and
      // rewrites command memory it hasn't read yet.
      u32 m_wait_timeouts{};
@@ -1964,7 +2121,7 @@ index 2bf9854204..5a03942f16 100644
      struct PresentStats {
          long long frame_us{}, fence_us{}, composite_us{}, pace_us{}, max_fence_us{};
          long long max_frame_us{}, hitches{};
-@@ -2027,9 +2048,13 @@ private:
+@@ -2030,9 +2048,13 @@ private:
          if (mkw_dynamic) {
              swap_interval = 1;
          }
@@ -1979,7 +2136,7 @@ index 2bf9854204..5a03942f16 100644
          const u32 refresh_rate = (timing & 0xffff) >= 30 && (timing & 0xffff) <= 240 ? timing & 0xffff : 60;
          if (trace) {
              m_frame_trace.interval = swap_interval;
-@@ -2153,7 +2178,7 @@ private:
+@@ -2156,7 +2178,7 @@ private:
  
      // Shows a presented native image: word 5 is the image id, ~word 22 / word 24 the GPU fence
      // (syncpoint, value) to wait for (layout from changes.patch). The image is a block-linear
@@ -1988,7 +2145,7 @@ index 2bf9854204..5a03942f16 100644
      // shown_size: the present's word 7, ((height - 1) << 16) | (width - 1) of the area the game drew
      // into from the image's top-left corner (0 when it gives none).
      void Composite(u32 image_id, u32 fence_id, u32 fence_value, u32 shown_size) {
-@@ -2162,7 +2187,9 @@ private:
+@@ -2165,7 +2187,9 @@ private:
          u64 parent_offset{};
          std::optional<Nx2NativeObjects::VideoTrace> video_trace;
          Nx2ImageLayout layout{};
@@ -1999,7 +2156,7 @@ index 2bf9854204..5a03942f16 100644
          {
              std::scoped_lock lk{m_objects->mutex};
              const auto image = m_objects->images.find(image_id);
-@@ -2177,7 +2204,9 @@ private:
+@@ -2180,7 +2204,9 @@ private:
              parent = memory->second.parent;
              parent_offset = memory->second.parent_offset + image->second.offset;
              layout = Nx2CalculateImageLayout(image->second.preference.data());
@@ -2010,7 +2167,7 @@ index 2bf9854204..5a03942f16 100644
              if (Nx2VideoTraceEnabled()) {
                  video_trace = m_objects->last_video_write;
              }
-@@ -2261,14 +2290,19 @@ private:
+@@ -2264,14 +2290,19 @@ private:
              .offset = 0,
              .width = layout.width,
              .height = layout.height,
@@ -2034,7 +2191,7 @@ index 2bf9854204..5a03942f16 100644
          }};
          std::vector<Nvidia::NvFence> fences;
          if (fence_id < 192) {
-@@ -2375,22 +2409,29 @@ private:
+@@ -2378,22 +2409,29 @@ private:
          TipcReplyWords(ctx, {60, 0});
      }
  
@@ -2076,7 +2233,7 @@ index 2bf9854204..5a03942f16 100644
      }
  
      // 212(u64 layer): u64 bits of the layer's buffer slots that are ready. The client polls it once
-@@ -3214,6 +3255,7 @@ private:
+@@ -3217,6 +3255,7 @@ private:
              pictures.clear();
              const auto decode_start = std::chrono::steady_clock::now();
              decoder->Decode(input.data, input.pts, pictures);
@@ -2084,7 +2241,7 @@ index 2bf9854204..5a03942f16 100644
              if (input.end) {
                  decoder->Drain(pictures);
              }
-@@ -3967,6 +4009,22 @@ private:
+@@ -3970,6 +4009,22 @@ private:
          image.memory = w[19];
          std::copy_n(w + 2, image.preference.size(), image.preference.begin());
          image.size = Nx2CalculateImageLayout(w + 2).size;
@@ -2280,6 +2437,18 @@ index 8e58f32288..884232e7a8 100644
  // Maxwell v1 and older Nvidia cards don't support setting gl_Layer from non-geometry stages.
  // This creates a workaround by setting the layer as a generic output and creating a
  // passthrough geometry shader that reads the generic and sets the layer.
+diff --git a/src/tests/CMakeLists.txt b/src/tests/CMakeLists.txt
+index 80295ae4a4..367d48e07e 100644
+--- a/src/tests/CMakeLists.txt
++++ b/src/tests/CMakeLists.txt
+@@ -9,7 +9,6 @@ add_executable(tests
+     video_core/vulkan_overlay_filter.cpp
+     video_core/buffer_cache_ports.cpp
+     video_core/unswizzle_workers.cpp
+-    video_core/block_linear_swizzle.cpp
+     video_core/aftermath_dump.cpp
+     video_core/frame_dump_schedule.cpp
+     video_core/nx2_stutter_trace.cpp
 diff --git a/src/tests/common/game_presets.cpp b/src/tests/common/game_presets.cpp
 index 481f5c5e1d..b0ecda3b25 100644
 --- a/src/tests/common/game_presets.cpp
@@ -2481,11 +2650,290 @@ index 66528c1ebe..9e81a4cc4c 100644
  TEST_CASE("Native image base alignment does not shrink tile geometry", "[nx2_image_layout]") {
      auto preference = ColorPreference;
      preference[4] = 8;
+diff --git a/src/tests/video_core/block_linear_swizzle.cpp b/src/tests/video_core/block_linear_swizzle.cpp
+deleted file mode 100644
+index cb8c3c997c..0000000000
+--- a/src/tests/video_core/block_linear_swizzle.cpp
++++ /dev/null
+@@ -1,260 +0,0 @@
+-// SPDX-FileCopyrightText: Copyright 2026 Eden Emulator Project
+-// SPDX-License-Identifier: GPL-3.0-or-later
+-
+-#include <chrono>
+-#include <cstdio>
+-#include <random>
+-#include <vector>
+-
+-#include <catch2/catch_test_macros.hpp>
+-
+-#include "common/alignment.h"
+-#include "common/div_ceil.h"
+-#include "video_core/textures/decoders.h"
+-
+-namespace {
+-
+-using namespace Tegra::Texture;
+-
+-struct Layout {
+-    u32 width;
+-    u32 height;
+-    u32 depth;
+-    u32 bpp;
+-    u32 block_height;
+-    u32 block_depth;
+-    u32 alignment;
+-};
+-
+-// The block linear address of byte `x` of row `y` in slice `z`, written out bit by bit (GOBs of
+-// 64 bytes by 8 rows, stacked in blocks of 2^block_height GOBs high and 2^block_depth deep).
+-u64 BlockLinearOffset(const Layout& layout, u32 x, u32 y, u32 z, bool native) {
+-    const u32 stride = Common::AlignUpLog2(layout.width, layout.alignment) * layout.bpp;
+-    const u64 gobs_in_x = Common::DivCeil(stride, GOB_SIZE_X);
+-    const u64 block_size = gobs_in_x << (GOB_SIZE_SHIFT + layout.block_height + layout.block_depth);
+-    const u64 blocks_in_y = Common::DivCeil(layout.height, GOB_SIZE_Y << layout.block_height);
+-    const u64 slice_size = blocks_in_y * block_size;
+-    const u32 depth_mask = (1U << layout.block_depth) - 1;
+-    const u32 height_mask = (1U << layout.block_height) - 1;
+-    const u64 offset_z = (z >> layout.block_depth) * slice_size +
+-                         (u64{z & depth_mask} << (GOB_SIZE_SHIFT + layout.block_height));
+-    const u32 gob_y = y / GOB_SIZE_Y;
+-    const u64 offset_y = (gob_y >> layout.block_height) * block_size +
+-                         (u64{gob_y & height_mask} << GOB_SIZE_SHIFT);
+-    const u64 offset_x = u64{x / GOB_SIZE_X}
+-                         << (GOB_SIZE_SHIFT + layout.block_height + layout.block_depth);
+-    // Within a GOB: x bits 0-3 stay, x bit 4 goes to bit 5 and x bit 5 to bit 8; y bits 0, 1 and
+-    // 2 go to bits 4, 6 and 7.
+-    u32 within = (x & 0xf) | (((x >> 4) & 1) << 5) | (((x >> 5) & 1) << 8) | ((y & 1) << 4) |
+-                 (((y >> 1) & 1) << 6) | (((y >> 2) & 1) << 7);
+-    if (native) {
+-        const u32 swap = ((within >> 5) ^ (within >> 6)) & 1;
+-        within ^= (swap << 5) | (swap << 6);
+-    }
+-    return offset_z + offset_y + offset_x + within;
+-}
+-
+-size_t GuestBytes(const Layout& layout) {
+-    // Whole blocks: the aligned stride in GOBs, the height and depth rounded up to blocks.
+-    const u32 stride = Common::AlignUpLog2(layout.width, layout.alignment) * layout.bpp;
+-    const size_t gobs_in_x = Common::DivCeil(stride, GOB_SIZE_X);
+-    const size_t blocks_in_y = Common::DivCeil(layout.height, GOB_SIZE_Y << layout.block_height);
+-    const size_t blocks_in_z = Common::DivCeil(layout.depth, 1U << layout.block_depth);
+-    return gobs_in_x * blocks_in_y * blocks_in_z *
+-           (size_t{GOB_SIZE} << (layout.block_height + layout.block_depth));
+-}
+-
+-size_t LinearBytes(const Layout& layout) {
+-    return size_t{layout.width} * layout.height * layout.depth * layout.bpp;
+-}
+-
+-std::vector<u8> RandomBytes(size_t size, u32 seed) {
+-    std::mt19937 engine{seed};
+-    std::vector<u8> bytes(size);
+-    for (u8& byte : bytes) {
+-        byte = static_cast<u8>(engine());
+-    }
+-    return bytes;
+-}
+-
+-void CheckLayout(const Layout& layout, bool native) {
+-    INFO("width " << layout.width << " height " << layout.height << " depth " << layout.depth
+-                  << " bpp " << layout.bpp << " block height " << layout.block_height
+-                  << " block depth " << layout.block_depth << " alignment " << layout.alignment
+-                  << " native " << native);
+-    const size_t guest_bytes = GuestBytes(layout);
+-    const size_t linear_bytes = LinearBytes(layout);
+-    const u32 row_bytes = layout.width * layout.bpp;
+-
+-    // Unswizzle: every linear byte comes from its block linear address.
+-    const std::vector<u8> guest = RandomBytes(guest_bytes, layout.width * 31 + layout.height);
+-    std::vector<u8> linear(linear_bytes, 0xcd);
+-    UnswizzleTexture(linear, guest, layout.bpp, layout.width, layout.height, layout.depth,
+-                     layout.block_height, layout.block_depth, layout.alignment, native);
+-    bool unswizzle_ok = true;
+-    for (u32 z = 0; z < layout.depth && unswizzle_ok; ++z) {
+-        for (u32 y = 0; y < layout.height && unswizzle_ok; ++y) {
+-            for (u32 x = 0; x < row_bytes; ++x) {
+-                const size_t linear_offset = (size_t{z} * layout.height + y) * row_bytes + x;
+-                if (linear[linear_offset] != guest[BlockLinearOffset(layout, x, y, z, native)]) {
+-                    unswizzle_ok = false;
+-                    break;
+-                }
+-            }
+-        }
+-    }
+-    CHECK(unswizzle_ok);
+-
+-    // Swizzle: every block linear address of an image byte holds that byte, and the padding
+-    // between them keeps what was there.
+-    const std::vector<u8> source = RandomBytes(linear_bytes, layout.height * 17 + layout.bpp);
+-    std::vector<u8> swizzled(guest_bytes, 0xab);
+-    std::vector<u8> expected(guest_bytes, 0xab);
+-    for (u32 z = 0; z < layout.depth; ++z) {
+-        for (u32 y = 0; y < layout.height; ++y) {
+-            for (u32 x = 0; x < row_bytes; ++x) {
+-                expected[BlockLinearOffset(layout, x, y, z, native)] =
+-                    source[(size_t{z} * layout.height + y) * row_bytes + x];
+-            }
+-        }
+-    }
+-    SwizzleTexture(swizzled, source, layout.bpp, layout.width, layout.height, layout.depth,
+-                   layout.block_height, layout.block_depth, layout.alignment, native);
+-    CHECK(swizzled == expected);
+-}
+-
+-struct Subrect {
+-    u32 origin_x;
+-    u32 origin_y;
+-    u32 extent_x;
+-    u32 lines;
+-    u32 pitch;
+-};
+-
+-// SwizzleSubrect: the lines start at origin_y in each slice and continue into the next one.
+-void CheckSubrect(const Layout& layout, const Subrect& rect, bool native) {
+-    INFO("width " << layout.width << " height " << layout.height << " depth " << layout.depth
+-                  << " bpp " << layout.bpp << " block height " << layout.block_height
+-                  << " block depth " << layout.block_depth << " origin " << rect.origin_x << ","
+-                  << rect.origin_y << " extent " << rect.extent_x << " lines " << rect.lines
+-                  << " pitch " << rect.pitch << " native " << native);
+-    const size_t guest_bytes = GuestBytes(layout);
+-    const std::vector<u8> source =
+-        RandomBytes(size_t{rect.pitch} * layout.height * layout.depth, rect.extent_x * 7 + 3);
+-    std::vector<u8> swizzled(guest_bytes, 0x5a);
+-    std::vector<u8> expected(guest_bytes, 0x5a);
+-    u32 remaining = rect.lines;
+-    const u32 lines_per_slice = (std::min)(rect.lines, layout.height - rect.origin_y);
+-    for (u32 z = 0; z < layout.depth && remaining != 0; ++z) {
+-        const u32 lines = (std::min)(remaining, lines_per_slice);
+-        for (u32 line = 0; line < lines; ++line) {
+-            for (u32 x = 0; x < rect.extent_x * layout.bpp; ++x) {
+-                expected[BlockLinearOffset(layout, rect.origin_x * layout.bpp + x,
+-                                           rect.origin_y + line, z, native)] =
+-                    source[(size_t{z} * layout.height + line) * rect.pitch + x];
+-            }
+-        }
+-        remaining -= lines;
+-    }
+-    SwizzleSubrect(swizzled, source, layout.bpp, layout.width, layout.height, layout.depth,
+-                   rect.origin_x, rect.origin_y, rect.extent_x, rect.lines, layout.block_height,
+-                   layout.block_depth, rect.pitch, native);
+-    CHECK(swizzled == expected);
+-}
+-
+-} // Anonymous namespace
+-
+-TEST_CASE("Block linear subrect swizzle matches the GOB layout", "[block_linear_swizzle]") {
+-    // Origins and extents that start and end inside 16-byte units and GOBs.
+-    for (const u32 bpp : {1U, 2U, 4U, 8U, 16U}) {
+-        for (const u32 block_height : {0U, 2U, 4U}) {
+-            for (const bool native : {false, true}) {
+-                const Layout layout{100, 40, 1, bpp, block_height, 0, 0};
+-                for (const Subrect rect : {Subrect{0, 0, 100, 40, 100 * bpp},
+-                                           Subrect{3, 5, 17, 9, 17 * bpp},
+-                                           Subrect{13, 7, 61, 33, 64 * bpp},
+-                                           Subrect{99, 39, 1, 1, bpp},
+-                                           Subrect{31, 0, 2, 40, 5 * bpp}}) {
+-                    CheckSubrect(layout, rect, native);
+-                }
+-            }
+-        }
+-    }
+-    // Lines that continue into the next slices.
+-    for (const bool native : {false, true}) {
+-        CheckSubrect({24, 9, 3, 4, 1, 1, 0}, {5, 2, 11, 20, 11 * 4}, native);
+-        CheckSubrect({40, 16, 2, 16, 2, 0, 0}, {1, 0, 37, 32, 40 * 16}, native);
+-    }
+-}
+-
+-TEST_CASE("Block linear swizzle matches the GOB layout", "[block_linear_swizzle]") {
+-    // Widths whose rows are and aren't a whole number of 16-byte units (UnswizzleTexture widens
+-    // to the largest power of two unit that divides a row, up to 16 bytes), partial GOBs at the
+-    // right and bottom, and tall and deep blocks.
+-    for (const u32 bpp : {1U, 2U, 4U, 8U, 16U}) {
+-        for (const u32 width : {1U, 3U, 4U, 16U, 17U, 33U, 64U, 100U}) {
+-            for (const u32 height : {1U, 7U, 8U, 9U, 40U}) {
+-                for (const u32 block_height : {0U, 1U, 3U, 5U}) {
+-                    for (const bool native : {false, true}) {
+-                        CheckLayout({width, height, 1, bpp, block_height, 0, 0}, native);
+-                    }
+-                }
+-            }
+-        }
+-    }
+-    for (const u32 depth : {2U, 3U, 5U}) {
+-        for (const u32 block_depth : {0U, 1U, 2U}) {
+-            for (const bool native : {false, true}) {
+-                CheckLayout({48, 20, depth, 16, 2, block_depth, 0}, native);
+-                CheckLayout({13, 9, depth, 4, 1, block_depth, 0}, native);
+-            }
+-        }
+-    }
+-    // A row stride aligned past the width.
+-    for (const u32 alignment : {1U, 4U, 6U}) {
+-        for (const bool native : {false, true}) {
+-            CheckLayout({37, 19, 1, 4, 2, 0, alignment}, native);
+-            CheckLayout({64, 24, 1, 16, 3, 0, alignment}, native);
+-        }
+-    }
+-}
+-
+-TEST_CASE("Block linear subrect swizzle microbenchmark", "[.block_linear_swizzle_benchmark]") {
+-    // A DMA copy of a 1024x1024 RGBA8 region from pitch linear into block linear.
+-    const Layout layout{1024, 1024, 1, 4, 4, 0, 0};
+-    const std::vector<u8> source = RandomBytes(LinearBytes(layout), 2);
+-    std::vector<u8> guest(GuestBytes(layout));
+-    for (const bool native : {false, true}) {
+-        constexpr int iterations = 200;
+-        const auto start = std::chrono::steady_clock::now();
+-        for (int i = 0; i < iterations; ++i) {
+-            SwizzleSubrect(guest, source, layout.bpp, layout.width, layout.height, 1, 0, 0,
+-                           layout.width, layout.height, layout.block_height, 0,
+-                           layout.width * layout.bpp, native);
+-        }
+-        const double seconds =
+-            std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+-        std::printf("1024x1024 RGBA8 subrect swizzle%s: %.3f ms, %.2f GB/s\n",
+-                    native ? " (native tiling)" : "", seconds * 1e3 / iterations,
+-                    LinearBytes(layout) * iterations / seconds / 1e9);
+-    }
+-}
+-
+-TEST_CASE("Block linear unswizzle microbenchmark", "[.block_linear_swizzle_benchmark]") {
+-    const Layout layout{1024, 1024, 1, 4, 4, 0, 0};
+-    const std::vector<u8> guest = RandomBytes(GuestBytes(layout), 1);
+-    std::vector<u8> linear(LinearBytes(layout));
+-    for (const bool native : {false, true}) {
+-        constexpr int iterations = 200;
+-        const auto start = std::chrono::steady_clock::now();
+-        for (int i = 0; i < iterations; ++i) {
+-            UnswizzleTexture(linear, guest, layout.bpp, layout.width, layout.height, 1,
+-                             layout.block_height, 0, 0, native);
+-        }
+-        const double seconds =
+-            std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+-        std::printf("1024x1024 RGBA8 unswizzle%s: %.3f ms, %.2f GB/s\n",
+-                    native ? " (native tiling)" : "", seconds * 1e3 / iterations,
+-                    LinearBytes(layout) * iterations / seconds / 1e9);
+-    }
+-}
 diff --git a/src/tests/video_core/buffer_cache_ports.cpp b/src/tests/video_core/buffer_cache_ports.cpp
-index 4971aff31c..a6de32a37c 100644
+index 8d16a878f2..a6de32a37c 100644
 --- a/src/tests/video_core/buffer_cache_ports.cpp
 +++ b/src/tests/video_core/buffer_cache_ports.cpp
-@@ -355,6 +355,13 @@ struct BufferCacheTestAccess {
+@@ -264,10 +264,9 @@ namespace VideoCommon {
+ 
+ struct BufferCacheTestAccess {
+     static Binding Bind(Cache& cache, Tegra::MemoryManager& memory, GPUVAddr descriptor,
+-                        bool written = false, bool native = false, bool table = false,
+-                        bool compute = false) {
++                        bool written = false, bool native = false, bool table = false) {
+         cache.gpu_memory = &memory;
+-        return cache.StorageBufferBinding(descriptor, 0, written, native, table, compute);
++        return cache.StorageBufferBinding(descriptor, 0, written, native, table);
+     }
+     template <class C>
+     static BufferId Add(C& cache, DAddr address, u32 size, bool mapped = false) {
+@@ -356,6 +355,13 @@ struct BufferCacheTestAccess {
      static void MarkWritten(Cache& cache, BufferId id, DAddr address, u32 size) {
          cache.MarkWrittenBuffer(id, address, size);
      }
@@ -2499,7 +2947,28 @@ index 4971aff31c..a6de32a37c 100644
      static size_t ReadDownloads(Cache& cache) {
          return cache.read_downloads.size();
      }
-@@ -813,6 +820,147 @@ TEST_CASE("Command page readers remain ordered during batch completion", "[buffe
+@@ -435,9 +441,8 @@ struct BasicFixture {
+         std::memcpy(bytes, &address, sizeof(address));
+         std::memcpy(bytes + 8, &size, sizeof(size));
+     }
+-    VideoCommon::Binding Bind(bool written = false, bool native = false, bool table = false,
+-                              bool compute = false) {
+-        return Access::Bind(*cache, *memory, 0x100000, written, native, table, compute);
++    VideoCommon::Binding Bind(bool written = false, bool native = false, bool table = false) {
++        return Access::Bind(*cache, *memory, 0x100000, written, native, table);
+     }
+ };
+ 
+@@ -618,8 +623,6 @@ TEST_CASE("Storage binding cache preserves native and table size policies", "[bu
+     f.Descriptor(base, 256);
+     REQUIRE(f.Bind().size == 4096);
+     REQUIRE(f.Bind(false, true).size == 8 << 20);
+-    REQUIRE(f.Bind(false, true, false, true).size == 80 << 20);
+-    REQUIRE(f.Bind(true, true, false, true).size == 8 << 20);
+     REQUIRE(f.Bind(false, false, true).size == 80 << 20);
+     REQUIRE(f.Bind(true, false, true).size == 256);
+     f.Descriptor(base, (1ULL << 32) | 256);
+@@ -817,6 +820,147 @@ TEST_CASE("Command page readers remain ordered during batch completion", "[buffe
      REQUIRE(f.runtime.downloads == 1);
  }
  
@@ -2647,63 +3116,6 @@ index 4971aff31c..a6de32a37c 100644
  TEST_CASE("Native uniform banks upload directly without overwriting GPU-owned bytes",
            "[buffer_ports]") {
      Fixture f;
-diff --git a/src/tests/video_core/nx2_gpu_mapping.cpp b/src/tests/video_core/nx2_gpu_mapping.cpp
-index bfa3caab63..66097df2ab 100644
---- a/src/tests/video_core/nx2_gpu_mapping.cpp
-+++ b/src/tests/video_core/nx2_gpu_mapping.cpp
-@@ -1,5 +1,6 @@
- // SPDX-License-Identifier: GPL-3.0-or-later
- 
-+#include <map>
- #include <utility>
- #include <vector>
- 
-@@ -68,3 +69,45 @@ TEST_CASE("NX2 destroyed memory leaves no GPU range mapped into it", "[video_cor
-     REQUIRE_FALSE(registry.GpuAddressOf(7, 0));
-     REQUIRE(registry.GpuAddressOf(7, 0x1000) == 0xa1000U);
- }
-+
-+TEST_CASE("NX2 destroyed memory gets a new device range when registered again",
-+          "[video_core][nx2_mapping]") {
-+    Service::Nvidia::Devices::Nx2GpuMemoryRegistry registry;
-+    // Like nvhost_as_gpu: device ranges cached by CPU range, shared through the registry.
-+    std::map<std::pair<u64, u64>, u64> ranges;
-+    u64 next_device = 0x100000;
-+    const auto allocate = [&next_device] {
-+        const u64 device_address = next_device;
-+        next_device += 0x20000;
-+        return device_address;
-+    };
-+    registry.AddListener(
-+        &ranges,
-+        [&](u64, u64 cpu_address, u64 size) {
-+            const std::pair key{cpu_address, size};
-+            if (!ranges.contains(key)) {
-+                ranges[key] = registry.AcquireDeviceRange(1, cpu_address, size, allocate);
-+            }
-+            registry.RecordDeviceRange(cpu_address, size, ranges[key]);
-+        },
-+        [](u64, u64) {},
-+        [&](u64 cpu_address, u64 size) {
-+            if (ranges.erase(std::pair{cpu_address, size}) != 0) {
-+                registry.ReleaseDeviceRange(1, cpu_address, size);
-+            }
-+        });
-+    registry.Register(0x10000, 0x4000);
-+    const u64 first = ranges.at({0x10000, 0x4000});
-+    REQUIRE(registry.DeviceAddressOf(0x10000) == first);
-+
-+    // Sub 102, then the game registers new memory at the same address.
-+    registry.UnmapMemory(0x10000, 0x4000);
-+    registry.ReleaseBacking(0x10000, 0x4000);
-+    REQUIRE(ranges.empty());
-+    REQUIRE_FALSE(registry.DeviceAddressOf(0x10000));
-+    registry.Register(0x10000, 0x4000);
-+
-+    const u64 second = ranges.at({0x10000, 0x4000});
-+    REQUIRE(second != first);
-+    REQUIRE(registry.DeviceAddressOf(0x10000) == second);
-+}
 diff --git a/src/tests/video_core/stage_translation.cpp b/src/tests/video_core/stage_translation.cpp
 index 39bc1d379b..1c3cbda578 100644
 --- a/src/tests/video_core/stage_translation.cpp
@@ -2739,10 +3151,18 @@ index 39bc1d379b..1c3cbda578 100644
 +    CHECK_FALSE(CanFlushTexturePool(0xFFFFFFFF));
 +}
 diff --git a/src/video_core/CMakeLists.txt b/src/video_core/CMakeLists.txt
-index 8ad13ef577..ada353e871 100644
+index 371992d963..ada353e871 100644
 --- a/src/video_core/CMakeLists.txt
 +++ b/src/video_core/CMakeLists.txt
-@@ -620,7 +620,7 @@ endif()
+@@ -242,7 +242,6 @@ add_library(video_core STATIC
+     renderer_vulkan/vk_rasterizer.cpp
+     renderer_vulkan/vk_rasterizer.h
+     renderer_vulkan/submission_policy.h
+-    renderer_vulkan/upload_batch.h
+     renderer_vulkan/vk_render_pass_cache.cpp
+     renderer_vulkan/vk_render_pass_cache.h
+     renderer_vulkan/vk_resource_pool.cpp
+@@ -621,7 +620,7 @@ endif()
  # setting is on. Only Streamline's MIT-licensed headers are compiled in and nothing of NVIDIA's is
  # linked or copied: sl.interposer.dll and the DLSS plugins are loaded at run time from the user's PC.
  cmake_dependent_option(ENABLE_NVIDIA_DLSS "Enable NVIDIA DLSS through NVIDIA Streamline" ON
@@ -2752,7 +3172,7 @@ index 8ad13ef577..ada353e871 100644
      "NVIDIA Streamline SDK directory for its headers (empty: download them)")
  if (ENABLE_NVIDIA_DLSS)
 diff --git a/src/video_core/buffer_cache/buffer_cache.h b/src/video_core/buffer_cache/buffer_cache.h
-index dcb049da8b..4ad8bdccb0 100644
+index 0fad666952..4ad8bdccb0 100644
 --- a/src/video_core/buffer_cache/buffer_cache.h
 +++ b/src/video_core/buffer_cache/buffer_cache.h
 @@ -1440,6 +1440,11 @@ bool BufferCache<P>::DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 am
@@ -2798,6 +3218,15 @@ index dcb049da8b..4ad8bdccb0 100644
      if (indirect_offset != ~0U) {
          TraceTablePointer(false, stage, ssbo_index, cbuf_index, cbuf_offset, indirect_offset, holder,
                            channel_state->storage_buffers[stage][ssbo_index]);
+@@ -1891,7 +1901,7 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
+         table_pointer && holder == 0
+             ? NULL_BINDING
+             : StorageBufferBinding(ssbo_addr, cbuf_index, is_written, native_pointer,
+-                                   table_pointer, true);
++                                   table_pointer);
+     channel_state->compute_storage_buffers[ssbo_index] = binding;
+     if (table_pointer && holder != 0) {
+         TraceTablePointer(true, 0, ssbo_index, cbuf_index, cbuf_offset, indirect_offset, holder,
 @@ -2522,6 +2532,7 @@ void BufferCache<P>::BindHostGraphicsUniformBuffer(size_t stage, u32 index, u32
      // Native programs keep tables next to their code in a 64 KiB bank read with indirect offsets
      // (Splatoon Raiders: the dialogue box corners in c1). Writes to that memory can go unnoticed by
@@ -2944,12 +3373,11 @@ index dcb049da8b..4ad8bdccb0 100644
          }
      }
  }
-@@ -4150,14 +4230,15 @@ void BufferCache<P>::TraceTablePointer(bool compute, size_t stage, size_t ssbo_i
- 
+@@ -4151,14 +4231,14 @@ void BufferCache<P>::TraceTablePointer(bool compute, size_t stage, size_t ssbo_i
  template <class P>
  Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index, bool is_written,
--                                             bool native_pointer, bool table_pointer) const {
-+                                             bool native_pointer, bool table_pointer,
+                                              bool native_pointer, bool table_pointer,
+-                                             bool compute) const {
 +                                             bool mapping_sized) const {
      const GPUVAddr gpu_addr = gpu_memory->Read<u64>(ssbo_addr);
  
@@ -2962,26 +3390,79 @@ index dcb049da8b..4ad8bdccb0 100644
      const u64 next_qword = reads_size_word ? gpu_memory->Read<u64>(ssbo_addr + 8) : 0;
      const u32 alignment = runtime.GetStorageBufferAlignment();
      struct CachedBinding {
-@@ -4172,7 +4253,8 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
-     constexpr size_t ways = 4;
+@@ -4174,7 +4254,7 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
      thread_local std::array<std::array<CachedBinding, ways>, 512> binding_cache{};
      const u32 flags =
--        (is_written ? 1U : 0U) | (native_pointer ? 2U : 0U) | (table_pointer ? 4U : 0U);
-+        (is_written ? 1U : 0U) | (native_pointer ? 2U : 0U) | (table_pointer ? 4U : 0U) |
+         (is_written ? 1U : 0U) | (native_pointer ? 2U : 0U) | (table_pointer ? 4U : 0U) |
+-        (compute ? 8U : 0U);
 +        (mapping_sized ? 8U : 0U);
      const size_t owner = gpu_memory->GetID() + 1;
      const u64 serial = gpu_memory->MapSerial();
      auto& set = binding_cache[((gpu_addr ^ next_qword ^ flags) * 0x9E3779B97F4A7C15ULL) >> 55];
-@@ -4205,7 +4287,7 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
-             // A native (Switch 2) compute program's pointer is bare: the word after it is another
-             // parameter (a dimension, stride or texture handle), not an NVN buffer size. Taking it
-             // as one bound Fortune's Weave's DLSS input features to 266 bytes and dropped the rest.
+@@ -4197,20 +4277,17 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
+             // 1 GiB). Ocarina of Time's grass instances lie 12-18 MiB past theirs (an 8 MiB cap
+             // culled every blade), and its light probe records reach about 130 MiB past theirs: a
+             // 64 MiB cap left the far probes outside the binding, and the fog took one overbright
+-            // constant from them. A native (Switch 2) compute pointer has no size either, and
+-            // Mario Kart World's lighting passes read past 8 MiB from theirs: capped there, the
+-            // reads came back zero and lit land and characters too dark. Written bindings keep
+-            // a cap: a write marks the whole binding GPU-modified.
+-            const bool native_compute = native_pointer && compute;
+-            if ((table_pointer || native_compute) && !is_written) {
++            // constant from them. Written pools keep a cap: a write marks the whole binding
++            // GPU-modified.
++            if (table_pointer && !is_written) {
+                 const u64 reach = (std::min)(runtime.GetMaxStorageBufferRange(), u64{1_GiB});
+                 const u32 limit = static_cast<u32>(reach - (std::min)(reach, u64{64_KiB}));
+                 return (std::min)(memory_layout_size, limit);
+             }
+-            // A native compute program's pointer is bare: the word after it is another parameter
+-            // (a dimension, stride or texture handle), not an NVN buffer size. Taking it as one
+-            // bound Fortune's Weave's DLSS input features to 266 bytes and dropped the rest.
 -            if (native_pointer) {
++            // A native (Switch 2) compute program's pointer is bare: the word after it is another
++            // parameter (a dimension, stride or texture handle), not an NVN buffer size. Taking it
++            // as one bound Fortune's Weave's DLSS input features to 266 bytes and dropped the rest.
 +            if (mapping_sized) {
                  return (std::min)(memory_layout_size, static_cast<u32>(8_MiB));
              }
              const u32 packed_size = static_cast<u32>(next_qword);
-@@ -4310,4 +4392,4 @@ std::pair<typename BufferCache<P>::Buffer*, u32> BufferCache<P>::GetDrawIndirect
+@@ -4224,34 +4301,7 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
+         if ((native_pointer || table_pointer) && size != 0) {
+             // Stop where the mapping or its device range does: the binding is one device range, and
+             // a written one isn't split into separate ranges without sparse sources.
+-            const u32 wanted = size;
+             size = static_cast<u32>(gpu_memory->MaxContinuousRange(gpu_addr, size));
+-            if (native_pointer && compute) {
+-                static std::atomic<u64> computed{}, past_cap{}, at_gap{}, logged{};
+-                static std::atomic<s64> next_log{};
+-                const u64 total = computed.fetch_add(1, std::memory_order_relaxed) + 1;
+-                if (size > 8_MiB) {
+-                    past_cap.fetch_add(1, std::memory_order_relaxed);
+-                }
+-                if (size < wanted) {
+-                    at_gap.fetch_add(1, std::memory_order_relaxed);
+-                }
+-                const s64 now = std::chrono::duration_cast<std::chrono::seconds>(
+-                                    std::chrono::steady_clock::now().time_since_epoch())
+-                                    .count();
+-                const u64 long_bindings = past_cap.load(std::memory_order_relaxed);
+-                const u64 gap_bindings = at_gap.load(std::memory_order_relaxed);
+-                s64 due = next_log.load(std::memory_order_relaxed);
+-                if (now >= due && logged.load(std::memory_order_relaxed) !=
+-                                      long_bindings + gap_bindings &&
+-                    next_log.compare_exchange_strong(due, now + 10)) {
+-                    logged.store(long_bindings + gap_bindings, std::memory_order_relaxed);
+-                    LOG_INFO(HW_GPU,
+-                             "Native compute storage bindings: {} reach past the old 8 MiB cap, "
+-                             "{} stop at a mapping gap, of {} bound",
+-                             long_bindings, gap_bindings, total);
+-                }
+-            }
+         }
+ 
+         // Alignment only applies to the offset of the buffer
+@@ -4342,4 +4392,4 @@ std::pair<typename BufferCache<P>::Buffer*, u32> BufferCache<P>::GetDrawIndirect
                            buffer.Offset(channel_state->indirect_buffer_binding.device_addr));
  }
  
@@ -2989,7 +3470,7 @@ index dcb049da8b..4ad8bdccb0 100644
 +} // namespace VideoCommon
 \ No newline at end of file
 diff --git a/src/video_core/buffer_cache/buffer_cache_base.h b/src/video_core/buffer_cache/buffer_cache_base.h
-index d5444a963d..c7b9862754 100644
+index e2db1e6d55..c7b9862754 100644
 --- a/src/video_core/buffer_cache/buffer_cache_base.h
 +++ b/src/video_core/buffer_cache/buffer_cache_base.h
 @@ -10,6 +10,7 @@
@@ -3041,17 +3522,16 @@ index d5444a963d..c7b9862754 100644
      void Nx2NoteListHostWrite(DAddr device_addr, u64 size);
  
      /// Return true when a CPU region is modified from the GPU
-@@ -718,7 +722,8 @@ private:
- 
+@@ -719,7 +723,7 @@ private:
      [[nodiscard]] Binding StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index, bool is_written,
                                                 bool native_pointer = false,
--                                               bool table_pointer = false) const;
-+                                               bool table_pointer = false,
+                                                bool table_pointer = false,
+-                                               bool compute = false) const;
 +                                               bool mapping_sized = false) const;
  
      void TraceTablePointer(bool compute, size_t stage, size_t ssbo_index, u32 cbuf_index,
                             u32 cbuf_offset, u32 indirect_offset, GPUVAddr holder,
-@@ -1100,8 +1105,9 @@ private:
+@@ -1101,8 +1105,9 @@ private:
  
      /// A command list page (Nx2CopyListPages): the GPU writes noted to it and the last copy.
      using Nx2Staging = decltype(std::declval<Runtime&>().DownloadStagingBuffer(size_t{}, true));
@@ -3062,7 +3542,7 @@ index d5444a963d..c7b9862754 100644
          u64 copy_writes{}; ///< `writes` when the copy was made: the copy is current while equal
          u64 copy_tick{};   ///< GPU tick that completes the copy
          /// `writes` when the front last flushed the page: guest memory holds it while equal
-@@ -1114,8 +1120,25 @@ private:
+@@ -1115,8 +1120,25 @@ private:
          /// the page's lists read guest memory once the back ran the work before the last such
          /// wait and no write came since the front flushed the page (Nx2ReadListCopy).
          bool draw_written{};
@@ -3184,6 +3664,18 @@ index fbe3e07086..068f6d181e 100644
      }
      bool past_sync = !split.Active();
      using GpuWrittenList = VideoCore::RasterizerInterface::GpuWrittenList;
+diff --git a/src/video_core/engines/fermi_2d.cpp b/src/video_core/engines/fermi_2d.cpp
+index 5e29f954a6..996661f8dd 100644
+--- a/src/video_core/engines/fermi_2d.cpp
++++ b/src/video_core/engines/fermi_2d.cpp
+@@ -88,6 +88,7 @@ void Fermi2D::Blit() {
+     UNIMPLEMENTED_IF_MSG(regs.operation != Operation::SrcCopy, "Operation is not copy");
+     UNIMPLEMENTED_IF_MSG(regs.src.layer != 0, "Source layer is not zero");
+     UNIMPLEMENTED_IF_MSG(regs.dst.layer != 0, "Destination layer is not zero");
++    UNIMPLEMENTED_IF_MSG(regs.src.depth != 1, "Source depth is not one");
+     UNIMPLEMENTED_IF_MSG(regs.clip_enable != 0, "Clipped blit enabled");
+ 
+     const auto& args = regs.pixels_from_memory;
 diff --git a/src/video_core/engines/maxwell_3d.cpp b/src/video_core/engines/maxwell_3d.cpp
 index e20d9dd266..a13968e4ff 100644
 --- a/src/video_core/engines/maxwell_3d.cpp
@@ -4305,6 +4797,122 @@ index 48757b88ad..cd8bab799c 100644
  }
  
  } // namespace Vulkan
+diff --git a/src/video_core/renderer_vulkan/upload_batch.h b/src/video_core/renderer_vulkan/upload_batch.h
+deleted file mode 100644
+index eb7edc77f8..0000000000
+--- a/src/video_core/renderer_vulkan/upload_batch.h
++++ /dev/null
+@@ -1,110 +0,0 @@
+-// SPDX-FileCopyrightText: Copyright 2026 Eden Emulator Project
+-// SPDX-License-Identifier: GPL-3.0-or-later
+-
+-#pragma once
+-
+-#include <span>
+-#include <vector>
+-
+-#include "common/common_types.h"
+-#include "video_core/vulkan_common/vulkan_wrapper.h"
+-
+-namespace Vulkan {
+-
+-/// Uploads in order (Scheduler::RecordUpload) waiting to be recorded as one command: their
+-/// copies run between one barrier before and one after. Copies of one batch may run in any
+-/// order and at once, so a batch never holds two copies that write the same bytes, or one that
+-/// writes a buffer another reads.
+-class UploadBatch {
+-public:
+-    /// Copies with the same source and destination, consecutive in `copies`.
+-    struct Group {
+-        VkBuffer src;
+-        VkBuffer dst;
+-        u32 first;
+-        u32 count;
+-    };
+-
+-    /// More copies than this go in a later batch. It bounds CanAdd's checks on the recording
+-    /// thread, at the cost of two barriers per this many uploads.
+-    static constexpr size_t MaxCopies = 64;
+-
+-    [[nodiscard]] bool Empty() const noexcept {
+-        return copies.empty();
+-    }
+-
+-    /// Whether these copies can join the batch: it has room, they read no buffer a copy in it
+-    /// writes and write none it reads, and they write no byte of dst that a copy in it writes.
+-    /// Otherwise the batch is recorded first.
+-    [[nodiscard]] bool CanAdd(VkBuffer src, VkBuffer dst,
+-                              std::span<const VkBufferCopy> new_copies) const {
+-        if (copies.size() + new_copies.size() > MaxCopies) {
+-            return false;
+-        }
+-        for (const Group& group : groups) {
+-            if (src == group.dst || dst == group.src) {
+-                return false;
+-            }
+-            if (group.dst != dst) {
+-                continue;
+-            }
+-            for (u32 index = group.first; index < group.first + group.count; ++index) {
+-                const VkBufferCopy& pending = copies[index];
+-                for (const VkBufferCopy& copy : new_copies) {
+-                    if (copy.dstOffset < pending.dstOffset + pending.size &&
+-                        pending.dstOffset < copy.dstOffset + copy.size) {
+-                        return false;
+-                    }
+-                }
+-            }
+-        }
+-        return true;
+-    }
+-
+-    /// Records a batch: the barrier before an in-order buffer copy (BufferCacheRuntime::
+-    /// CopyBuffer's), the copies, and the barrier after one, made to reach transfers as well.
+-    /// Recorded one by one, the barriers between two uploads ordered the copies before them
+-    /// ahead of the copies after them, which CanAdd makes needless, and ahead of all later work:
+-    /// graphics and compute through the barrier after a copy, transfers (in later submissions
+-    /// too) through the barrier before the next one. The barrier after the batch does both.
+-    static void Record(vk::CommandBuffer cmdbuf, std::span<const VkBufferCopy> batch_copies,
+-                       std::span<const Group> batch_groups) {
+-        static constexpr VkMemoryBarrier READ_BARRIER{
+-            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+-            .pNext = nullptr,
+-            .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+-            .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+-        };
+-        static constexpr VkMemoryBarrier WRITE_BARRIER{
+-            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+-            .pNext = nullptr,
+-            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+-            .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
+-        };
+-        cmdbuf.PipelineBarrier(vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER,
+-                               VK_PIPELINE_STAGE_TRANSFER_BIT, 0, READ_BARRIER);
+-        for (const Group& group : batch_groups) {
+-            cmdbuf.CopyBuffer(
+-                group.src, group.dst,
+-                vk::Span<VkBufferCopy>(batch_copies.data() + group.first, group.count));
+-        }
+-        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
+-                               vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER, 0, WRITE_BARRIER);
+-    }
+-
+-    void Add(VkBuffer src, VkBuffer dst, std::span<const VkBufferCopy> new_copies) {
+-        const u32 first = static_cast<u32>(copies.size());
+-        const u32 count = static_cast<u32>(new_copies.size());
+-        copies.insert(copies.end(), new_copies.begin(), new_copies.end());
+-        if (!groups.empty() && groups.back().src == src && groups.back().dst == dst) {
+-            groups.back().count += count;
+-        } else {
+-            groups.push_back({src, dst, first, count});
+-        }
+-    }
+-
+-    std::vector<VkBufferCopy> copies;
+-    std::vector<Group> groups;
+-};
+-
+-} // namespace Vulkan
 diff --git a/src/video_core/renderer_vulkan/vk_blit_screen.cpp b/src/video_core/renderer_vulkan/vk_blit_screen.cpp
 index d4a3c8972b..2c3e9af8ba 100644
 --- a/src/video_core/renderer_vulkan/vk_blit_screen.cpp
@@ -4379,7 +4987,7 @@ index 659d0fb5ff..e234b9049f 100644
      void PrepareFrame(const Device& device, Frame* frame, const Layout::FramebufferLayout& layout);
  
 diff --git a/src/video_core/renderer_vulkan/vk_buffer_cache.cpp b/src/video_core/renderer_vulkan/vk_buffer_cache.cpp
-index a87fbe02df..fbf6b06d58 100644
+index 23afe8afff..fbf6b06d58 100644
 --- a/src/video_core/renderer_vulkan/vk_buffer_cache.cpp
 +++ b/src/video_core/renderer_vulkan/vk_buffer_cache.cpp
 @@ -489,11 +489,17 @@ void BufferCacheRuntime::WaitSubmittedTick(u64 tick) {
@@ -4402,8 +5010,46 @@ index a87fbe02df..fbf6b06d58 100644
          VideoCommon::Nx2Profile::Scope scope{VideoCommon::Nx2Profile::Zone::ListSubmitWait};
          if (!scheduler.WaitSubmitted(tick)) {
              scheduler.Wait(tick);
+@@ -598,13 +604,6 @@ void BufferCacheRuntime::CopyBuffer(VkBuffer dst_buffer, VkBuffer src_buffer,
+     }
+ 
+     scheduler.RequestOutsideRenderPassOperationContext();
+-    if (barrier && src_buffer == staging_pool.StreamBuf() && !vk_copies.empty()) {
+-        // Only in-order stream uploads share barriers. Dedicated staging buffers retain their
+-        // normal recording path and tick-based reuse.
+-        scheduler.RecordUpload(src_buffer, dst_buffer,
+-                               std::span<const VkBufferCopy>{vk_copies.data(), vk_copies.size()});
+-        return;
+-    }
+     scheduler.Record([src_buffer, dst_buffer, vk_copies, barrier](vk::CommandBuffer cmdbuf) {
+         if (barrier) {
+             cmdbuf.PipelineBarrier(vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER,
+@@ -612,10 +611,8 @@ void BufferCacheRuntime::CopyBuffer(VkBuffer dst_buffer, VkBuffer src_buffer,
+         }
+         cmdbuf.CopyBuffer(src_buffer, dst_buffer, vk_copies);
+         if (barrier) {
+-            // Later transfers too: a reordered upload of the same bytes in a later submission
+-            // has no barrier of its own before it.
+             cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
+-                                   vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER, 0, WRITE_BARRIER);
++                                   vk::PIPELINE_STAGE_GRAPHICS_COMPUTE, 0, WRITE_BARRIER);
+         }
+     });
+ }
+@@ -643,9 +640,8 @@ void BufferCacheRuntime::PostCopyBarrier() {
+     };
+     scheduler.RequestOutsideRenderPassOperationContext();
+     scheduler.Record([](vk::CommandBuffer cmdbuf) {
+-        // Copies bracketed explicitly need the same ordering as CopyBuffer(barrier = true).
+-        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
+-                               vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER, 0, WRITE_BARRIER);
++        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, vk::PIPELINE_STAGE_GRAPHICS_COMPUTE,
++                               0, WRITE_BARRIER);
+     });
+ }
+ 
 diff --git a/src/video_core/renderer_vulkan/vk_ocarina_camera_motion.cpp b/src/video_core/renderer_vulkan/vk_ocarina_camera_motion.cpp
-index 4a477c2b41..23d0a36b1b 100644
+index 1512865e68..23d0a36b1b 100644
 --- a/src/video_core/renderer_vulkan/vk_ocarina_camera_motion.cpp
 +++ b/src/video_core/renderer_vulkan/vk_ocarina_camera_motion.cpp
 @@ -15,9 +15,13 @@
@@ -4433,14 +5079,21 @@ index 4a477c2b41..23d0a36b1b 100644
  
      void Record(Scheduler& scheduler, const void* descriptors, VkImage image,
                  const OcarinaUpscaler& upscaler, u64 frame) {
-@@ -704,9 +708,14 @@ struct OcarinaUpscaler::Impl {
+@@ -700,13 +704,18 @@ struct OcarinaEffects {
+ } // namespace
+ 
+ struct OcarinaUpscaler::Impl {
+-    Impl(const Device& device_, Scheduler& scheduler_, DescriptorPool& pool_,
++    Impl(const Device& device_, Scheduler& scheduler_, DescriptorPool& pool,
           ComputePassDescriptorQueue& queue_, MemoryAllocator& allocator_, StagingBufferPool& staging,
           VideoCommon::OcarinaUpscaleBackend backend)
-         : device{device_}, scheduler{scheduler_}, queue{queue_}, allocator{allocator_}, pool{pool},
+-        : device{device_}, scheduler{scheduler_}, queue{queue_}, allocator{allocator_}, pool{pool_},
+-          motion_pass{device, scheduler, pool_},
+-          color_pass{device, scheduler, pool_},
+-          output_pass{device, scheduler, pool_, OCARINA_DLSS_OUTPUT_COMP_SPV} {
++        : device{device_}, scheduler{scheduler_}, queue{queue_}, allocator{allocator_}, pool{pool},
 +          hdr_scene{HdrScene(backend)},
-           motion_pass{device, scheduler, pool},
--          color_pass{device, scheduler, pool},
--          output_pass{device, scheduler, pool, OCARINA_DLSS_OUTPUT_COMP_SPV} {
++          motion_pass{device, scheduler, pool},
 +          color_pass{device, scheduler, pool,
 +                     hdr_scene ? std::span<const u32>{OCARINA_DLSS_COLOR_HDR_COMP_SPV}
 +                               : std::span<const u32>{OCARINA_DLSS_COLOR_COMP_SPV}},
@@ -4450,7 +5103,12 @@ index 4a477c2b41..23d0a36b1b 100644
  #ifdef EGLANTINE_STREAMLINE
          if (backend == VideoCommon::OcarinaUpscaleBackend::Dlss) {
              dlss = std::make_unique<StreamlineDlssUpscaler>(device, scheduler, allocator);
-@@ -730,11 +739,23 @@ struct OcarinaUpscaler::Impl {
+@@ -726,15 +735,27 @@ struct OcarinaUpscaler::Impl {
+         if (!Fsr3Upscaler::IsSupported(device)) {
+             throw vk::Exception(VK_ERROR_FEATURE_NOT_PRESENT);
+         }
+-        fsr = std::make_unique<Fsr3Upscaler>(device, scheduler, allocator, staging, pool_, queue,
++        fsr = std::make_unique<Fsr3Upscaler>(device, scheduler, allocator, staging, pool, queue,
                                             Fsr3Upscaler::Profile::OcarinaLdr);
      }
  
@@ -4594,6 +5252,19 @@ index 22831f329a..417a2af82c 100644
              gpu_memory->FlushRegion(tex_header.Address(), pool_bytes);
              for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
                  if (graphics_key.unique_hashes[index] != 0) {
+diff --git a/src/video_core/renderer_vulkan/vk_pipeline_cache_prebuild.h b/src/video_core/renderer_vulkan/vk_pipeline_cache_prebuild.h
+index 9275003c1e..a1715f5c2e 100644
+--- a/src/video_core/renderer_vulkan/vk_pipeline_cache_prebuild.h
++++ b/src/video_core/renderer_vulkan/vk_pipeline_cache_prebuild.h
+@@ -65,7 +65,7 @@ public:
+                     std::unique_ptr<Pipeline> pipeline = translate();
+                     translate = {};
+                     {
+-                        std::scoped_lock capture_lock{mutex};
++                        std::scoped_lock lock{mutex};
+                         captured_bytes -= capture_bytes;
+                     }
+                     if (!pipeline) {
 diff --git a/src/video_core/renderer_vulkan/vk_present_manager.cpp b/src/video_core/renderer_vulkan/vk_present_manager.cpp
 index ea2a913ad8..25d4b5a4fd 100644
 --- a/src/video_core/renderer_vulkan/vk_present_manager.cpp
@@ -4936,10 +5607,31 @@ index 76d4f129e4..2a7db459b2 100644
      std::optional<QueriesPrefixScanPass> queries_prefix_scan_pass;
  };
 diff --git a/src/video_core/renderer_vulkan/vk_rasterizer.cpp b/src/video_core/renderer_vulkan/vk_rasterizer.cpp
-index f8aa71f0e1..bdc9c59b4f 100644
+index 76998a351b..bdc9c59b4f 100644
 --- a/src/video_core/renderer_vulkan/vk_rasterizer.cpp
 +++ b/src/video_core/renderer_vulkan/vk_rasterizer.cpp
-@@ -421,6 +421,10 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
+@@ -262,20 +262,6 @@ bool IsPrimitiveRestartSupported(const Device& device, VkPrimitiveTopology topol
+             (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST &&
+              device.IsPatchListPrimitiveRestartSupported()));
+ }
+-
+-/// Earlier writes must be visible to a dispatch, including its indirect arguments.
+-void RecordDispatchBarrier(vk::CommandBuffer cmdbuf) {
+-    static constexpr VkMemoryBarrier READ_BARRIER{
+-        .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+-        .pNext = nullptr,
+-        .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+-        .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
+-    };
+-    cmdbuf.PipelineBarrier(vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER,
+-                           VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
+-                               VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+-                           0, READ_BARRIER);
+-}
+ } // Anonymous namespace
+ 
+ void RasterizerVulkan::ReadMeshEmulationProbe() {
+@@ -435,6 +421,10 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
        fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache, device, scheduler),
        frame_dump(device, memory_allocator, scheduler) {
      scheduler.SetQueryCache(query_cache);
@@ -4950,7 +5642,7 @@ index f8aa71f0e1..bdc9c59b4f 100644
      buffer_cache.SetPendingCpuWrites(
          [this](const std::function<void(DAddr, size_t)>& callback) {
              gpu.ForEachPendingCpuWrite(callback);
-@@ -1108,14 +1112,20 @@ void RasterizerVulkan::PrepareDraw(bool is_indexed, Func&& draw_func, bool is_in
+@@ -1122,14 +1112,20 @@ void RasterizerVulkan::PrepareDraw(bool is_indexed, Func&& draw_func, bool is_in
      buffer_cache.NoteWorkRecorded(false);
      constexpr u64 final_vertex = 0x16aff33d999f993fULL;
      constexpr u64 final_fragment = 0x52402d8e8ab55263ULL;
@@ -4973,7 +5665,70 @@ index f8aa71f0e1..bdc9c59b4f 100644
                  oot_4k_guest_present = target.ImageHandle();
              }
          }
-@@ -2617,7 +2627,16 @@ void RasterizerVulkan::SignalReference() {
+@@ -2149,6 +2145,23 @@ void RasterizerVulkan::DispatchCompute() {
+         const u32 index = Tegra::Texture::TexturePair(handle, qmd.linked_tsc != 0).first;
+         texture_cache.PublishComputeCollisionImage(index);
+     };
++    // Earlier writes must be visible to the dispatch, its indirect arguments included, and what it
++    // writes to the next render pass.
++    const auto record_read_barrier = [this] {
++        static constexpr VkMemoryBarrier READ_BARRIER{
++            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
++            .pNext = nullptr,
++            .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
++            .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
++        };
++        scheduler.Record([](vk::CommandBuffer cmdbuf) {
++            cmdbuf.PipelineBarrier(vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER,
++                                   VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
++                                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
++                                   0, READ_BARRIER);
++        });
++        scheduler.NoteComputeWrites();
++    };
+     if (frame_dump.CapturingBuffers()) {
+         std::optional<std::array<u32, 3>> indirect_grid;
+         if (indirect_address) {
+@@ -2168,11 +2181,10 @@ void RasterizerVulkan::DispatchCompute() {
+         const auto [buffer, offset] =
+             buffer_cache.ObtainBuffer(*indirect_address, 12, sync_info, post_op);
+         scheduler.RequestOutsideRenderPassOperationContext();
+-        scheduler.NoteComputeWrites();
++        record_read_barrier();
+         scheduler.TraceComputePipeline(pipeline->ShaderHash());
+         scheduler.Record([this, pipeline, indirect_buffer = buffer->Handle(),
+                           indirect_offset = offset](vk::CommandBuffer cmdbuf) {
+-            RecordDispatchBarrier(cmdbuf);
+             if (!pipeline->IsBound()) {
+                 return;
+             }
+@@ -2191,12 +2203,7 @@ void RasterizerVulkan::DispatchCompute() {
+         return;
+     }
+     scheduler.RequestOutsideRenderPassOperationContext();
+-    scheduler.NoteComputeWrites();
+-    const bool barrier_recorded = can_replace || marking_effects;
+-    if (barrier_recorded) {
+-        // Effects snapshots and temporal upscaling can record work before the native dispatch.
+-        scheduler.Record([](vk::CommandBuffer cmdbuf) { RecordDispatchBarrier(cmdbuf); });
+-    }
++    record_read_barrier();
+     if (marking_effects) {
+         const auto written = pipeline->WrittenImages();
+         if (std::ranges::any_of(written, [this](VideoCommon::ImageViewId id) {
+@@ -2214,10 +2221,7 @@ void RasterizerVulkan::DispatchCompute() {
+         scheduler.TraceComputePipeline(pipeline->ShaderHash());
+     }
+     scheduler.Record([this, pipeline, dim, byte_addressed_shadow, bind = std::move(deferred_bind),
+-                      replacement, barrier_recorded](vk::CommandBuffer cmdbuf) {
+-        if (!barrier_recorded) {
+-            RecordDispatchBarrier(cmdbuf);
+-        }
++                      replacement](vk::CommandBuffer cmdbuf) {
+         if (replacement && !replacement->EvaluationFailed()) {
+             return;
+         }
+@@ -2623,7 +2627,16 @@ void RasterizerVulkan::SignalReference() {
  }
  
  void RasterizerVulkan::ReleaseFences(bool force) {
@@ -4990,7 +5745,7 @@ index f8aa71f0e1..bdc9c59b4f 100644
  }
  
  void RasterizerVulkan::FlushQueryResults(DAddr addr, u64 size) {
-@@ -3462,7 +3481,11 @@ std::optional<FramebufferTextureInfo> RasterizerVulkan::AccelerateDisplay(
+@@ -3468,7 +3481,11 @@ std::optional<FramebufferTextureInfo> RasterizerVulkan::AccelerateDisplay(
      if (oot_4k_scene_frame == render_trace_frame && info.image &&
          info.image == oot_4k_guest_present && info.image_view &&
          info.width == 2560 && info.height == 1440 && !scaled &&
@@ -5004,10 +5759,28 @@ index f8aa71f0e1..bdc9c59b4f 100644
          try {
              oot_live_dlss->Composite4k(info.image_view, render_trace_frame);
 diff --git a/src/video_core/renderer_vulkan/vk_scheduler.cpp b/src/video_core/renderer_vulkan/vk_scheduler.cpp
-index 7c3241dcf7..270f9888b7 100644
+index c056779f28..270f9888b7 100644
 --- a/src/video_core/renderer_vulkan/vk_scheduler.cpp
 +++ b/src/video_core/renderer_vulkan/vk_scheduler.cpp
-@@ -192,7 +192,7 @@ bool Scheduler::DeferFlush() {
+@@ -26,7 +26,6 @@
+ #include "common/thread.h"
+ #include "video_core/gpu_logging/gpu_logging.h"
+ #include "video_core/nx2_profile.h"
+-#include "video_core/renderer_vulkan/upload_batch.h"
+ #include "video_core/renderer_vulkan/vk_command_pool.h"
+ #include "video_core/renderer_vulkan/vk_graphics_pipeline.h"
+ #include "video_core/renderer_vulkan/vk_master_semaphore.h"
+@@ -112,8 +111,7 @@ void Scheduler::CommandChunk::ExecuteAll(vk::CommandBuffer cmdbuf,
+ Scheduler::Scheduler(const Device& device_, StateTracker& state_tracker_)
+     : device{device_}, state_tracker{state_tracker_},
+       master_semaphore{std::make_unique<MasterSemaphore>(device)},
+-      command_pool{std::make_unique<CommandPool>(*master_semaphore, device)},
+-      upload_batch{std::make_unique<UploadBatch>()} {
++      command_pool{std::make_unique<CommandPool>(*master_semaphore, device)} {
+ 
+     if (Common::DkbFrameTrace::Enabled()) {
+         const auto physical = device.GetPhysical();
+@@ -194,7 +192,7 @@ bool Scheduler::DeferFlush() {
          }
          return s64{500};
      }();
@@ -5016,11 +5789,82 @@ index 7c3241dcf7..270f9888b7 100644
          std::chrono::steady_clock::now() - last_flush >= std::chrono::microseconds{interval_us}) {
          return false;
      }
+@@ -286,10 +284,6 @@ void Scheduler::DispatchWork() {
+     if (VideoCommon::GpuSplit::check_owner) [[unlikely]] {
+         VideoCommon::GpuSplit::CheckOwner("Scheduler::DispatchWork");
+     }
+-    if (uploads_pending) {
+-        // The worker must receive everything recorded so far.
+-        FlushUploads();
+-    }
+     if (chunk && !chunk->Empty()) {
+         // Waking the worker is a system call (~2% of the GPU thread at one dispatch per 8
+         // draws): skip it while the worker is still busy, it pops the queue before waiting.
+@@ -306,32 +300,6 @@ void Scheduler::DispatchWork() {
+     }
+ }
+ 
+-void Scheduler::RecordUpload(VkBuffer src, VkBuffer dst, std::span<const VkBufferCopy> copies) {
+-    if (VideoCommon::GpuSplit::check_owner) {
+-        VideoCommon::GpuSplit::CheckOwner("Scheduler::RecordUpload");
+-    }
+-    // Check each region so even a single upload larger than the capacity stays bounded, and
+-    // overlapping regions within that upload cannot enter the same batch.
+-    for (const VkBufferCopy& copy : copies) {
+-        const std::span<const VkBufferCopy> region{&copy, 1};
+-        if (uploads_pending && !upload_batch->CanAdd(src, dst, region)) {
+-            FlushUploads();
+-        }
+-        upload_batch->Add(src, dst, region);
+-        uploads_pending = true;
+-    }
+-}
+-
+-void Scheduler::FlushUploads() {
+-    // Copy the vectors so the recording thread retains their capacity while the worker uses them.
+-    auto command = [copies = upload_batch->copies, groups = upload_batch->groups](
+-                       vk::CommandBuffer cmdbuf) { UploadBatch::Record(cmdbuf, copies, groups); };
+-    upload_batch->copies.clear();
+-    upload_batch->groups.clear();
+-    uploads_pending = false;
+-    Record(std::move(command));
+-}
+-
+ void Scheduler::BeginRenderPassImpl(const Framebuffer* framebuffer, VkRenderPass renderpass,
+                                     const VkClearValue* clear_values, u32 clear_value_count) {
+     if (VideoCommon::Nx2Profile::Enabled()) {
+@@ -822,10 +790,6 @@ void Scheduler::TraceGpuSubmission() {
+ }
+ 
+ u64 Scheduler::SubmitExecution(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore) {
+-    if (uploads_pending) {
+-        // Keep the copies in the tick that protects their staging regions and buffer lifetimes.
+-        FlushUploads();
+-    }
+     if (VideoCommon::Nx2Profile::Enabled()) {
+         g_profile_submits.fetch_add(1, std::memory_order_relaxed);
+         ReportSubmitCounts();
 diff --git a/src/video_core/renderer_vulkan/vk_scheduler.h b/src/video_core/renderer_vulkan/vk_scheduler.h
-index b3f5708312..3bc1576419 100644
+index 3ee05c3f06..3bc1576419 100644
 --- a/src/video_core/renderer_vulkan/vk_scheduler.h
 +++ b/src/video_core/renderer_vulkan/vk_scheduler.h
-@@ -70,6 +70,10 @@ public:
+@@ -16,7 +16,6 @@
+ #include <utility>
+ #include <queue>
+ #include <source_location>
+-#include <span>
+ #include <vector>
+ 
+ #include "common/alignment.h"
+@@ -42,7 +41,6 @@ class Device;
+ class Framebuffer;
+ class GraphicsPipeline;
+ class StateTracker;
+-class UploadBatch;
+ 
+ struct QueryCacheParams;
+ 
+@@ -72,6 +70,10 @@ public:
      /// submit deferred work (logged every 2 s while it waits). False only when the back thread
      /// is not running, so nothing will submit it: the caller then submits it itself.
      bool WaitSubmitted(u64 tick);
@@ -5031,7 +5875,41 @@ index b3f5708312..3bc1576419 100644
      /// Whether everything up to tick has been handed to the worker for submission.
      [[nodiscard]] bool IsSubmitted(u64 tick) const noexcept {
          return tick < master_semaphore->CurrentTick();
-@@ -526,6 +530,7 @@ private:
+@@ -188,10 +190,6 @@ public:
+         on_submit = std::move(func);
+     }
+ 
+-    /// Consecutive in-order staging uploads share barriers until their destinations overlap,
+-    /// a source depends on a pending copy, or the batch is full. Call outside a render pass.
+-    void RecordUpload(VkBuffer src, VkBuffer dst, std::span<const VkBufferCopy> copies);
+-
+     /// Send work to a separate thread.
+     template <typename T>
+         requires std::is_invocable_v<T, vk::CommandBuffer, vk::CommandBuffer>
+@@ -199,10 +197,6 @@ public:
+         if (VideoCommon::GpuSplit::check_owner) [[unlikely]] {
+             VideoCommon::GpuSplit::CheckOwner("Scheduler::Record");
+         }
+-        if (uploads_pending) {
+-            // Pending uploads precede every other recorded command, including upload-buffer work.
+-            FlushUploads();
+-        }
+         if (chunk->Record(command)) {
+             return;
+         }
+@@ -473,11 +467,6 @@ private:
+     u64 render_pass_serial{};
+     std::unique_ptr<CommandPool> command_pool;
+ 
+-    std::unique_ptr<UploadBatch> upload_batch;
+-    bool uploads_pending{};
+-    /// Records pending uploads before another command, worker handoff, or submission tick.
+-    void FlushUploads();
+-
+     vk::QueryPool trace_query_pool;
+     static constexpr u32 TraceMaxSubmissions = 512;
+     struct SubmissionTrace {
+@@ -541,6 +530,7 @@ private:
      std::mutex queue_mutex;
      std::condition_variable_any event_cv;
      bool worker_waiting{}; ///< The worker is waiting for work (guarded by queue_mutex)
@@ -5081,10 +5959,23 @@ index 1000aed081..c41d074460 100644
          ++buffer_index;
          buffer.SetObjectNameEXT(fmt::format("Staging Buffer {}", buffer_index).c_str());
 diff --git a/src/video_core/renderer_vulkan/vk_streamline_dlss.cpp b/src/video_core/renderer_vulkan/vk_streamline_dlss.cpp
-index 5504f3ae9c..4d1befbd5f 100644
+index a9f576a809..4d1befbd5f 100644
 --- a/src/video_core/renderer_vulkan/vk_streamline_dlss.cpp
 +++ b/src/video_core/renderer_vulkan/vk_streamline_dlss.cpp
-@@ -232,7 +232,7 @@ bool StreamlineDlssUpscaler::Upscale(const Inputs& in) {
+@@ -25,12 +25,6 @@ constexpr VkImageUsageFlags OUTPUT_USAGE = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE
+                                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                                            VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+ 
+-// slEvaluateFeature returns eWarnOutOfVRAM after it has evaluated DLSS, when the VRAM budget is
+-// used up (commonInterface.cpp, slEvaluateFeatureInternal). The output is written; it is a warning.
+-bool Evaluated(sl::Result result) {
+-    return result == sl::Result::eOk || result == sl::Result::eWarnOutOfVRAM;
+-}
+-
+ int EnvInt(const char* name, int fallback) {
+     const char* const value = std::getenv(name);
+     return value ? std::atoi(value) : fallback;
+@@ -238,7 +232,7 @@ bool StreamlineDlssUpscaler::Upscale(const Inputs& in) {
      hdr_input = in.hdr;
  
      // Keep the existing HDR controls for linear input such as Fortune's Weave. Tonemapped
@@ -5093,6 +5984,31 @@ index 5504f3ae9c..4d1befbd5f 100644
      sl::DLSSOptions options{};
      options.mode = ModeFor(in.render_size, in.upscale_size);
      options.outputWidth = in.upscale_size.width;
+@@ -409,11 +403,7 @@ bool StreamlineDlssUpscaler::Upscale(const Inputs& in) {
+             [&] {
+                 api_result = api.evaluate_feature(sl::kFeatureDLSS, *frame, inputs, std::size(inputs),
+                                                   reinterpret_cast<sl::CommandBuffer*>(*cmdbuf));
+-                if (api_result == sl::Result::eWarnOutOfVRAM && !vram_warned.exchange(true)) {
+-                    LOG_WARNING(Render_Vulkan, "NVIDIA DLSS: Streamline reports the VRAM budget is "
+-                                               "used up; DLSS stays on");
+-                }
+-                return Evaluated(api_result);
++                return api_result == sl::Result::eOk;
+             },
+             [&] {
+                 cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+diff --git a/src/video_core/renderer_vulkan/vk_streamline_dlss.h b/src/video_core/renderer_vulkan/vk_streamline_dlss.h
+index a802a1e444..931849e42c 100644
+--- a/src/video_core/renderer_vulkan/vk_streamline_dlss.h
++++ b/src/video_core/renderer_vulkan/vk_streamline_dlss.h
+@@ -83,7 +83,6 @@ private:
+     vk::ImageView output_view;
+     vk::Sampler point_sampler;
+     std::atomic<bool> failed{};
+-    std::atomic<bool> vram_warned{};
+ };
+ 
+ } // namespace Vulkan
 diff --git a/src/video_core/renderer_vulkan/vk_swapchain.cpp b/src/video_core/renderer_vulkan/vk_swapchain.cpp
 index 2cbdcbef49..ca530118f6 100644
 --- a/src/video_core/renderer_vulkan/vk_swapchain.cpp
@@ -5340,7 +6256,7 @@ index da57da6917..9ce8bec55d 100644
          UNIMPLEMENTED_MSG("Unimplemented format={}", format);
          return PixelFormat::A8B8G8R8_UNORM;
 diff --git a/src/video_core/texture_cache/texture_cache.h b/src/video_core/texture_cache/texture_cache.h
-index c80963ea22..04db45278b 100644
+index b497d4f1b0..04db45278b 100644
 --- a/src/video_core/texture_cache/texture_cache.h
 +++ b/src/video_core/texture_cache/texture_cache.h
 @@ -332,7 +332,19 @@ void TextureCache<P>::ApplyThresholdOverrides(bool log) {
@@ -5377,7 +6293,102 @@ index c80963ea22..04db45278b 100644
      if (log) {
          LogThresholds();
      }
-@@ -1712,6 +1730,10 @@ std::pair<typename P::ImageView*, bool> TextureCache<P>::TryFindFramebufferImage
+@@ -1399,84 +1417,6 @@ void TextureCache<P>::UnmapGPUMemory(size_t as_id, GPUVAddr gpu_addr, size_t siz
+     }
+ }
+ 
+-// A 2D-engine copy between two 3D surfaces names one depth slice by its address inside the
+-// volume (The Duskbloods network test copies its 16x16x16 grading table slice by slice). Copy
+-// that slice of the cached 3D images when both exist with the surface's size and format;
+-// otherwise the generic path treats each slice as its own 2D image.
+-template <class P>
+-bool TextureCache<P>::CopyVolumeSlice(const Tegra::Engines::Fermi2D::Surface& dst,
+-                                      const Tegra::Engines::Fermi2D::Surface& src,
+-                                      const Tegra::Engines::Fermi2D::Config& copy) {
+-    using Tegra::Engines::Fermi2D;
+-    const auto is_volume = [](const Fermi2D::Surface& surface) {
+-        return surface.depth > 1 && surface.linear == Fermi2D::MemoryLayout::BlockLinear &&
+-               surface.layer == 0;
+-    };
+-    const bool whole_slice = copy.src_x0 == 0 && copy.src_y0 == 0 && copy.dst_x0 == 0 &&
+-                             copy.dst_y0 == 0 && copy.src_x1 == static_cast<s32>(src.width) &&
+-                             copy.src_y1 == static_cast<s32>(src.height) &&
+-                             copy.dst_x1 == static_cast<s32>(dst.width) &&
+-                             copy.dst_y1 == static_cast<s32>(dst.height);
+-    if (!is_volume(src) || !is_volume(dst) || !whole_slice || src.format != dst.format ||
+-        src.width != dst.width || src.height != dst.height) {
+-        return false;
+-    }
+-    const auto format = VideoCore::Surface::PixelFormatFromRenderTargetFormat(src.format);
+-    struct Slice {
+-        ImageId id;
+-        s32 depth;
+-    };
+-    const auto find_slice = [&](const Fermi2D::Surface& surface) -> std::optional<Slice> {
+-        std::optional<Slice> found;
+-        const GPUVAddr address = surface.Address();
+-        ForEachImageInRegionGPU(channel_state->gpu_memory.GetID(), address, 1,
+-                                [&](ImageId id, Image& image) {
+-            if (image.info.type != ImageType::e3D || image.info.format != format ||
+-                image.info.size.width != surface.width ||
+-                image.info.size.height != surface.height ||
+-                image.info.size.depth != surface.depth || address < image.gpu_addr) {
+-                return false;
+-            }
+-            const auto offset = static_cast<u32>(address - image.gpu_addr);
+-            const auto it = std::ranges::find(image.slice_offsets, offset);
+-            if (it == image.slice_offsets.end()) {
+-                return false;
+-            }
+-            const SubresourceBase base =
+-                image.slice_subresources[std::distance(image.slice_offsets.begin(), it)];
+-            if (base.level != 0) {
+-                return false;
+-            }
+-            found = Slice{id, base.layer};
+-            return true;
+-        });
+-        return found;
+-    };
+-    const auto src_slice = find_slice(src);
+-    const auto dst_slice = find_slice(dst);
+-    if (!src_slice || !dst_slice || src_slice->id == dst_slice->id) {
+-        static u32 reported{};
+-        if (reported++ < 16) {
+-            LOG_WARNING(HW_GPU, "2D copy between 3D surfaces {:#x} -> {:#x} without cached volumes",
+-                        src.Address(), dst.Address());
+-        }
+-        return false;
+-    }
+-    runtime.FlushDeferredClear();
+-    PrepareImage(src_slice->id, false, false);
+-    PrepareImage(dst_slice->id, true, false);
+-    const ImageCopy slice_copy{
+-        .src_subresource = {.base_level = 0, .base_layer = 0, .num_layers = 1},
+-        .dst_subresource = {.base_level = 0, .base_layer = 0, .num_layers = 1},
+-        .src_offset = {0, 0, src_slice->depth},
+-        .dst_offset = {0, 0, dst_slice->depth},
+-        .extent = {src.width, src.height, 1},
+-    };
+-    runtime.CopyImage(slot_images[dst_slice->id], slot_images[src_slice->id],
+-                      std::span{&slice_copy, 1});
+-    return true;
+-}
+-
+ template <class P>
+ bool TextureCache<P>::BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
+                                 const Tegra::Engines::Fermi2D::Surface& src,
+@@ -1491,9 +1431,6 @@ bool TextureCache<P>::BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
+     // Only when the copy proceeds: a rejected blit writes nothing and must not realize the
+     // clear ahead of the next draw that consumes it as its load-op. GetBlitImages cannot
+     // invalidate the parked clear: framebuffer removal flushes first (RemoveFramebuffers).
+-    if (CopyVolumeSlice(dst, src, copy)) {
+-        return true;
+-    }
+     const auto result = GetBlitImages(dst, src, copy);
+     if (!result) {
+         return false;
+@@ -1793,6 +1730,10 @@ std::pair<typename P::ImageView*, bool> TextureCache<P>::TryFindFramebufferImage
              return PixelFormat::R5G6B5_UNORM;
          case Service::android::PixelFormat::Bgra8888:
              return PixelFormat::B8G8R8A8_UNORM;
@@ -5388,6 +6399,129 @@ index c80963ea22..04db45278b 100644
          default:
              return PixelFormat::A8B8G8R8_UNORM;
          }
+diff --git a/src/video_core/texture_cache/texture_cache_base.h b/src/video_core/texture_cache/texture_cache_base.h
+index fc4ae5ea05..4d2447c705 100644
+--- a/src/video_core/texture_cache/texture_cache_base.h
++++ b/src/video_core/texture_cache/texture_cache_base.h
+@@ -363,10 +363,6 @@ public:
+     void UnmapGPUMemory(size_t as_id, GPUVAddr gpu_addr, size_t size);
+ 
+     /// Blit an image with the given parameters
+-    bool CopyVolumeSlice(const Tegra::Engines::Fermi2D::Surface& dst,
+-                         const Tegra::Engines::Fermi2D::Surface& src,
+-                         const Tegra::Engines::Fermi2D::Config& copy);
+-
+     bool BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
+                    const Tegra::Engines::Fermi2D::Surface& src,
+                    const Tegra::Engines::Fermi2D::Config& copy);
+diff --git a/src/video_core/textures/decoders.cpp b/src/video_core/textures/decoders.cpp
+index bbb122b3cd..ef50be156b 100644
+--- a/src/video_core/textures/decoders.cpp
++++ b/src/video_core/textures/decoders.cpp
+@@ -5,7 +5,6 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later
+ 
+ #include <array>
+-#include <bit>
+ #include <cmath>
+ #include <cstring>
+ #include <span>
+@@ -42,20 +41,6 @@ void incrpdep(u32& value) {
+     value = ((value | ~mask) + swizzled_incr) & mask;
+ }
+ 
+-// Where each 16-byte unit of a GOB row lies within the GOB, by row (y & 7) and unit (x / 16 & 3).
+-// The 16 bytes of a unit are contiguous. A GOB's own offset is a multiple of GOB_SIZE, so the
+-// native tiling's swap of bits 5 and 6 only moves units within it.
+-std::array<u32, GOB_SIZE_Y * 4> GobUnitOffsets(bool native_tiling) {
+-    std::array<u32, GOB_SIZE_Y * 4> offsets;
+-    for (u32 row = 0; row < GOB_SIZE_Y; ++row) {
+-        for (u32 unit = 0; unit < 4; ++unit) {
+-            offsets[row * 4 + unit] = NativeGobOffset(
+-                pdep<SWIZZLE_X_BITS>(unit * 16) | pdep<SWIZZLE_Y_BITS>(row), native_tiling);
+-        }
+-    }
+-    return offsets;
+-}
+-
+ template <bool TO_LINEAR, u32 BYTES_PER_PIXEL>
+ void SwizzleImpl(std::span<u8> output, std::span<const u8> input, u32 width, u32 height, u32 depth,
+                  u32 block_height, u32 block_depth, u32 stride, bool native_tiling) {
+@@ -78,37 +63,6 @@ void SwizzleImpl(std::span<u8> output, std::span<const u8> input, u32 width, u32
+     const u32 block_depth_mask = (1U << block_depth) - 1;
+     const u32 x_shift = GOB_SIZE_SHIFT + block_height + block_depth;
+ 
+-    if constexpr (BYTES_PER_PIXEL == 16 && origin_x == 0 && origin_y == 0 && origin_z == 0) {
+-        // 16-byte units (UnswizzleTexture and SwizzleTexture widen to them when a row allows it):
+-        // their offsets in a GOB come from a table instead of being computed one by one.
+-        const auto unit_offsets = GobUnitOffsets(native_tiling);
+-        const u32 gobs_wide = Common::DivCeil(width, 4U);
+-        for (u32 slice = 0; slice < depth; ++slice) {
+-            const u32 offset_z = (slice >> block_depth) * slice_size +
+-                                 ((slice & block_depth_mask) << (GOB_SIZE_SHIFT + block_height));
+-            for (u32 line = 0; line < height; ++line) {
+-                const u32 block_y = line >> GOB_SIZE_Y_SHIFT;
+-                const u32 offset_y = (block_y >> block_height) * block_size +
+-                                     ((block_y & block_height_mask) << GOB_SIZE_SHIFT);
+-                const u32* const row_offsets = &unit_offsets[(line & (GOB_SIZE_Y - 1)) * 4];
+-                const u32 row_linear = slice * pitch * height + line * pitch;
+-                for (u32 gob_x = 0; gob_x < gobs_wide; ++gob_x) {
+-                    const u32 gob_offset = offset_z + offset_y + (gob_x << x_shift);
+-                    const u32 units = (std::min)(4U, width - gob_x * 4);
+-                    for (u32 unit = 0; unit < units; ++unit) {
+-                        const u32 swizzled_offset = gob_offset + row_offsets[unit];
+-                        const u32 unswizzled_offset = row_linear + (gob_x * 4 + unit) * 16;
+-                        u8* const dst = &output[TO_LINEAR ? swizzled_offset : unswizzled_offset];
+-                        const u8* const src =
+-                            &input[TO_LINEAR ? unswizzled_offset : swizzled_offset];
+-                        std::memcpy(dst, src, 16);
+-                    }
+-                }
+-            }
+-        }
+-        return;
+-    }
+-
+     for (u32 slice = 0; slice < depth; ++slice) {
+         const u32 z = slice + origin_z;
+         const u32 offset_z = (z >> block_depth) * slice_size +
+@@ -166,10 +120,6 @@ void SwizzleSubrectImpl(std::span<u8> output, std::span<const u8> input, u32 wid
+ 
+     u32 unprocessed_lines = num_lines;
+     u32 extent_y = (std::min)(num_lines, height - origin_y);
+-    // Power of two pixels never straddle a 16-byte unit: copy each row in runs of whole units
+-    // (and the partial ones at its ends) from the unit table.
+-    constexpr bool unit_runs = std::has_single_bit(BYTES_PER_PIXEL);
+-    [[maybe_unused]] const auto unit_offsets = GobUnitOffsets(native_tiling);
+ 
+     for (u32 slice = 0; slice < depth; ++slice) {
+         const u32 z = slice + origin_z;
+@@ -184,25 +134,6 @@ void SwizzleSubrectImpl(std::span<u8> output, std::span<const u8> input, u32 wid
+             const u32 offset_y = (block_y >> block_height) * block_size +
+                                  ((block_y & block_height_mask) << GOB_SIZE_SHIFT);
+ 
+-            if constexpr (unit_runs) {
+-                const u32* const row_offsets = &unit_offsets[(y & (GOB_SIZE_Y - 1)) * 4];
+-                const u32 x_begin = origin_x * BYTES_PER_PIXEL;
+-                const u32 x_end = (origin_x + extent_x) * BYTES_PER_PIXEL;
+-                const u32 row_linear = slice * pitch * height + line * pitch;
+-                for (u32 x = x_begin; x < x_end;) {
+-                    const u32 run = (std::min)(16 - (x & 15), x_end - x);
+-                    const u32 swizzled_offset = offset_z + offset_y +
+-                                                ((x >> GOB_SIZE_X_SHIFT) << x_shift) +
+-                                                row_offsets[(x >> 4) & 3] + (x & 15);
+-                    const u32 unswizzled_offset = row_linear + (x - x_begin);
+-                    u8* const dst = &output[TO_LINEAR ? swizzled_offset : unswizzled_offset];
+-                    const u8* const src = &input[TO_LINEAR ? unswizzled_offset : swizzled_offset];
+-                    std::memcpy(dst, src, run);
+-                    x += run;
+-                }
+-                continue;
+-            }
+-
+             u32 swizzled_x = pdep<SWIZZLE_X_BITS>(origin_x * BYTES_PER_PIXEL);
+             for (u32 column = 0; column < extent_x;
+                  ++column, incrpdep<SWIZZLE_X_BITS, BYTES_PER_PIXEL>(swizzled_x)) {
 diff --git a/src/video_core/video_core.cpp b/src/video_core/video_core.cpp
 index 4dc43c1f91..715f4ca632 100644
 --- a/src/video_core/video_core.cpp
@@ -5426,14 +6560,37 @@ index 3ab924e37f..4321f9b83f 100644
      // Probe optional extensions against the same snapshot the caller verifies against, so the
      // check here and the verification in CreateInstance can never disagree (see TOCTOU note below).
 diff --git a/src/video_core/vulkan_common/vulkan_memory_allocator.cpp b/src/video_core/vulkan_common/vulkan_memory_allocator.cpp
-index cc14c43fe1..0f12b3b1c8 100644
+index edd319a25e..0f12b3b1c8 100644
 --- a/src/video_core/vulkan_common/vulkan_memory_allocator.cpp
 +++ b/src/video_core/vulkan_common/vulkan_memory_allocator.cpp
-@@ -463,7 +463,22 @@ vk::Buffer MemoryAllocator::CreateBuffer(const VkBufferCreateInfo &ci, MemoryUsa
+@@ -463,30 +463,20 @@ vk::Buffer MemoryAllocator::CreateBuffer(const VkBufferCreateInfo &ci, MemoryUsa
      VkMemoryPropertyFlags property_flags{};
  
      if (!CreateBufferInSeparatePool(ci, usage, alloc_ci, handle, allocation, alloc_info)) {
--        vk::Check(vmaCreateBuffer(allocator, &ci, &alloc_ci, &handle, &allocation, &alloc_info));
+-        VkResult result =
+-            vmaCreateBuffer(allocator, &ci, &alloc_ci, &handle, &allocation, &alloc_info);
+-        if (result == VK_ERROR_OUT_OF_DEVICE_MEMORY) {
+-            // Over the device memory budget, as images are in CreateImage: buffers have no
+-            // unbacked fallback, and the vk::Exception a failed staging or buffer cache
+-            // allocation throws from the GPU thread aborts the process. Phones share RAM with
+-            // the GPU, so the budget is often lower than the memory that is really free.
+-            static u32 logged{};
+-            if (logged++ < 32) {
+-                LOG_WARNING(Render_Vulkan,
+-                            "Buffer of {} bytes (usage {}) is over the memory budget; "
+-                            "allocating it anyway",
+-                            ci.size, static_cast<u32>(usage));
+-            }
+-            // The texture cache answers each pressure event by keeping more device memory free.
+-            // Upload and download buffers live in host memory on a discrete GPU, so they only
+-            // count when the heaps are shared or the buffer asked for device-local memory.
+-            if (device.IsIntegrated() || usage == MemoryUsage::DeviceLocal ||
+-                usage == MemoryUsage::Stream) {
+-                pressure_events.fetch_add(1, std::memory_order_relaxed);
+-            }
+-            VmaAllocationCreateInfo relaxed = alloc_ci;
+-            relaxed.flags &= ~VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT;
+-            result = vmaCreateBuffer(allocator, &ci, &relaxed, &handle, &allocation, &alloc_info);
 +        VkResult result = vmaCreateBuffer(allocator, &ci, &alloc_ci, &handle, &allocation,
 +                                          &alloc_info);
 +        // Staging buffers live in system memory, where the budget is the OS's soft hint: going
@@ -5448,11 +6605,9 @@ index cc14c43fe1..0f12b3b1c8 100644
 +            LOG_WARNING(Render_Vulkan,
 +                        "Buffer of {} KiB (usage {}) over the memory budget: {}", ci.size >> 10,
 +                        static_cast<u32>(usage), result == VK_SUCCESS ? "made anyway" : "failed");
-+        }
-+        vk::Check(result);
+         }
+         vk::Check(result);
      }
-     vmaGetAllocationMemoryProperties(allocator, allocation, &property_flags);
- 
 diff --git a/src/yuzu/configuration/configure_graphics.cpp b/src/yuzu/configuration/configure_graphics.cpp
 index e0be4c0af1..32c0b8f2b8 100644
 --- a/src/yuzu/configuration/configure_graphics.cpp
@@ -5537,7 +6692,7 @@ index 42d0b7b3d4..c528b11b56 100644
     <property name="checkable">
      <bool>true</bool>
 diff --git a/src/yuzu/main_window.cpp b/src/yuzu/main_window.cpp
-index 812ad9e983..45cbd758c9 100644
+index 7b5a021b98..45cbd758c9 100644
 --- a/src/yuzu/main_window.cpp
 +++ b/src/yuzu/main_window.cpp
 @@ -452,11 +452,10 @@ MainWindow::MainWindow(bool has_broken_vulkan)
@@ -5621,7 +6776,16 @@ index 812ad9e983..45cbd758c9 100644
      Settings::LogSettings();
  
      if (UISettings::values.select_user_on_boot && !user_flag_cmd_line) {
-@@ -2483,6 +2517,11 @@ void MainWindow::OnEmulationStopTimeout() {
+@@ -2335,8 +2369,6 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+     frame_gen_state = VideoCore::FrameGenState::Pending;
+     frame_gen_frames = 0;
+     frame_gen_generating = false;
+-    frame_gen_fps = 0.0;
+-    frame_gen_fps_timer.invalidate();
+     refresh_button->setDisabled(true);
+     SetFPSSuffix();
+ 
+@@ -2485,6 +2517,11 @@ void MainWindow::OnEmulationStopTimeout() {
  void MainWindow::TerminateEmulationThread() {
      if (QtCommon::emu_thread && QtCommon::emu_thread->isRunning()) {
          LOG_ERROR(Frontend, "Emulation thread failed to stop, terminating it");
@@ -5633,7 +6797,7 @@ index 812ad9e983..45cbd758c9 100644
          QtCommon::emu_thread->terminate();
          QtCommon::emu_thread->wait();
      }
-@@ -4967,29 +5006,83 @@ void MainWindow::OnCaptureScreenshot() {
+@@ -4969,29 +5006,83 @@ void MainWindow::OnCaptureScreenshot() {
  }
  
  #ifdef ENABLE_UPDATE_CHECKER
@@ -5730,11 +6894,65 @@ index 812ad9e983..45cbd758c9 100644
          return;
      }
  
+@@ -5143,20 +5234,6 @@ void MainWindow::UpdateStatusBar() {
+     auto& shader_notify = QtCommon::system->GPU().ShaderNotify();
+     const int shaders_building = shader_notify.ShadersBuilding();
+ 
+-    // Before statsUpdated, so the performance overlay reads this update's generated frame rate.
+-    const auto frame_gen = QtCommon::system->GPU().Renderer().GetFrameGenStatus();
+-    const u64 new_generated_frames = frame_gen.generated_frames - frame_gen_frames;
+-    const qint64 frame_gen_ms = frame_gen_fps_timer.isValid() ? frame_gen_fps_timer.restart() : 0;
+-    if (!frame_gen_fps_timer.isValid()) {
+-        frame_gen_fps_timer.start();
+-    }
+-    frame_gen_fps = frame_gen_ms > 0 ? static_cast<double>(new_generated_frames) * 1000.0 /
+-                                           static_cast<double>(frame_gen_ms)
+-                                     : 0.0;
+-    frame_gen_generating = frame_gen.generated_frames > frame_gen_frames;
+-    frame_gen_frames = frame_gen.generated_frames;
+-    frame_gen_state = frame_gen.state;
+-
+     emit statsUpdated(results, shader_notify);
+ 
+     if (shaders_building > 0) {
+@@ -5180,9 +5257,6 @@ void MainWindow::UpdateStatusBar() {
+     }
+ 
+     QString fpsText = tr("Game: %1 FPS").arg(std::round(results.average_game_fps), 0, 'f', 0);
+-    if (frame_gen_fps >= 0.5) {
+-        fpsText = fpsText % tr(" + %1 generated").arg(std::round(frame_gen_fps), 0, 'f', 0);
+-    }
+     if (!m_fpsSuffix.isEmpty())
+         fpsText = fpsText % QStringLiteral(" (%1)").arg(m_fpsSuffix);
+ 
+@@ -5190,6 +5264,10 @@ void MainWindow::UpdateStatusBar() {
+ 
+     emu_frametime_label->setText(tr("Frame: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
+ 
++    const auto frame_gen = QtCommon::system->GPU().Renderer().GetFrameGenStatus();
++    frame_gen_generating = frame_gen.generated_frames > frame_gen_frames;
++    frame_gen_frames = frame_gen.generated_frames;
++    frame_gen_state = frame_gen.state;
+     UpdateFrameGenButton();
+ 
+     res_scale_label->setVisible(true);
 diff --git a/src/yuzu/main_window.h b/src/yuzu/main_window.h
-index 64ddb1f693..dc009bb9b7 100644
+index c8b75df583..dc009bb9b7 100644
 --- a/src/yuzu/main_window.h
 +++ b/src/yuzu/main_window.h
-@@ -455,6 +455,9 @@ private slots:
+@@ -185,11 +185,6 @@ public:
+ 
+     std::filesystem::path GetShortcutPath(QtCommon::Game::ShortcutTarget target);
+ 
+-    /// Frames per second frame generation added since the last status bar update.
+-    [[nodiscard]] double FrameGenFps() const {
+-        return frame_gen_fps;
+-    }
+-
+ signals:
+ 
+     /**
+@@ -460,6 +455,9 @@ private slots:
  
  #ifdef ENABLE_UPDATE_CHECKER
      void OnEmulatorUpdateAvailable();
@@ -5744,7 +6962,7 @@ index 64ddb1f693..dc009bb9b7 100644
  #endif
  
  private:
-@@ -515,6 +518,8 @@ private:
+@@ -520,6 +518,8 @@ private:
  #ifdef ENABLE_UPDATE_CHECKER
      QFuture<UpdateChecker::CheckResult> update_future;
      QFutureWatcher<UpdateChecker::CheckResult> update_watcher;
@@ -5753,6 +6971,30 @@ index 64ddb1f693..dc009bb9b7 100644
  #endif
  
      MultiplayerState* multiplayer_state = nullptr;
+@@ -561,8 +561,6 @@ private:
+     VideoCore::FrameGenState frame_gen_state{};
+     u64 frame_gen_frames = 0;
+     bool frame_gen_generating = false;
+-    double frame_gen_fps = 0.0;
+-    QElapsedTimer frame_gen_fps_timer;
+     VolumeButton* volume_button = nullptr;
+     QWidget* volume_popup = nullptr;
+     QSlider* volume_slider = nullptr;
+diff --git a/src/yuzu/render/performance_overlay.cpp b/src/yuzu/render/performance_overlay.cpp
+index a31eb73cb7..bfb9341864 100644
+--- a/src/yuzu/render/performance_overlay.cpp
++++ b/src/yuzu/render/performance_overlay.cpp
+@@ -103,10 +103,6 @@ void PerformanceOverlay::updateStats(const Core::PerfStatsResults& results,
+         static constexpr double FPS_SAMPLE_THRESHOLD = 3.0;
+ 
+         QString fpsText = tr("%1 fps").arg(std::round(fps), 0, 'f', 0);
+-        // Frames frame generation added, kept short for the overlay's width.
+-        if (const double generated = m_mainWindow->FrameGenFps(); generated >= 0.5) {
+-            fpsText += tr(" (+%1)").arg(std::round(generated), 0, 'f', 0);
+-        }
+         // if (!m_fpsSuffix.isEmpty()) fpsText = fpsText % QStringLiteral(" (%1)").arg(m_fpsSuffix);
+         ui->fps->setText(fpsText);
+ 
 diff --git a/tools/superbuild/README.md b/tools/superbuild/README.md
 new file mode 100644
 index 0000000000..6e485ee7a0
