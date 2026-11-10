@@ -1122,12 +1122,19 @@ namespace {
 std::atomic<u64> g_zero_filled_bytes{};
 
 [[maybe_unused]] bool IsZeroPage(const u8* page) {
+    // Stops at the first non-zero line: most pages hold data in their first bytes.
     const auto* words = reinterpret_cast<const u64*>(page);
-    u64 bits = 0;
-    for (size_t i = 0; i < PageAlignment / sizeof(u64); ++i) {
-        bits |= words[i];
+    constexpr size_t LineWords = 8; // 64 bytes
+    for (size_t i = 0; i < PageAlignment / sizeof(u64); i += LineWords) {
+        u64 bits = 0;
+        for (size_t j = 0; j < LineWords; ++j) {
+            bits |= words[i + j];
+        }
+        if (bits != 0) {
+            return false;
+        }
     }
-    return bits == 0;
+    return true;
 }
 } // namespace
 
