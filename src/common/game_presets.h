@@ -38,6 +38,10 @@ inline bool ApplyMarioKartWorldPreset(Values& settings, u64 program_id, bool acc
 
 inline void SetOcarinaOfTimeRecommendedSettings(Values& settings, bool global) {
     const auto session = [global](auto& setting, auto value) {
+        // Keep a per-game value the user already chose; fill in the rest.
+        if (!global && !setting.UsingGlobal()) {
+            return;
+        }
         setting.SetGlobal(global);
         setting.SetValue(value);
     };

@@ -2146,9 +2146,11 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
     }
     PrepareShaderPrecache(title_id, std::filesystem::path{filename.toStdU16String()});
 
-    if (title_id == Settings::OcarinaOfTimeProgramId && !asked_recommended_oot_settings) {
-        asked_recommended_oot_settings = true;
-        use_recommended_oot_settings =
+    if (title_id == Settings::OcarinaOfTimeProgramId &&
+        !Settings::values.oot_recommended_settings_applied.GetValue()) {
+        Settings::values.oot_recommended_settings_applied = true;
+        OnSaveConfig();
+        const bool accepted =
             QMessageBox::question(
                 this, tr("Recommended Ocarina of Time settings"),
                 tr("Use the recommended performance settings for Ocarina of Time?\n\n"
@@ -2156,19 +2158,19 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
                    "conservative VRAM, BC3, asynchronous presentation and shaders, no memory "
                    "operation syncs, and more) plus FSR3 scaling and NVIDIA DLSS where "
                    "available.\n\n"
-                   "They are saved for Ocarina of Time and can be changed later."),
+                   "They are saved for Ocarina of Time. This is offered once; you can change any "
+                   "of them later in the game's Properties and they will stay changed."),
                 QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
-        LOG_INFO(Config, "OoT recommended settings accepted: {}", use_recommended_oot_settings);
-    }
-    if (Settings::ApplyOcarinaOfTimePreset(Settings::values, title_id,
-                                           use_recommended_oot_settings)) {
-        QtCommon::system->ApplySettings();
-        Settings::UpdateGPUAccuracy();
-        if (per_game_config) {
-            per_game_config->SaveAllValues();
-            LOG_INFO(Config, "Saved recommended OoT settings to its per-game configuration");
+        LOG_INFO(Config, "OoT recommended settings accepted: {}", accepted);
+        if (accepted && Settings::ApplyOcarinaOfTimePreset(Settings::values, title_id, true)) {
+            QtCommon::system->ApplySettings();
+            Settings::UpdateGPUAccuracy();
+            if (per_game_config) {
+                per_game_config->SaveAllValues();
+                LOG_INFO(Config, "Saved recommended OoT settings to its per-game configuration");
+            }
+            LOG_INFO(Config, "Applied recommended OoT settings after per-game configuration");
         }
-        LOG_INFO(Config, "Applied recommended OoT settings after per-game configuration");
     }
     Settings::LogSettings();
 

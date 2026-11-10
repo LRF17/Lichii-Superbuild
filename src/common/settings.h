@@ -1037,6 +1037,10 @@ struct Values {
         linkage, false, "recommended_settings_prompt_shown", Category::Miscellaneous};
     Setting<std::string> recommended_settings_backup{
         linkage, {}, "recommended_settings_backup", Category::Miscellaneous};
+    // The Ocarina of Time recommended settings are offered and applied only once, so a later
+    // change the user makes in the per-game properties is never overwritten at the next boot.
+    Setting<bool> oot_recommended_settings_applied{
+        linkage, false, "oot_recommended_settings_applied", Category::Miscellaneous};
 
     // Network
     Setting<std::string> network_interface{linkage, std::string(), "network_interface",

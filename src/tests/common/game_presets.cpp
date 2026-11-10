@@ -122,6 +122,8 @@ TEST_CASE("OoT performance preset applies only when accepted", "[game_presets]")
     settings->vram_usage_mode.SetValue(Settings::VramUsageMode::Aggressive);
     settings->astc_recompression.SetValue(Settings::AstcRecompression::Uncompressed);
     settings->native_async_draws.SetValue(Settings::NativeAsyncDraws::Wait);
+    settings->precache_shaders.SetGlobal(false);
+    settings->precache_shaders.SetValue(Settings::PrecacheShaders::Always);
 
     CHECK_FALSE(
         Settings::ApplyOcarinaOfTimePreset(*settings, Settings::OcarinaOfTimeProgramId, false));
@@ -140,4 +142,6 @@ TEST_CASE("OoT performance preset applies only when accepted", "[game_presets]")
     CHECK(settings->vram_usage_mode.GetValue() == Settings::VramUsageMode::Conservative);
     CHECK(settings->astc_recompression.GetValue() == Settings::AstcRecompression::Bc3);
     CHECK(settings->native_async_draws.GetValue() == Settings::NativeAsyncDraws::Bounded);
+    // A value the user already set for this game is never overwritten by the recommended table.
+    CHECK(settings->precache_shaders.GetValue() == Settings::PrecacheShaders::Always);
 }

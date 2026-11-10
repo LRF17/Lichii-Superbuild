@@ -2,6 +2,26 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v47
+
+- **Fixed: the Ocarina of Time recommended settings were overwriting changes
+  made in the game's Properties.** v46 applied the full recommended table on
+  every OoT launch and saved it to OoT's per-game config, so a value you set
+  yourself — for example `Precache shaders before game start = Always` — was
+  reset to the recommended `Off` at the next boot. The recommended settings
+  are now offered and applied **once** (a saved flag), and the preset skips any
+  setting that already has a per-game value, so manual edits stick. The prompt
+  says so explicitly.
+- Based on the same zortos `nx2` `bcb37c49f7` as v46; everything from v46
+  stays: #1199, the expanded OoT preset saved per game, #1180 water ripples,
+  #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110 Bananza AMD
+  crash fix, Linux pipeline preloading, #1200/#1197/#1196/#1154, 4K HDR DLSS
+  PR #9, frame-generation HDR PR #8, HDR DLSS PR #7, #1058, #1127, #1078,
+  #1094/#1095, #1061, #1062, #1056, #1060, #1036, #1028, #874, native HDR,
+  DLSS presets E/F, the safe Fritchii ports and the optional white-flash
+  mitigation.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
 ## v46
 
 - **The Ocarina of Time recommended-settings prompt now uses zortos's full

@@ -1,8 +1,8 @@
 # Lichii Superbuild (unofficial)
 
-> ## ✅ v46 recommended
+> ## ✅ v47 recommended
 >
-> v46 is based on zortos `nx2` `bcb37c49f7` (#1199) and makes the OoT recommended preset use zortos's full 46-setting developer table plus FSR 3/DLSS, saved to OoT's per-game config. Everything from v45 stays: #1180 water ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110 Bananza AMD crash fix, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
+> v47 fixes the OoT recommended-settings preset overwriting per-game changes made in Properties: it is now offered and applied once (saved flag) and skips settings that already have a per-game value. Based on the same zortos `nx2` `bcb37c49f7` as v46; everything from v46 stays. v32 and v42 were removed; v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 
 ## Credits
 
