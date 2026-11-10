@@ -180,10 +180,10 @@ index 873b99bec2..67960c7f41 100644
 +dist-local/
 +tools/superbuild/local/
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index bc40878ce6..5c8ad75a8b 100644
+index bc40878ce6..15cded38d4 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
-@@ -1,11 +1,549 @@
+@@ -1,11 +1,570 @@
  # Changelog
  
 -All notable changes to Eglantine are documented here. Each release's notes are taken from its
@@ -192,9 +192,31 @@ index bc40878ce6..5c8ad75a8b 100644
 +All releases are unofficial builds. See the GitHub releases for assets and checksums.
  
 -## [Unreleased]
-+## v48
++## v49
  
 -## [0.1.0]
++- **New: Help -> Check for Updates...** runs an update check on demand and
++  always shows the result. The old check ran only once at startup and stayed
++  silent on a network failure, on "no update", and for 24 hours after a dialog
++  was dismissed (or forever after "Skip this version") — which is why an update
++  sometimes went unnoticed. The manual check bypasses those suppressions and
++  reports rate limits, HTTP errors, offline failures and "you are up to date"
++  in a dialog. A failed startup check now also retries once after two minutes.
++- **New: Help -> Open Releases Page...** opens this repository's releases page
++  directly, so an update can always be downloaded even when GitHub's API is
++  rate limited.
++- Everything from v48 stays: #1210, #1219, #1216, Fritchii v5.6's zero-page
++  trim, the one-shot saved OoT preset, #1199, #1180, #1155, #1129, #1110,
++  Linux pipeline preloading, #1200/#1197/#1196/#1154, 4K HDR DLSS PR #9,
++  frame-generation HDR PR #8, HDR DLSS PR #7, #1058, #1127, #1078,
++  #1094/#1095, #1061, #1062, #1056, #1060, #1036, #1028, #874, native HDR,
++  DLSS presets E/F, the safe Fritchii ports and the optional white-flash
++  mitigation.
++- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+ 
+-- Initial release candidate
++## v48
++
 +- Based on latest zortos `nx2` `093e264c8a`: **#1210** keeps the texture-cache
 +  collector thresholds within the host's commit budget, fixing an OoT
 +  out-of-memory crash on cards like the RX 7600 XT (Windows charges device
@@ -221,8 +243,7 @@ index bc40878ce6..5c8ad75a8b 100644
 +  HDR, DLSS presets E/F, the safe Fritchii ports and the optional white-flash
 +  mitigation.
 +- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
- 
--- Initial release candidate
++
 +## v47
 +
 +- **Fixed: the Ocarina of Time recommended settings were overwriting changes
@@ -875,7 +896,7 @@ index 0000000000..a0496b95b6
 +expose the port to a network. Dumps and captures can contain game assets; keep
 +them local and do not upload `.rdc` captures or dumps publicly.
 diff --git a/README.md b/README.md
-index 9230cf33b0..1a0cb504ad 100644
+index 9230cf33b0..95ad0bbfc7 100644
 --- a/README.md
 +++ b/README.md
 @@ -9,7 +9,7 @@
@@ -891,9 +912,9 @@ index 9230cf33b0..1a0cb504ad 100644
  
  # Lichii
  
-+> ## ✅ v48 recommended
++> ## ✅ v49 recommended
 +>
-+> v48 is based on zortos `nx2` `093e264c8a` (#1210 host-commit OOM fix, #1212 shadow rename), with #1219 white-light occlusion carry, #1216 OoT fast draws and Fritchii v5.6's zero-page trim. Everything from v47 stays: the OoT recommended settings applied once without overwriting per-game edits, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
++> v49 adds Help -> Check for Updates... (on demand, always shows the result) and Help -> Open Releases Page..., so an update is never silently missed. Same zortos `nx2` `093e264c8a` base; everything from v48 stays: #1210 host-commit OOM fix, #1219 white-light occlusion carry, #1216 OoT fast draws, Fritchii v5.6's zero-page trim, #1212, the one-shot saved OoT preset, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 +
 +> **Unofficial superbuild fork.** This repository is not official Lichii and is
 +> not affiliated with zortos293. It carries a curated set of performance and
@@ -915,15 +936,15 @@ index 9230cf33b0..1a0cb504ad 100644
  
 diff --git a/SUPERBUILD.md b/SUPERBUILD.md
 new file mode 100644
-index 0000000000..f1c92a17e1
+index 0000000000..c6c34e8b0c
 --- /dev/null
 +++ b/SUPERBUILD.md
 @@ -0,0 +1,216 @@
 +# Lichii Superbuild (unofficial)
 +
-+> ## ✅ v48 recommended
++> ## ✅ v49 recommended
 +>
-+> v48 is based on zortos `nx2` `093e264c8a` (#1210 host-commit OOM fix, #1212 shadow rename) plus #1219 white-light occlusion carry, #1216 OoT fast draws and Fritchii v5.6's zero-page trim. Everything from v47 stays (one-shot saved OoT preset, #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading). v32 and v42 were removed; v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
++> v49 adds Help -> Check for Updates... (on demand, always shows the result) and Help -> Open Releases Page..., so updates are never silently missed. Same zortos `nx2` `093e264c8a` base; everything from v48 stays (#1210, #1219, #1216, Fritchii zero-page trim, one-shot saved OoT preset, #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading). v32 and v42 were removed; v48/v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 +
 +## Credits
 +
@@ -5159,11 +5180,71 @@ index e78b069590..6e4bf72776 100644
      QWidget* api_widget;
      QComboBox* aspect_ratio_combobox;
      QComboBox* resolution_combobox;
+diff --git a/src/yuzu/main.ui b/src/yuzu/main.ui
+index 42d0b7b3d4..c528b11b56 100644
+--- a/src/yuzu/main.ui
++++ b/src/yuzu/main.ui
+@@ -235,6 +235,8 @@
+     <addaction name="action_Report_Compatibility"/>
+     <addaction name="action_Open_Mods_Page"/>
+     <addaction name="action_Open_UserHandbook"/>
++    <addaction name="action_Check_For_Updates"/>
++    <addaction name="action_Open_Releases_Page"/>
+     <addaction name="separator"/>
+     <addaction name="action_Apply_Recommended_Settings"/>
+     <addaction name="action_Restore_Previous_Settings"/>
+@@ -298,6 +300,16 @@
+     <string>&amp;About Lichii</string>
+    </property>
+   </action>
++  <action name="action_Check_For_Updates">
++   <property name="text">
++    <string>Check for &amp;Updates...</string>
++   </property>
++  </action>
++  <action name="action_Open_Releases_Page">
++   <property name="text">
++    <string>Open &amp;Releases Page...</string>
++   </property>
++  </action>
+   <action name="action_Single_Window_Mode">
+    <property name="checkable">
+     <bool>true</bool>
 diff --git a/src/yuzu/main_window.cpp b/src/yuzu/main_window.cpp
-index 812ad9e983..ef89b1171e 100644
+index 812ad9e983..299f1c9b92 100644
 --- a/src/yuzu/main_window.cpp
 +++ b/src/yuzu/main_window.cpp
-@@ -2102,6 +2102,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+@@ -452,11 +452,10 @@ MainWindow::MainWindow(bool has_broken_vulkan)
+     show();
+ 
+ #ifdef ENABLE_UPDATE_CHECKER
+-    if (UISettings::values.check_for_updates) {
+-        update_future = QtConcurrent::run([]() { return UpdateChecker::Check(); });
+-        update_watcher.connect(&update_watcher, &QFutureWatcher<QString>::finished, this,
+-                               &MainWindow::OnEmulatorUpdateAvailable);
+-        update_watcher.setFuture(update_future);
++    connect(&update_watcher, &QFutureWatcher<UpdateChecker::CheckResult>::finished, this,
++            &MainWindow::OnEmulatorUpdateAvailable);
++    if (UISettings::values.check_for_updates.GetValue()) {
++        StartUpdateCheck(false);
+     }
+ #endif
+ 
+@@ -1716,6 +1715,13 @@ void MainWindow::ConnectMenuEvents() {
+     connect_menu(ui->action_Eden_Dependencies, &MainWindow::OnEdenDependencies);
+     connect_menu(ui->action_Apply_Recommended_Settings, &MainWindow::OnApplyRecommendedSettings);
+     connect_menu(ui->action_Restore_Previous_Settings, &MainWindow::OnRestorePreviousSettings);
++#ifdef ENABLE_UPDATE_CHECKER
++    connect_menu(ui->action_Check_For_Updates, &MainWindow::OnCheckForUpdates);
++    connect_menu(ui->action_Open_Releases_Page, &MainWindow::OnOpenReleasesPage);
++#else
++    ui->action_Check_For_Updates->setVisible(false);
++    ui->action_Open_Releases_Page->setVisible(false);
++#endif
+     connect(ui->menu_Help, &QMenu::aboutToShow, this, [this] {
+         ui->action_Apply_Recommended_Settings->setEnabled(!emulation_running);
+         ui->action_Restore_Previous_Settings->setEnabled(!emulation_running);
+@@ -2102,6 +2108,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
      config->SaveAllValues();
  
      u64 title_id{0};
@@ -5171,7 +5252,7 @@ index 812ad9e983..ef89b1171e 100644
  
      last_filename_booted = filename;
  
-@@ -2118,7 +2119,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+@@ -2118,7 +2125,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
          const auto config_file_name = title_id == 0
                                            ? Common::FS::PathToUTF8String(file_path.filename())
                                            : fmt::format("{:016X}", title_id);
@@ -5180,7 +5261,7 @@ index 812ad9e983..ef89b1171e 100644
          QtCommon::system->HIDCore().ReloadInputDevices();
          QtCommon::system->ApplySettings();
      }
-@@ -2144,6 +2145,33 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+@@ -2144,6 +2151,33 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
          LOG_INFO(Config, "Applied recommended MKW settings after per-game configuration");
      }
      PrepareShaderPrecache(title_id, std::filesystem::path{filename.toStdU16String()});
@@ -5214,6 +5295,126 @@ index 812ad9e983..ef89b1171e 100644
      Settings::LogSettings();
  
      if (UISettings::values.select_user_on_boot && !user_flag_cmd_line) {
+@@ -4967,29 +5001,83 @@ void MainWindow::OnCaptureScreenshot() {
+ }
+ 
+ #ifdef ENABLE_UPDATE_CHECKER
+-void MainWindow::OnEmulatorUpdateAvailable() {
+-    const auto result = update_future.result();
+-    if (result.failure == UpdateChecker::Failure::RateLimited) {
+-        statusBar()->showMessage(
+-            tr("Could not check for updates: GitHub rate limit reached. Lichii will try again at "
+-               "the next start."),
+-            15000);
++void MainWindow::StartUpdateCheck(bool manual) {
++    if (update_future.isRunning()) {
+         return;
+     }
+-    if (result.failure == UpdateChecker::Failure::Http) {
+-        statusBar()->showMessage(
+-            tr("Could not check for updates: GitHub answered with HTTP %1.").arg(result.status),
+-            15000);
++    manual_update_check = manual;
++    ui->action_Check_For_Updates->setEnabled(false);
++    update_future = QtConcurrent::run([]() { return UpdateChecker::Check(); });
++    update_watcher.setFuture(update_future);
++}
++
++void MainWindow::OnCheckForUpdates() {
++    if (update_future.isRunning()) {
++        QMessageBox::information(this, tr("Check for Updates"),
++                                 tr("An update check is already running."));
+         return;
+     }
++    statusBar()->showMessage(tr("Checking for updates..."), 15000);
++    StartUpdateCheck(true);
++}
++
++void MainWindow::OnOpenReleasesPage() {
++    QDesktopServices::openUrl(
++        QUrl{QStringLiteral("https://github.com/callme-sy/Lichii-Superbuild/releases")});
++}
++
++void MainWindow::OnEmulatorUpdateAvailable() {
++    ui->action_Check_For_Updates->setEnabled(true);
++    const auto result = update_future.result();
++    const bool manual = manual_update_check;
++    manual_update_check = false;
++
++    if (result.failure != UpdateChecker::Failure::None) {
++        QString message;
++        switch (result.failure) {
++        case UpdateChecker::Failure::RateLimited:
++            message = tr("Could not check for updates: GitHub rate limit reached. "
++                         "Try again later, or open the releases page in your browser.");
++            break;
++        case UpdateChecker::Failure::Http:
++            message = tr("Could not check for updates: GitHub answered with HTTP %1.")
++                          .arg(result.status);
++            break;
++        default:
++            message = tr("Could not check for updates: no answer from GitHub. "
++                         "Check your connection, or open the releases page in your browser.");
++            break;
++        }
++        if (manual) {
++            QMessageBox::warning(this, tr("Check for Updates"), message);
++        } else {
++            statusBar()->showMessage(message, 15000);
++            // A failed check at startup (network not up yet, a transient GitHub error) used to
++            // leave the update unnoticed until the next launch. Retry once, quietly.
++            if (!update_check_retried) {
++                update_check_retried = true;
++                QTimer::singleShot(120 * 1000, this, [this] { StartUpdateCheck(false); });
++            }
++        }
++        return;
++    }
++    update_check_retried = false;
+     if (!result.update) {
++        if (manual) {
++            QMessageBox::information(
++                this, tr("Check for Updates"),
++                tr("You are up to date: %1 is the latest release.")
++                    .arg(QString::fromUtf8(Common::g_build_release_tag)));
++        }
+         return;
+     }
+ 
+     const auto& release = *result.update;
+     const auto now = static_cast<unsigned long long>(QDateTime::currentSecsSinceEpoch());
+-    if (UISettings::values.skipped_update_tag.GetValue() == release.tag ||
+-        UISettings::values.update_remind_at.GetValue() > now) {
++    // A manual check always shows the result; dismissed or skipped versions only quiet the
++    // automatic check at startup.
++    if (!manual && (UISettings::values.skipped_update_tag.GetValue() == release.tag ||
++                    UISettings::values.update_remind_at.GetValue() > now)) {
+         return;
+     }
+ 
+diff --git a/src/yuzu/main_window.h b/src/yuzu/main_window.h
+index 64ddb1f693..dc009bb9b7 100644
+--- a/src/yuzu/main_window.h
++++ b/src/yuzu/main_window.h
+@@ -455,6 +455,9 @@ private slots:
+ 
+ #ifdef ENABLE_UPDATE_CHECKER
+     void OnEmulatorUpdateAvailable();
++    void OnCheckForUpdates();
++    void OnOpenReleasesPage();
++    void StartUpdateCheck(bool manual);
+ #endif
+ 
+ private:
+@@ -515,6 +518,8 @@ private:
+ #ifdef ENABLE_UPDATE_CHECKER
+     QFuture<UpdateChecker::CheckResult> update_future;
+     QFutureWatcher<UpdateChecker::CheckResult> update_watcher;
++    bool manual_update_check{false};
++    bool update_check_retried{false};
+ #endif
+ 
+     MultiplayerState* multiplayer_state = nullptr;
 diff --git a/tools/superbuild/README.md b/tools/superbuild/README.md
 new file mode 100644
 index 0000000000..6e485ee7a0
