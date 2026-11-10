@@ -2102,6 +2102,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
     config->SaveAllValues();
 
     u64 title_id{0};
+    std::unique_ptr<QtConfig> per_game_config;
 
     last_filename_booted = filename;
 
@@ -2118,7 +2119,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
         const auto config_file_name = title_id == 0
                                           ? Common::FS::PathToUTF8String(file_path.filename())
                                           : fmt::format("{:016X}", title_id);
-        QtConfig per_game_config(config_file_name, Config::ConfigType::PerGameConfig);
+        per_game_config = std::make_unique<QtConfig>(config_file_name, Config::ConfigType::PerGameConfig);
         QtCommon::system->HIDCore().ReloadInputDevices();
         QtCommon::system->ApplySettings();
     }
@@ -2151,10 +2152,11 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
             QMessageBox::question(
                 this, tr("Recommended Ocarina of Time settings"),
                 tr("Use the recommended performance settings for Ocarina of Time?\n\n"
-                   "FSR3 scaling, GPU accuracy Low, GPU NVDEC, asynchronous presentation, "
-                   "asynchronous shaders, NVIDIA DLSS where available and no memory operation "
-                   "syncs.\n\n"
-                   "They apply until Lichii is closed. Your saved settings are not changed."),
+                   "The Lichii developer's recommended settings (GPU accuracy Low, GPU NVDEC, "
+                   "conservative VRAM, BC3, asynchronous presentation and shaders, no memory "
+                   "operation syncs, and more) plus FSR3 scaling and NVIDIA DLSS where "
+                   "available.\n\n"
+                   "They are saved for Ocarina of Time and can be changed later."),
                 QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
         LOG_INFO(Config, "OoT recommended settings accepted: {}", use_recommended_oot_settings);
     }
@@ -2162,6 +2164,10 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
                                            use_recommended_oot_settings)) {
         QtCommon::system->ApplySettings();
         Settings::UpdateGPUAccuracy();
+        if (per_game_config) {
+            per_game_config->SaveAllValues();
+            LOG_INFO(Config, "Saved recommended OoT settings to its per-game configuration");
+        }
         LOG_INFO(Config, "Applied recommended OoT settings after per-game configuration");
     }
     Settings::LogSettings();

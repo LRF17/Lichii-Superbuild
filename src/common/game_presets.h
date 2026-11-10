@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "common/recommended_settings.h"
 #include "common/settings.h"
 
 namespace Settings {
@@ -40,13 +41,12 @@ inline void SetOcarinaOfTimeRecommendedSettings(Values& settings, bool global) {
         setting.SetGlobal(global);
         setting.SetValue(value);
     };
+    // The Lichii developer's recommended baseline, the same table the global offer uses.
+    ForEachRecommendedSetting(settings, [&](auto& setting, const auto& value) {
+        session(setting, value);
+    });
+    // OoT-specific choices the global table leaves out as personal/hardware settings.
     session(settings.scaling_filter, ScalingFilter::Fsr3);
-    session(settings.gpu_accuracy, GpuAccuracy::Low);
-    session(settings.nvdec_emulation, NvdecEmulation::Gpu);
-    session(settings.async_presentation, true);
-    session(settings.use_asynchronous_shaders, true);
-    // A fence per synced command list stalls the GPU thread and OoT renders correctly without it.
-    session(settings.sync_memory_operations, false);
     // Real DLSS on RTX cards; without Streamline's files or an RTX GPU this falls back to FSR 3.1.
     session(settings.nvidia_dlss, true);
 }
