@@ -4713,8 +4713,8 @@ Sampler::Sampler(TextureCacheRuntime& runtime, const Tegra::Texture::TSCEntry& t
             max_lod = 0.25f;
         }
     }
-    // Ocarina with FSR: FSR renders below the output size, so textures would pick the render
-    // size's mips; the bias keeps the output's detail (VideoCommon::OcarinaFsrLodBias).
+    // Ocarina with FSR or DLSS: the scene renders below the output size, so textures would pick
+    // the render size's mips; the bias keeps the output's detail (VideoCommon::OcarinaFsrLodBias).
     f32 lod_bias = tsc.LodBias();
     ocarina_fsr_failed = &runtime.ocarina_fsr_failed;
     if (const f32 fsr_lod_bias = runtime.OcarinaFsrLodBias();
@@ -4758,7 +4758,7 @@ Sampler::VariantKey Sampler::MakeKey(const ImageView& image_view, bool is_depth)
     // Vulkan leaves it undefined and AMD returns the 0/1 compare result (Ocarina forest fog
     // composite read alpha 0 -> black screen). Use a variant without comparison.
     key.drop_compare = has_depth_comparison && !is_depth;
-    // The FSR bias is for the game's textures. Images the GPU wrote (render targets: bloom and
+    // The upscaler's bias is for the game's textures. Images the GPU wrote (render targets: bloom and
     // blur chains, reflections, fog) keep the game's own bias, or they'd read a mip too sharp.
     // So does every image in handheld mode (the console mode can change in-session), and after
     // the upscaler failed this session (the game's pass runs again).

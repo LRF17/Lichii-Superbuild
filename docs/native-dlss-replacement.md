@@ -80,8 +80,9 @@ the game keeps its own pass whenever DLSS is off, unavailable or fails to start.
   offset by the same jitter, so its scene-depth check compares the same samples the game drew,
   and its motion is taken from the unjittered position. Without that offset the jitter made the
   check fail on most of the fragments it otherwise accepts.
-- Texture LOD bias (FSR only): when the session's upscaler is FSR, mipmapped samplers get
-  AMD's recommended bias log2(render / output) - 1 = -1.58 in docked mode (none in handheld).
+- Texture LOD bias (FSR and DLSS): when the session's upscaler is FSR or DLSS, mipmapped samplers
+  get the bias AMD and NVIDIA both recommend, log2(render / output) - 1 = -1.58 in docked mode
+  (none in handheld).
   Samplers pick the biased or unbiased variant at each bind, so a console mode switch takes
   effect in-session. Images the GPU wrote (render targets: bloom, blur, reflections, fog) keep
   the game's own bias.
