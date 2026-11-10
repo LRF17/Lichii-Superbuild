@@ -49,9 +49,8 @@ inline void SetOcarinaOfTimeRecommendedSettings(Values& settings, bool global) {
     session(settings.sync_memory_operations, false);
     // Real DLSS on RTX cards; without Streamline's files or an RTX GPU this falls back to FSR 3.1.
     session(settings.nvidia_dlss, true);
-    // Build the game's shaders on the loading screen rather than stutter on first use, and bound
-    // the wait for unbuilt Switch 2 pipelines instead of skipping draws.
-    session(settings.precache_shaders, PrecacheShaders::Always);
+    // Bound the wait for unbuilt Switch 2 pipelines instead of skipping draws. Precache shaders
+    // stays at its saved setting: the per-session preset is applied after the precache decision.
     session(settings.native_async_draws, NativeAsyncDraws::Bounded);
 }
 

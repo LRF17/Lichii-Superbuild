@@ -6,16 +6,16 @@ All releases are unofficial builds. See the GitHub releases for assets and check
 
 - **Before playing: if your shader cache is from v34 or earlier, clear it.**
   v35 replaced the Vulkan pipeline cache with shader cache v2, and caches from
-  older builds can cause wrong graphics or repeated rebuilds. The first launch
-  after that takes a few minutes on the loading screen while shaders are
-  precached — this is normal, there is a Skip button, and later launches only
-  build what is new until the GPU driver changes.
-- **The Ocarina of Time recommended-settings prompt now also sets Precache
-  shaders = Always and Switch 2 draws with unbuilt pipelines = Bounded wait.**
-  The first builds the game's shaders on the loading screen instead of
-  stuttering on first use; the second bounds each frame's wait for a pipeline
-  that is still building instead of skipping the draw. Both apply with the rest
-  of the preset for the session and do not change saved settings.
+  older builds can cause wrong graphics or repeated rebuilds. If you enable
+  Precache shaders, the first launch after that takes a few minutes on the
+  loading screen while shaders are built — this is normal, there is a Skip
+  button, and later launches only build what is new until the GPU driver
+  changes.
+- **The Ocarina of Time recommended-settings prompt now also sets Switch 2
+  draws with unbuilt pipelines = Bounded wait.** Each frame waits up to the
+  pipeline-wait budget (8 ms by default) for a pipeline that is still building,
+  then skips the draw instead of stalling the frame. It applies with the rest of
+  the preset for the session and does not change saved settings.
 - Based on the same zortos `nx2` `d2eaae4f3a` as v41 (nx2 has not moved), so
   everything from v41 stays: water fixes #1152/#1147, 4K HDR DLSS PR #9,
   frame-generation HDR PR #8, #1143/#1154, HDR DLSS PR #7, #1058, #1127,

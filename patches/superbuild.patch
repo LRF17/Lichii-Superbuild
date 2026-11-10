@@ -180,7 +180,7 @@ index 873b99bec2..67960c7f41 100644
 +dist-local/
 +tools/superbuild/local/
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index bc40878ce6..dbcadd298a 100644
+index bc40878ce6..d47e234fcd 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
 @@ -1,11 +1,451 @@
@@ -197,16 +197,16 @@ index bc40878ce6..dbcadd298a 100644
 -## [0.1.0]
 +- **Before playing: if your shader cache is from v34 or earlier, clear it.**
 +  v35 replaced the Vulkan pipeline cache with shader cache v2, and caches from
-+  older builds can cause wrong graphics or repeated rebuilds. The first launch
-+  after that takes a few minutes on the loading screen while shaders are
-+  precached — this is normal, there is a Skip button, and later launches only
-+  build what is new until the GPU driver changes.
-+- **The Ocarina of Time recommended-settings prompt now also sets Precache
-+  shaders = Always and Switch 2 draws with unbuilt pipelines = Bounded wait.**
-+  The first builds the game's shaders on the loading screen instead of
-+  stuttering on first use; the second bounds each frame's wait for a pipeline
-+  that is still building instead of skipping the draw. Both apply with the rest
-+  of the preset for the session and do not change saved settings.
++  older builds can cause wrong graphics or repeated rebuilds. If you enable
++  Precache shaders, the first launch after that takes a few minutes on the
++  loading screen while shaders are built — this is normal, there is a Skip
++  button, and later launches only build what is new until the GPU driver
++  changes.
++- **The Ocarina of Time recommended-settings prompt now also sets Switch 2
++  draws with unbuilt pipelines = Bounded wait.** Each frame waits up to the
++  pipeline-wait budget (8 ms by default) for a pipeline that is still building,
++  then skips the draw instead of stalling the frame. It applies with the rest of
++  the preset for the session and does not change saved settings.
 +- Based on the same zortos `nx2` `d2eaae4f3a` as v41 (nx2 has not moved), so
 +  everything from v41 stays: water fixes #1152/#1147, 4K HDR DLSS PR #9,
 +  frame-generation HDR PR #8, #1143/#1154, HDR DLSS PR #7, #1058, #1127,
@@ -1113,7 +1113,7 @@ index 4928eb47ff..3be40fe991 100644
  
  Enhancements aimed at removing jagged lines/sharp edges and/or masking artifacts.
 diff --git a/src/common/game_presets.h b/src/common/game_presets.h
-index 83dd4d3c3f..800d7eda07 100644
+index 83dd4d3c3f..c7e4df32e8 100644
 --- a/src/common/game_presets.h
 +++ b/src/common/game_presets.h
 @@ -7,6 +7,7 @@
@@ -1124,7 +1124,7 @@ index 83dd4d3c3f..800d7eda07 100644
  
  inline void SetMarioKartWorldRecommendedSettings(Values& settings, bool global) {
      const auto session = [global](auto& setting, auto value) {
-@@ -34,4 +35,32 @@ inline bool ApplyMarioKartWorldPreset(Values& settings, u64 program_id, bool acc
+@@ -34,4 +35,31 @@ inline bool ApplyMarioKartWorldPreset(Values& settings, u64 program_id, bool acc
      return true;
  }
  
@@ -1142,9 +1142,8 @@ index 83dd4d3c3f..800d7eda07 100644
 +    session(settings.sync_memory_operations, false);
 +    // Real DLSS on RTX cards; without Streamline's files or an RTX GPU this falls back to FSR 3.1.
 +    session(settings.nvidia_dlss, true);
-+    // Build the game's shaders on the loading screen rather than stutter on first use, and bound
-+    // the wait for unbuilt Switch 2 pipelines instead of skipping draws.
-+    session(settings.precache_shaders, PrecacheShaders::Always);
++    // Bound the wait for unbuilt Switch 2 pipelines instead of skipping draws. Precache shaders
++    // stays at its saved setting: the per-session preset is applied after the precache decision.
 +    session(settings.native_async_draws, NativeAsyncDraws::Bounded);
 +}
 +
@@ -1843,10 +1842,10 @@ index af9debf108..c556c3ef62 100644
      video_core/unswizzle_workers.cpp
      video_core/aftermath_dump.cpp
 diff --git a/src/tests/common/game_presets.cpp b/src/tests/common/game_presets.cpp
-index 481f5c5e1d..0ae3165c7e 100644
+index 481f5c5e1d..2f405c5115 100644
 --- a/src/tests/common/game_presets.cpp
 +++ b/src/tests/common/game_presets.cpp
-@@ -109,3 +109,33 @@ TEST_CASE("Declining the MKW preset preserves global and per-game preferences",
+@@ -109,3 +109,31 @@ TEST_CASE("Declining the MKW preset preserves global and per-game preferences",
          CHECK(settings->resolution_setup.UsingGlobal() == !per_game);
      }
  }
@@ -1860,7 +1859,6 @@ index 481f5c5e1d..0ae3165c7e 100644
 +    settings->use_asynchronous_shaders.SetValue(false);
 +    settings->sync_memory_operations.SetValue(true);
 +    settings->nvidia_dlss.SetValue(false);
-+    settings->precache_shaders.SetValue(Settings::PrecacheShaders::Off);
 +    settings->native_async_draws.SetValue(Settings::NativeAsyncDraws::Wait);
 +
 +    CHECK_FALSE(
@@ -1877,7 +1875,6 @@ index 481f5c5e1d..0ae3165c7e 100644
 +    CHECK(settings->use_asynchronous_shaders.GetValue());
 +    CHECK_FALSE(settings->sync_memory_operations.GetValue());
 +    CHECK(settings->nvidia_dlss.GetValue());
-+    CHECK(settings->precache_shaders.GetValue() == Settings::PrecacheShaders::Always);
 +    CHECK(settings->native_async_draws.GetValue() == Settings::NativeAsyncDraws::Bounded);
 +}
 diff --git a/src/tests/core/builtin_patches.cpp b/src/tests/core/builtin_patches.cpp
