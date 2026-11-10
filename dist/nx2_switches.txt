@@ -11,11 +11,9 @@
 # Restart the emulator after editing.
 
 # --- Performance tuning defaults for Switch 2 ---
-# Offload GPU method/macro execution to the back thread (SPLIT=2 delivers up to +54% FPS alone).
-EDEN_NX2_SPLIT=2
-
-# Batch GPU fence syncpoints to reduce host driver overhead and smooth frametimes.
-EDEN_NX2_FENCE_BATCH=1
+# The GPU thread split and fence batching are on by default for Switch 2 titles, so neither is
+# set here: EDEN_NX2_SPLIT=0 runs everything on one thread, EDEN_NX2_FENCE_BATCH=0 releases one
+# fence at a time, both for comparisons.
 
 # Leave buffer downloads disabled on Switch 2 (default): forcing downloads (=1) copies back
 # 90-220 MB/s of buffers CPU never touches, causing heavy mutex contention and dropping FPS by ~38-63%.
@@ -37,14 +35,12 @@ EDEN_NX2_FENCE_BATCH=1
 #EDEN_NX2_NO_REACTIVE=1
 
 #EDEN_NX2_MME_JIT=0
-#EDEN_NX2_PBFLUSH=0
 #EDEN_NX2_SKIP_SAME=0
 #EDEN_NX2_INLINE_DEFER=0
 #EDEN_NX2_SPLIT_SKIP=1
 #EDEN_NX2_AUTO_STUB=1
 #EDEN_NX2_KEEP_ASTC=1
 EDEN_NX2_PRELOAD_ALL_PIPELINES=1
-EDEN_NX2_ASYNC_DISCARD=1
 
 # Optional: rare white-screen / sky flashes in Ocarina of Time (upstream issues #607,
 # #704, #981). Uncomment to submit fences immediately instead of batching them for
