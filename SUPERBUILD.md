@@ -1,8 +1,8 @@
 # Lichii Superbuild (unofficial)
 
-> ## ✅ v50 recommended
+> ## ✅ v51 recommended
 >
-> v50 fixes OoT's white areas / white light columns (#1236, stale SMMU device-range backing) plus the UI-thread deadlock (#1234) and stuck Equal acquire (#1235). Same zortos `nx2` `093e264c8a` base; everything from v49 stays (manual update check, #1210, #1219, #1216, Fritchii zero-page trim, one-shot saved OoT preset, #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading). #1218 remains held for a separate test build. v32 and v42 were removed; v49/v48/v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
+> v51 rebases the layer onto zortos `nx2` `7dddff2d0e` (16 new merges), drops our local copies of #1236 and the Fritchii allocator port (both now upstream as #1236/#959), and removes the two PRs upstream closed as wrong or harmful (#1219, #1235). #1231 (MKW dark lighting) and #1245/#1246 (upload/dispatch batching) come in free. Everything else from v50 stays (manual update check, #1234, #1216, Fritchii zero-page trim, one-shot saved OoT preset, #1180, #1155, #1129, #1110, Linux pipeline preloading). #1218 remains held for a separate test build. v32 and v42 were removed; v50/v49/v48/v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 
 ## Credits
 

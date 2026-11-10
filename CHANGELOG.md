@@ -2,6 +2,42 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v51
+
+- Rebased on the latest zortos `nx2` `7dddff2d0e` (16 upstream merges since
+  `093e264c8a`). New from upstream:
+  - **#1236** (white areas / white light columns) and **#1231** (MKW dark
+    lighting) are now merged upstream — we dropped our local copies of them;
+    #1231 is inherited for free.
+  - **#959** (allocate a buffer over the memory budget instead of throwing) is
+    upstream's own version of our long-carried Fritchii allocator port, with
+    device-pressure accounting — we dropped ours.
+  - **#1245/#1246** (jpkto): one command and one pair of barriers for a run of
+    in-order uploads, and a dispatch's barrier recorded in the dispatch's own
+    command.
+  - **#941**: keep NVIDIA DLSS on when Streamline warns the VRAM budget is used
+    up. **#853**: copy 2D-engine blits between 3D surfaces slice by slice.
+    **#850**: size the sysmix queue to the host's callback. **#784**: swizzle
+    and unswizzle block linear in 16-byte units. **#796**: show generated frames
+    next to the FPS. **#1168**: do not wait for the time services when applying
+    settings during loading. **#1128**, **#972**, **#1108**, **#1126**: build,
+    kernel and patch-handling fixes.
+- **Dropped two PRs upstream closed:** #1219 (the owner confirmed #1236, not
+  the occlusion carry, was the white-light cause) and #1235 (a maintainer sweep
+  flagged the time-based Equal-acquire recovery as able to unblock GPU work
+  early and rewind semaphore progress). Both were in v50.
+- Kept everything else from v50: #1234 (UI deadlock), #1216 (OoT fast draws),
+  the manual Help -> Check for Updates... and Open Releases Page..., #1210,
+  Fritchii v5.6's zero-page trim, the one-shot saved OoT preset, #1199, #1180,
+  #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154,
+  4K HDR DLSS PR #9, frame-generation HDR PR #8, HDR DLSS PR #7, #1058, #1127,
+  #1078, #1094/#1095, #1061, #1062, #1056, #1060, #1036, #1028, #874, native
+  HDR, DLSS presets E/F, the safe Fritchii ports and the optional white-flash
+  mitigation.
+- README now states plainly that this is a hobby project, run for fun, with no
+  donations or payment accepted; all donation links and traces were removed.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
 ## v50
 
 - **#1236: fixed Ocarina of Time's white areas / white light columns

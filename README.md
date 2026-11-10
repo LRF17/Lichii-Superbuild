@@ -17,15 +17,19 @@
 
 # Lichii
 
-> ## ✅ v50 recommended
+> ## ✅ v51 recommended
 >
-> v50 fixes Ocarina of Time's white areas / white light columns (#1236, stale SMMU device-range backing), the UI-thread deadlock on terminating a stuck emulation thread (#1234) and a stuck Equal acquire on NVN2 queue semaphores (#1235). Same zortos `nx2` `093e264c8a` base; everything from v49 stays: Help -> Check for Updates... and Open Releases Page..., #1210 host-commit OOM fix, #1219 white-light occlusion carry, #1216 OoT fast draws, Fritchii v5.6's zero-page trim, #1212, the one-shot saved OoT preset, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v49, v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
+> v51 rebases onto the latest zortos `nx2` `7dddff2d0e` (16 new merges: #1231 MKW dark lighting, #1245/#1246 upload/dispatch batching, #959 memory-budget allocation, #941, #853, #850, #784, #796 and more), drops our local copies of #1236 and the Fritchii allocator port now that they are upstream, and removes #1219/#1235 which upstream closed as wrong or harmful. Everything from v50 stays: Help -> Check for Updates... and Open Releases Page..., #1234, #1216, Fritchii v5.6's zero-page trim, the one-shot saved OoT preset, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v50, v49, v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 
 > **Unofficial superbuild fork.** This repository is not official Lichii and is
 > not affiliated with zortos293. It carries a curated set of performance and
 > correctness fixes on top of `nx2`; see [SUPERBUILD.md](SUPERBUILD.md) for the
 > included commits, skipped fixes and build instructions. Use a stock build as
 > fallback.
+>
+> This is a hobby project, maintained in my spare time for the fun of it. I don't
+> accept donations or payment of any kind, and there is nothing to support
+> financially: every build is free and public for everyone.
 
 Lichii is an experimental, open-source Nintendo Switch and Switch 2 emulator written in C++. It builds on Eglantine, Eden, yuzu and Sudachi, preserving their contributions while developing this fork's game compatibility and renderer fixes.
 

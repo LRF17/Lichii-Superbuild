@@ -704,16 +704,16 @@ struct OcarinaEffects {
 } // namespace
 
 struct OcarinaUpscaler::Impl {
-    Impl(const Device& device_, Scheduler& scheduler_, DescriptorPool& pool,
+    Impl(const Device& device_, Scheduler& scheduler_, DescriptorPool& pool_,
          ComputePassDescriptorQueue& queue_, MemoryAllocator& allocator_, StagingBufferPool& staging,
          VideoCommon::OcarinaUpscaleBackend backend)
-        : device{device_}, scheduler{scheduler_}, queue{queue_}, allocator{allocator_}, pool{pool},
+        : device{device_}, scheduler{scheduler_}, queue{queue_}, allocator{allocator_}, pool{pool_},
           hdr_scene{HdrScene(backend)},
-          motion_pass{device, scheduler, pool},
-          color_pass{device, scheduler, pool,
+          motion_pass{device, scheduler, pool_},
+          color_pass{device, scheduler, pool_,
                      hdr_scene ? std::span<const u32>{OCARINA_DLSS_COLOR_HDR_COMP_SPV}
                                : std::span<const u32>{OCARINA_DLSS_COLOR_COMP_SPV}},
-          output_pass{device, scheduler, pool,
+          output_pass{device, scheduler, pool_,
                       hdr_scene ? std::span<const u32>{OCARINA_DLSS_OUTPUT_HDR_COMP_SPV}
                                 : std::span<const u32>{OCARINA_DLSS_OUTPUT_COMP_SPV}} {
 #ifdef EGLANTINE_STREAMLINE
@@ -735,7 +735,7 @@ struct OcarinaUpscaler::Impl {
         if (!Fsr3Upscaler::IsSupported(device)) {
             throw vk::Exception(VK_ERROR_FEATURE_NOT_PRESENT);
         }
-        fsr = std::make_unique<Fsr3Upscaler>(device, scheduler, allocator, staging, pool, queue,
+        fsr = std::make_unique<Fsr3Upscaler>(device, scheduler, allocator, staging, pool_, queue,
                                            Fsr3Upscaler::Profile::OcarinaLdr);
     }
 
