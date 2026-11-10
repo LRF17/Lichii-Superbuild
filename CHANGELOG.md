@@ -4,6 +4,12 @@ All releases are unofficial builds. See the GitHub releases for assets and check
 
 ## v42
 
+- **Before playing: if your shader cache is from v34 or earlier, clear it.**
+  v35 replaced the Vulkan pipeline cache with shader cache v2, and caches from
+  older builds can cause wrong graphics or repeated rebuilds. The first launch
+  after that takes a few minutes on the loading screen while shaders are
+  precached — this is normal, there is a Skip button, and later launches only
+  build what is new until the GPU driver changes.
 - **The Ocarina of Time recommended-settings prompt now also sets Precache
   shaders = Always and Switch 2 draws with unbuilt pipelines = Bounded wait.**
   The first builds the game's shaders on the loading screen instead of

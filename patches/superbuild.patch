@@ -180,10 +180,10 @@ index 873b99bec2..67960c7f41 100644
 +dist-local/
 +tools/superbuild/local/
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index bc40878ce6..46ff2298f7 100644
+index bc40878ce6..dbcadd298a 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
-@@ -1,11 +1,445 @@
+@@ -1,11 +1,451 @@
  # Changelog
  
 -All notable changes to Eglantine are documented here. Each release's notes are taken from its
@@ -195,6 +195,12 @@ index bc40878ce6..46ff2298f7 100644
 +## v42
  
 -## [0.1.0]
++- **Before playing: if your shader cache is from v34 or earlier, clear it.**
++  v35 replaced the Vulkan pipeline cache with shader cache v2, and caches from
++  older builds can cause wrong graphics or repeated rebuilds. The first launch
++  after that takes a few minutes on the loading screen while shaders are
++  precached — this is normal, there is a Skip button, and later launches only
++  build what is new until the GPU driver changes.
 +- **The Ocarina of Time recommended-settings prompt now also sets Precache
 +  shaders = Always and Switch 2 draws with unbuilt pipelines = Bounded wait.**
 +  The first builds the game's shaders on the loading screen instead of
