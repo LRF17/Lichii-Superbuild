@@ -17,9 +17,9 @@
 
 # Lichii
 
-> ## ✅ v51 recommended
+> ## ✅ v52 recommended
 >
-> v51 rebases onto the latest zortos `nx2` `7dddff2d0e` (16 new merges: #1231 MKW dark lighting, #1245/#1246 upload/dispatch batching, #959 memory-budget allocation, #941, #853, #850, #784, #796 and more), drops our local copies of #1236 and the Fritchii allocator port now that they are upstream, and removes #1219/#1235 which upstream closed as wrong or harmful. Everything from v50 stays: Help -> Check for Updates... and Open Releases Page..., #1234, #1216, Fritchii v5.6's zero-page trim, the one-shot saved OoT preset, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v50, v49, v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
+> v52 adds PR #10 by LRF17: NVIDIA DLSS now gets Ocarina of Time's scene jitter and the -1.58 texture LOD bias, roughly doubling measured sharpness on distant grass, foliage and roofs while staying stable in motion. Same `nx2` `7dddff2d0e` base; everything from v51 stays: the 16 upstream merges (#1231, #1236, #959, #1245/#1246 and more), Help -> Check for Updates... and Open Releases Page..., #1234, #1216, Fritchii v5.6's zero-page trim, the one-shot saved OoT preset, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v51, v50, v49, v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 
 > **Unofficial superbuild fork.** This repository is not official Lichii and is
 > not affiliated with zortos293. It carries a curated set of performance and

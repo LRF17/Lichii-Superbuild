@@ -2,6 +2,27 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v52
+
+- **PR #10 by LRF17: NVIDIA DLSS now gets Ocarina of Time's scene jitter and
+  texture LOD bias.** The host adds a Halton sub-pixel jitter sequence for
+  temporal upscalers, but DLSS was left with `{0, 0}` and an unjittered scene,
+  so every frame sampled the same points and could never resolve detail finer
+  than the rendered pixels. DLSS now receives the same offset as FSR (with
+  FSR's sign; motion vectors stay unjittered), and mipmapped samplers get the
+  -1.58 LOD bias NVIDIA's DLSS guide asks for, already used by FSR. Measured
+  sharpness roughly doubles on distant grass, foliage and roofs, with a stable
+  picture in motion. SDR and HDR, 1440p -> 4K, tested on an RTX 4090.
+- Everything from v51 stays: the rebase on `nx2` `7dddff2d0e`, #1231, #1236,
+  #959, #1245/#1246, the manual Help -> Check for Updates... and Open Releases
+  Page..., #1234, #1216, Fritchii v5.6's zero-page trim, the one-shot saved OoT
+  preset, #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading,
+  #1200/#1197/#1196/#1154, 4K HDR DLSS PR #9, frame-generation HDR PR #8, HDR
+  DLSS PR #7, #1058, #1127, #1078, #1094/#1095, #1061, #1062, #1056, #1060,
+  #1036, #1028, #874, native HDR, DLSS presets E/F, the safe Fritchii ports and
+  the optional white-flash mitigation.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
 ## v51
 
 - Rebased on the latest zortos `nx2` `7dddff2d0e` (16 upstream merges since

@@ -180,10 +180,10 @@ index 873b99bec2..67960c7f41 100644
 +dist-local/
 +tools/superbuild/local/
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index bc40878ce6..5c63b1b954 100644
+index bc40878ce6..7171ca6dde 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
-@@ -1,11 +1,634 @@
+@@ -1,11 +1,655 @@
  # Changelog
  
 -All notable changes to Eglantine are documented here. Each release's notes are taken from its
@@ -192,9 +192,31 @@ index bc40878ce6..5c63b1b954 100644
 +All releases are unofficial builds. See the GitHub releases for assets and checksums.
  
 -## [Unreleased]
-+## v51
++## v52
  
 -## [0.1.0]
++- **PR #10 by LRF17: NVIDIA DLSS now gets Ocarina of Time's scene jitter and
++  texture LOD bias.** The host adds a Halton sub-pixel jitter sequence for
++  temporal upscalers, but DLSS was left with `{0, 0}` and an unjittered scene,
++  so every frame sampled the same points and could never resolve detail finer
++  than the rendered pixels. DLSS now receives the same offset as FSR (with
++  FSR's sign; motion vectors stay unjittered), and mipmapped samplers get the
++  -1.58 LOD bias NVIDIA's DLSS guide asks for, already used by FSR. Measured
++  sharpness roughly doubles on distant grass, foliage and roofs, with a stable
++  picture in motion. SDR and HDR, 1440p -> 4K, tested on an RTX 4090.
++- Everything from v51 stays: the rebase on `nx2` `7dddff2d0e`, #1231, #1236,
++  #959, #1245/#1246, the manual Help -> Check for Updates... and Open Releases
++  Page..., #1234, #1216, Fritchii v5.6's zero-page trim, the one-shot saved OoT
++  preset, #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading,
++  #1200/#1197/#1196/#1154, 4K HDR DLSS PR #9, frame-generation HDR PR #8, HDR
++  DLSS PR #7, #1058, #1127, #1078, #1094/#1095, #1061, #1062, #1056, #1060,
++  #1036, #1028, #874, native HDR, DLSS presets E/F, the safe Fritchii ports and
++  the optional white-flash mitigation.
++- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+ 
+-- Initial release candidate
++## v51
++
 +- Rebased on the latest zortos `nx2` `7dddff2d0e` (16 upstream merges since
 +  `093e264c8a`). New from upstream:
 +  - **#1236** (white areas / white light columns) and **#1231** (MKW dark
@@ -228,8 +250,7 @@ index bc40878ce6..5c63b1b954 100644
 +- README now states plainly that this is a hobby project, run for fun, with no
 +  donations or payment accepted; all donation links and traces were removed.
 +- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
- 
--- Initial release candidate
++
 +## v50
 +
 +- **#1236: fixed Ocarina of Time's white areas / white light columns
@@ -960,7 +981,7 @@ index 0000000000..a0496b95b6
 +expose the port to a network. Dumps and captures can contain game assets; keep
 +them local and do not upload `.rdc` captures or dumps publicly.
 diff --git a/README.md b/README.md
-index 9230cf33b0..8d062bb98e 100644
+index 9230cf33b0..e0c47f9d5b 100644
 --- a/README.md
 +++ b/README.md
 @@ -9,7 +9,7 @@
@@ -976,9 +997,9 @@ index 9230cf33b0..8d062bb98e 100644
  
  # Lichii
  
-+> ## ✅ v51 recommended
++> ## ✅ v52 recommended
 +>
-+> v51 rebases onto the latest zortos `nx2` `7dddff2d0e` (16 new merges: #1231 MKW dark lighting, #1245/#1246 upload/dispatch batching, #959 memory-budget allocation, #941, #853, #850, #784, #796 and more), drops our local copies of #1236 and the Fritchii allocator port now that they are upstream, and removes #1219/#1235 which upstream closed as wrong or harmful. Everything from v50 stays: Help -> Check for Updates... and Open Releases Page..., #1234, #1216, Fritchii v5.6's zero-page trim, the one-shot saved OoT preset, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v50, v49, v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
++> v52 adds PR #10 by LRF17: NVIDIA DLSS now gets Ocarina of Time's scene jitter and the -1.58 texture LOD bias, roughly doubling measured sharpness on distant grass, foliage and roofs while staying stable in motion. Same `nx2` `7dddff2d0e` base; everything from v51 stays: the 16 upstream merges (#1231, #1236, #959, #1245/#1246 and more), Help -> Check for Updates... and Open Releases Page..., #1234, #1216, Fritchii v5.6's zero-page trim, the one-shot saved OoT preset, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v51, v50, v49, v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 +
 +> **Unofficial superbuild fork.** This repository is not official Lichii and is
 +> not affiliated with zortos293. It carries a curated set of performance and
@@ -1045,15 +1066,15 @@ index 9230cf33b0..8d062bb98e 100644
  Lichii inherits the work of the Eglantine, Eden, yuzu and Sudachi projects and their contributors, including Eglantine's original developer Camille LaVey. Original copyright notices and third-party licenses are retained.
 diff --git a/SUPERBUILD.md b/SUPERBUILD.md
 new file mode 100644
-index 0000000000..58ef7cf997
+index 0000000000..65c24b2194
 --- /dev/null
 +++ b/SUPERBUILD.md
 @@ -0,0 +1,216 @@
 +# Lichii Superbuild (unofficial)
 +
-+> ## ✅ v51 recommended
++> ## ✅ v52 recommended
 +>
-+> v51 rebases the layer onto zortos `nx2` `7dddff2d0e` (16 new merges), drops our local copies of #1236 and the Fritchii allocator port (both now upstream as #1236/#959), and removes the two PRs upstream closed as wrong or harmful (#1219, #1235). #1231 (MKW dark lighting) and #1245/#1246 (upload/dispatch batching) come in free. Everything else from v50 stays (manual update check, #1234, #1216, Fritchii zero-page trim, one-shot saved OoT preset, #1180, #1155, #1129, #1110, Linux pipeline preloading). #1218 remains held for a separate test build. v32 and v42 were removed; v50/v49/v48/v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
++> v52 adds PR #10 by LRF17: NVIDIA DLSS gets OoT's scene jitter and the -1.58 texture LOD bias (roughly double the measured sharpness on distant grass, foliage and roofs, stable in motion). Same `nx2` `7dddff2d0e` base; everything from v51 stays (16 upstream merges, #1231/#1236/#959/#1245/#1246, the manual update check, #1234, #1216, Fritchii zero-page trim, one-shot saved OoT preset, #1180, #1155, #1129, #1110, Linux pipeline preloading). #1218 remains held for a separate test build. v32 and v42 were removed; v51/v50/v49/v48/v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 +
 +## Credits
 +
@@ -1320,6 +1341,40 @@ index 095ecdede4..8d7c4f9f23 100644
 +# Hylia 52.3 -> 55.4 fps. Off by default because batching gives ~10-15% fps in
 +# Hyrule Warriors; the evidence has not been reproduced on nx2 defaults.
 +#EDEN_NX2_FENCE_FLUSH_US=0
+diff --git a/docs/native-dlss-replacement.md b/docs/native-dlss-replacement.md
+index d1e3f1895c..dac2b76618 100644
+--- a/docs/native-dlss-replacement.md
++++ b/docs/native-dlss-replacement.md
+@@ -66,22 +66,23 @@ the game keeps its own pass whenever DLSS is off, unavailable or fails to start.
+   Its shaders use `HDR_COLOR_INPUT=0` and `INVERTED_DEPTH=0`. Camera reconstruction alone
+   converts the stored [0,1] depth to GL [-1,1] clip coordinates. Motion is previous minus
+   current in render pixels, with screen-down Y, so FSR's scale is `(1,1)` before normalization.
+-- Jitter (FSR only, on by default): the game has no subpixel sample sequence, so the host adds
+-  one. While FSR replaced the previous frame's upscale, every draw that depth-tests against the
++- Jitter (FSR and DLSS, on by default): the game has no subpixel sample sequence, so the host adds
++  one. While FSR or DLSS replaced the previous frame's upscale, every draw that depth-tests against the
+   scene depth at the scene size has its viewport offset by a Halton (2,3) sub-pixel amount
+   (AMD's phase count, 8 x (output / render width)^2: 18 for 1440p -> 4K, 8 for native AA), and
+-  FSR gets the same offset as the frame's jitter. Shadow maps, half-size passes, full-screen
++  the upscaler gets the same offset as the frame's jitter. Shadow maps, half-size passes, full-screen
+   passes and frames the game upscales itself are not offset. A full-screen pass with depth
+   writes on but the test off writes no depth (Vulkan disables writes with the test), so the
+-  depth-write flag alone doesn't count. DLSS gets no jitter.
++  depth-write flag alone doesn't count.
+ - Motion with jitter: FSR is told the motion vectors carry no jitter (no jitter-cancellation
+   flag). Camera motion comes from the unjittered matrices, reconstructed at each depth sample's
+   unjittered position (the pixel centre minus the jitter). The replay of Link's skinned draw is
+   offset by the same jitter, so its scene-depth check compares the same samples the game drew,
+   and its motion is taken from the unjittered position. Without that offset the jitter made the
+   check fail on most of the fragments it otherwise accepts.
+-- Texture LOD bias (FSR only): when the session's upscaler is FSR, mipmapped samplers get
+-  AMD's recommended bias log2(render / output) - 1 = -1.58 in docked mode (none in handheld).
++- Texture LOD bias (FSR and DLSS): when the session's upscaler is FSR or DLSS, mipmapped samplers
++  get the bias AMD and NVIDIA both recommend, log2(render / output) - 1 = -1.58 in docked mode
++  (none in handheld).
+   Samplers pick the biased or unbiased variant at each bind, so a console mode switch takes
+   effect in-session. Images the GPU wrote (render targets: bloom, blur, reflections, fog) keep
+   the game's own bias.
 diff --git a/docs/nx2/ocarina-dynamic-fps.md b/docs/nx2/ocarina-dynamic-fps.md
 index 01b8cc9b2e..45a3b463dc 100644
 --- a/docs/nx2/ocarina-dynamic-fps.md
@@ -2631,6 +2686,19 @@ index 8d16a878f2..ba9037f79e 100644
  TEST_CASE("Native uniform banks upload directly without overwriting GPU-owned bytes",
            "[buffer_ports]") {
      Fixture f;
+diff --git a/src/tests/video_core/ocarina_upscale.cpp b/src/tests/video_core/ocarina_upscale.cpp
+index eb31c1a429..946c831069 100644
+--- a/src/tests/video_core/ocarina_upscale.cpp
++++ b/src/tests/video_core/ocarina_upscale.cpp
+@@ -31,7 +31,7 @@ TEST_CASE("OoT FSR texture LOD bias follows the upscaler, the console mode and f
+     using VideoCommon::KeepOcarinaFsrLodBias;
+     using VideoCommon::OcarinaFsrLodBias;
+     CHECK(OcarinaFsrLodBias(Fsr) == -1.58f);
+-    CHECK(OcarinaFsrLodBias(Dlss) == 0.0f);
++    CHECK(OcarinaFsrLodBias(Dlss) == -1.58f);
+     CHECK(OcarinaFsrLodBias(Native) == 0.0f);
+     CHECK(KeepOcarinaFsrLodBias(true, false, false));
+     CHECK_FALSE(KeepOcarinaFsrLodBias(false, false, false));
 diff --git a/src/tests/video_core/stage_translation.cpp b/src/tests/video_core/stage_translation.cpp
 index 39bc1d379b..1c3cbda578 100644
 --- a/src/tests/video_core/stage_translation.cpp
@@ -3741,6 +3809,24 @@ index 0fe16cfb8e..48e7698b94 100644
  }
  
  } // namespace VideoCommon::Nx2Perf
+diff --git a/src/video_core/ocarina_upscale.h b/src/video_core/ocarina_upscale.h
+index 68c5a2da4e..eea5803689 100644
+--- a/src/video_core/ocarina_upscale.h
++++ b/src/video_core/ocarina_upscale.h
+@@ -24,10 +24,10 @@ constexpr OcarinaUpscaleBackend SelectOcarinaUpscaler(bool fsr_enabled, bool dls
+     return fsr_enabled ? OcarinaUpscaleBackend::Fsr : OcarinaUpscaleBackend::Native;
+ }
+ 
+-/// Texture LOD bias added to Ocarina's mipmapped samplers while FSR upscales. AMD recommends
+-/// log2(render / output) - 1: -1.58 for docked 1440p -> 4K.
++/// Texture LOD bias added to Ocarina's mipmapped samplers while FSR or DLSS upscales. AMD and
++/// NVIDIA both recommend log2(render / output) - 1: -1.58 for docked 1440p -> 4K.
+ constexpr float OcarinaFsrLodBias(OcarinaUpscaleBackend backend) {
+-    return backend == OcarinaUpscaleBackend::Fsr ? -1.58f : 0.0f;
++    return backend != OcarinaUpscaleBackend::Native ? -1.58f : 0.0f;
+ }
+ 
+ /// Whether a sampler with that bias keeps it for an image: only docked (handheld isn't measured),
 diff --git a/src/video_core/query_cache/query_cache.h b/src/video_core/query_cache/query_cache.h
 index 7a971b3666..0706f5c40e 100644
 --- a/src/video_core/query_cache/query_cache.h
@@ -4158,7 +4244,7 @@ index 23afe8afff..1f2a820b51 100644
          if (!scheduler.WaitSubmitted(tick)) {
              scheduler.Wait(tick);
 diff --git a/src/video_core/renderer_vulkan/vk_ocarina_camera_motion.cpp b/src/video_core/renderer_vulkan/vk_ocarina_camera_motion.cpp
-index 1512865e68..397db175f0 100644
+index 1512865e68..791d0fe274 100644
 --- a/src/video_core/renderer_vulkan/vk_ocarina_camera_motion.cpp
 +++ b/src/video_core/renderer_vulkan/vk_ocarina_camera_motion.cpp
 @@ -15,9 +15,13 @@
@@ -4274,7 +4360,13 @@ index 1512865e68..397db175f0 100644
      }
      state.scheduler.RequestOutsideRenderPassOperationContext();
      state.queue.Acquire(state.scheduler, 4);
-@@ -1004,7 +1036,7 @@ bool OcarinaUpscaler::Record(VkImageView color, VkImageView depth, VkImageView t
+@@ -1000,11 +1032,12 @@ bool OcarinaUpscaler::Record(VkImageView color, VkImageView depth, VkImageView t
+                                COLOR_RANGE, VK_IMAGE_ASPECT_COLOR_BIT},
+             .render_size = extent,
+             .upscale_size = output_extent,
+-            .jitter = {0.0f, 0.0f},
++            // The scene's viewport offset, as FSR gets it: the motion vectors carry none.
++            .jitter = jitter,
              .motion_vector_scale = {1.0f, 1.0f},
              .reset = reset,
              .depth_inverted = false,
@@ -4566,7 +4658,7 @@ index ab2b76f10f..67d31cc3a0 100644
      bool use_present_thread;
      std::atomic<std::size_t> image_count{};
 diff --git a/src/video_core/renderer_vulkan/vk_rasterizer.cpp b/src/video_core/renderer_vulkan/vk_rasterizer.cpp
-index 76998a351b..5925debbc6 100644
+index 76998a351b..9ba637c713 100644
 --- a/src/video_core/renderer_vulkan/vk_rasterizer.cpp
 +++ b/src/video_core/renderer_vulkan/vk_rasterizer.cpp
 @@ -435,6 +435,10 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
@@ -4620,7 +4712,25 @@ index 76998a351b..5925debbc6 100644
  }
  
  void RasterizerVulkan::FlushQueryResults(DAddr addr, u64 size) {
-@@ -3468,7 +3487,11 @@ std::optional<FramebufferTextureInfo> RasterizerVulkan::AccelerateDisplay(
+@@ -2893,13 +2912,14 @@ f32 Halton(u32 index, u32 base) {
+ 
+ void RasterizerVulkan::UpdateOcarinaJitter() {
+     std::array<f32, 2> want{};
+-    // Only while FSR replaced the previous frame's upscale: a frame the game upscales itself
+-    // would show the offset as a shake. Only draws that depth-test against the scene depth at
++    // Only while FSR or DLSS replaced the previous frame's upscale: a frame the game upscales
++    // itself would show the offset as a shake. Only draws that depth-test against the scene depth at
+     // the scene size, so a depth pre-pass and the colour passes move together; shadow maps,
+     // half-size passes and full-screen passes (which keep the depth bound without using it, as
+     // #678 found, some with depth writes on: with the test off nothing writes depth) stay put.
+     const auto& regs = maxwell3d->regs;
+-    if (oot_backend == VideoCommon::OcarinaUpscaleBackend::Fsr && oot_motion.extent.width != 0 &&
++    if (oot_backend && *oot_backend != VideoCommon::OcarinaUpscaleBackend::Native &&
++        oot_motion.extent.width != 0 &&
+         oot_dlss_frame && *oot_dlss_frame + 1 >= render_trace_frame && regs.depth_test_enable) {
+         const auto& targets = texture_cache.GetRenderTargets();
+         if (targets.depth_buffer_id) {
+@@ -3468,7 +3488,11 @@ std::optional<FramebufferTextureInfo> RasterizerVulkan::AccelerateDisplay(
      if (oot_4k_scene_frame == render_trace_frame && info.image &&
          info.image == oot_4k_guest_present && info.image_view &&
          info.width == 2560 && info.height == 1440 && !scaled &&
@@ -4925,6 +5035,45 @@ index 584399567d..0a194f7f0d 100644
      bool has_imm{false};
      bool has_mailbox{false};
      bool has_fifo_relaxed{false};
+diff --git a/src/video_core/renderer_vulkan/vk_texture_cache.cpp b/src/video_core/renderer_vulkan/vk_texture_cache.cpp
+index aa25dfe8f5..a1e2bfd7fe 100644
+--- a/src/video_core/renderer_vulkan/vk_texture_cache.cpp
++++ b/src/video_core/renderer_vulkan/vk_texture_cache.cpp
+@@ -4713,8 +4713,8 @@ Sampler::Sampler(TextureCacheRuntime& runtime, const Tegra::Texture::TSCEntry& t
+             max_lod = 0.25f;
+         }
+     }
+-    // Ocarina with FSR: FSR renders below the output size, so textures would pick the render
+-    // size's mips; the bias keeps the output's detail (VideoCommon::OcarinaFsrLodBias).
++    // Ocarina with FSR or DLSS: the scene renders below the output size, so textures would pick
++    // the render size's mips; the bias keeps the output's detail (VideoCommon::OcarinaFsrLodBias).
+     f32 lod_bias = tsc.LodBias();
+     ocarina_fsr_failed = &runtime.ocarina_fsr_failed;
+     if (const f32 fsr_lod_bias = runtime.OcarinaFsrLodBias();
+@@ -4758,7 +4758,7 @@ Sampler::VariantKey Sampler::MakeKey(const ImageView& image_view, bool is_depth)
+     // Vulkan leaves it undefined and AMD returns the 0/1 compare result (Ocarina forest fog
+     // composite read alpha 0 -> black screen). Use a variant without comparison.
+     key.drop_compare = has_depth_comparison && !is_depth;
+-    // The FSR bias is for the game's textures. Images the GPU wrote (render targets: bloom and
++    // The upscaler's bias is for the game's textures. Images the GPU wrote (render targets: bloom and
+     // blur chains, reflections, fog) keep the game's own bias, or they'd read a mip too sharp.
+     // So does every image in handheld mode (the console mode can change in-session), and after
+     // the upscaler failed this session (the game's pass runs again).
+diff --git a/src/video_core/renderer_vulkan/vk_texture_cache.h b/src/video_core/renderer_vulkan/vk_texture_cache.h
+index bf230a5941..0a16d6b7fe 100644
+--- a/src/video_core/renderer_vulkan/vk_texture_cache.h
++++ b/src/video_core/renderer_vulkan/vk_texture_cache.h
+@@ -259,8 +259,8 @@ public:
+     std::unique_ptr<Fsr3Upscaler> fsr3_upscaler;
+     bool fsr3_unsupported{};
+ 
+-    /// The LOD bias Ocarina's FSR adds to mipmapped samplers this session (0 for other games or
+-    /// upscalers), resolved on first use.
++    /// The LOD bias Ocarina's FSR or DLSS adds to mipmapped samplers this session (0 for other
++    /// games or the game's own upscaler), resolved on first use.
+     [[nodiscard]] f32 OcarinaFsrLodBias();
+     std::optional<f32> ocarina_fsr_lod_bias;
+     /// Set when the Ocarina upscaler fails during the session: samplers drop the bias again.
 diff --git a/src/video_core/shader_stage_translation.h b/src/video_core/shader_stage_translation.h
 index 40ef7bb078..b2f648cdc8 100644
 --- a/src/video_core/shader_stage_translation.h
