@@ -2,6 +2,35 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v48
+
+- Based on latest zortos `nx2` `093e264c8a`: **#1210** keeps the texture-cache
+  collector thresholds within the host's commit budget, fixing an OoT
+  out-of-memory crash on cards like the RX 7600 XT (Windows charges device
+  memory to the system commit limit); **#1212** renames the recommended-settings
+  parameter that shadowed `Settings::values` (the same MinGW/macOS build fix we
+  carried locally, now upstream).
+- **#1219: Ocarina of Time's white light.** Gameplay samples-query windows of
+  1,025-1,110 slots were being dropped at the 1,024-slot bank bound; the running
+  count is now carried into the next query instead of lost, so reports in the
+  window read correctly.
+- **#1216: more OoT fast draws.** Writes that change no draw state
+  (`vertex_id_base`, MME memory addresses A/B, occlusion query methods) no
+  longer break the fast-draw chain — about 36,000 draws a second were affected.
+  Also keeps vertex-stream stride changes from ending it when dynamic strides
+  are in use.
+- **Fritchii v5.6:** the zero-page trim stops at the first non-zero line instead
+  of reading the whole page, cutting the cost of scanning resident guest pages.
+- Everything from v47 stays: the OoT recommended settings applied once without
+  overwriting per-game edits, #1199, the expanded saved OoT preset, #1180 water
+  ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110
+  Bananza AMD crash fix, Linux pipeline preloading, #1200/#1197/#1196/#1154,
+  4K HDR DLSS PR #9, frame-generation HDR PR #8, HDR DLSS PR #7, #1058, #1127,
+  #1078, #1094/#1095, #1061, #1062, #1056, #1060, #1036, #1028, #874, native
+  HDR, DLSS presets E/F, the safe Fritchii ports and the optional white-flash
+  mitigation.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
 ## v47
 
 - **Fixed: the Ocarina of Time recommended settings were overwriting changes

@@ -180,10 +180,10 @@ index 873b99bec2..67960c7f41 100644
 +dist-local/
 +tools/superbuild/local/
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index bc40878ce6..8a50817424 100644
+index bc40878ce6..5c8ad75a8b 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
-@@ -1,11 +1,520 @@
+@@ -1,11 +1,549 @@
  # Changelog
  
 -All notable changes to Eglantine are documented here. Each release's notes are taken from its
@@ -192,9 +192,39 @@ index bc40878ce6..8a50817424 100644
 +All releases are unofficial builds. See the GitHub releases for assets and checksums.
  
 -## [Unreleased]
-+## v47
++## v48
  
 -## [0.1.0]
++- Based on latest zortos `nx2` `093e264c8a`: **#1210** keeps the texture-cache
++  collector thresholds within the host's commit budget, fixing an OoT
++  out-of-memory crash on cards like the RX 7600 XT (Windows charges device
++  memory to the system commit limit); **#1212** renames the recommended-settings
++  parameter that shadowed `Settings::values` (the same MinGW/macOS build fix we
++  carried locally, now upstream).
++- **#1219: Ocarina of Time's white light.** Gameplay samples-query windows of
++  1,025-1,110 slots were being dropped at the 1,024-slot bank bound; the running
++  count is now carried into the next query instead of lost, so reports in the
++  window read correctly.
++- **#1216: more OoT fast draws.** Writes that change no draw state
++  (`vertex_id_base`, MME memory addresses A/B, occlusion query methods) no
++  longer break the fast-draw chain — about 36,000 draws a second were affected.
++  Also keeps vertex-stream stride changes from ending it when dynamic strides
++  are in use.
++- **Fritchii v5.6:** the zero-page trim stops at the first non-zero line instead
++  of reading the whole page, cutting the cost of scanning resident guest pages.
++- Everything from v47 stays: the OoT recommended settings applied once without
++  overwriting per-game edits, #1199, the expanded saved OoT preset, #1180 water
++  ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110
++  Bananza AMD crash fix, Linux pipeline preloading, #1200/#1197/#1196/#1154,
++  4K HDR DLSS PR #9, frame-generation HDR PR #8, HDR DLSS PR #7, #1058, #1127,
++  #1078, #1094/#1095, #1061, #1062, #1056, #1060, #1036, #1028, #874, native
++  HDR, DLSS presets E/F, the safe Fritchii ports and the optional white-flash
++  mitigation.
++- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+ 
+-- Initial release candidate
++## v47
++
 +- **Fixed: the Ocarina of Time recommended settings were overwriting changes
 +  made in the game's Properties.** v46 applied the full recommended table on
 +  every OoT launch and saved it to OoT's per-game config, so a value you set
@@ -212,8 +242,7 @@ index bc40878ce6..8a50817424 100644
 +  DLSS presets E/F, the safe Fritchii ports and the optional white-flash
 +  mitigation.
 +- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
- 
--- Initial release candidate
++
 +## v46
 +
 +- **The Ocarina of Time recommended-settings prompt now uses zortos's full
@@ -846,7 +875,7 @@ index 0000000000..a0496b95b6
 +expose the port to a network. Dumps and captures can contain game assets; keep
 +them local and do not upload `.rdc` captures or dumps publicly.
 diff --git a/README.md b/README.md
-index 9230cf33b0..06cbf2a150 100644
+index 9230cf33b0..1a0cb504ad 100644
 --- a/README.md
 +++ b/README.md
 @@ -9,7 +9,7 @@
@@ -862,9 +891,9 @@ index 9230cf33b0..06cbf2a150 100644
  
  # Lichii
  
-+> ## ✅ v47 recommended
++> ## ✅ v48 recommended
 +>
-+> v47 fixes the OoT recommended settings overwriting manual changes in the game's Properties: the preset is now applied once and preserves your per-game values. Based on the same zortos `nx2` `bcb37c49f7` as v46, with everything from v46 (#1199, expanded saved OoT preset, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154). v32 and v42 were removed; v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
++> v48 is based on zortos `nx2` `093e264c8a` (#1210 host-commit OOM fix, #1212 shadow rename), with #1219 white-light occlusion carry, #1216 OoT fast draws and Fritchii v5.6's zero-page trim. Everything from v47 stays: the OoT recommended settings applied once without overwriting per-game edits, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 +
 +> **Unofficial superbuild fork.** This repository is not official Lichii and is
 +> not affiliated with zortos293. It carries a curated set of performance and
@@ -886,15 +915,15 @@ index 9230cf33b0..06cbf2a150 100644
  
 diff --git a/SUPERBUILD.md b/SUPERBUILD.md
 new file mode 100644
-index 0000000000..8d2ec08d5e
+index 0000000000..f1c92a17e1
 --- /dev/null
 +++ b/SUPERBUILD.md
 @@ -0,0 +1,216 @@
 +# Lichii Superbuild (unofficial)
 +
-+> ## ✅ v47 recommended
++> ## ✅ v48 recommended
 +>
-+> v47 fixes the OoT recommended-settings preset overwriting per-game changes made in Properties: it is now offered and applied once (saved flag) and skips settings that already have a per-game value. Based on the same zortos `nx2` `bcb37c49f7` as v46; everything from v46 stays. v32 and v42 were removed; v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
++> v48 is based on zortos `nx2` `093e264c8a` (#1210 host-commit OOM fix, #1212 shadow rename) plus #1219 white-light occlusion carry, #1216 OoT fast draws and Fritchii v5.6's zero-page trim. Everything from v47 stays (one-shot saved OoT preset, #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading). v32 and v42 were removed; v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 +
 +## Credits
 +
@@ -1262,8 +1291,36 @@ index 83dd4d3c3f..afcd5972c9 100644
 +}
 +
  } // namespace Settings
+diff --git a/src/common/host_memory.cpp b/src/common/host_memory.cpp
+index 746a921e33..9e04c88bac 100644
+--- a/src/common/host_memory.cpp
++++ b/src/common/host_memory.cpp
+@@ -1122,12 +1122,19 @@ namespace {
+ std::atomic<u64> g_zero_filled_bytes{};
+ 
+ [[maybe_unused]] bool IsZeroPage(const u8* page) {
++    // Stops at the first non-zero line: most pages hold data in their first bytes.
+     const auto* words = reinterpret_cast<const u64*>(page);
+-    u64 bits = 0;
+-    for (size_t i = 0; i < PageAlignment / sizeof(u64); ++i) {
+-        bits |= words[i];
++    constexpr size_t LineWords = 8; // 64 bytes
++    for (size_t i = 0; i < PageAlignment / sizeof(u64); i += LineWords) {
++        u64 bits = 0;
++        for (size_t j = 0; j < LineWords; ++j) {
++            bits |= words[i + j];
++        }
++        if (bits != 0) {
++            return false;
++        }
+     }
+-    return bits == 0;
++    return true;
+ }
+ } // namespace
+ 
 diff --git a/src/common/memory_detect.cpp b/src/common/memory_detect.cpp
-index bb96417891..c599108baa 100644
+index c46e9b0b2d..b4ce3b1173 100644
 --- a/src/common/memory_detect.cpp
 +++ b/src/common/memory_detect.cpp
 @@ -81,14 +81,22 @@ const MemoryInfo& GetMemInfo() {
@@ -1343,190 +1400,6 @@ index 140225da07..cc24eacf2f 100644
          }
      }
      return {};
-diff --git a/src/common/recommended_settings.cpp b/src/common/recommended_settings.cpp
-index 439af81b6b..f5fca06b1b 100644
---- a/src/common/recommended_settings.cpp
-+++ b/src/common/recommended_settings.cpp
-@@ -25,11 +25,11 @@ std::map<std::string, std::string> ParseBackup(const std::string& backup) {
- 
- } // namespace
- 
--std::vector<RecommendedSettingChange> ApplyRecommendedSettings(Values& values) {
--    const auto saved = ParseBackup(values.recommended_settings_backup.GetValue());
-+std::vector<RecommendedSettingChange> ApplyRecommendedSettings(Values& settings) {
-+    const auto saved = ParseBackup(settings.recommended_settings_backup.GetValue());
-     std::vector<RecommendedSettingChange> changes;
-     std::string backup;
--    ForEachRecommendedSetting(values, [&](auto& setting, const auto& value) {
-+    ForEachRecommendedSetting(settings, [&](auto& setting, const auto& value) {
-         std::string previous = setting.ToStringGlobal();
-         // A value backed up earlier stays; a setting the backup does not hold yet, such as one a
-         // later build added to the table, joins it.
-@@ -49,15 +49,15 @@ std::vector<RecommendedSettingChange> ApplyRecommendedSettings(Values& values) {
-         changes.push_back({&setting, std::move(previous), setting.ToStringGlobal()});
-     });
-     if (!changes.empty()) {
--        values.recommended_settings_backup = backup;
-+        settings.recommended_settings_backup = backup;
-     }
-     return changes;
- }
- 
--std::vector<RecommendedSettingChange> RestorePreviousSettings(Values& values) {
--    const auto saved = ParseBackup(values.recommended_settings_backup.GetValue());
-+std::vector<RecommendedSettingChange> RestorePreviousSettings(Values& settings) {
-+    const auto saved = ParseBackup(settings.recommended_settings_backup.GetValue());
-     std::vector<RecommendedSettingChange> changes;
--    ForEachRecommendedSetting(values, [&](auto& setting, const auto&) {
-+    ForEachRecommendedSetting(settings, [&](auto& setting, const auto&) {
-         const auto it = saved.find(setting.GetLabel());
-         if (it == saved.end()) {
-             return;
-@@ -71,7 +71,7 @@ std::vector<RecommendedSettingChange> RestorePreviousSettings(Values& values) {
-             changes.push_back({&setting, std::move(previous), setting.ToStringGlobal()});
-         }
-     });
--    values.recommended_settings_backup = std::string{};
-+    settings.recommended_settings_backup = std::string{};
-     return changes;
- }
- 
-diff --git a/src/common/recommended_settings.h b/src/common/recommended_settings.h
-index e956dec102..3b8baa9e61 100644
---- a/src/common/recommended_settings.h
-+++ b/src/common/recommended_settings.h
-@@ -13,71 +13,71 @@ namespace Settings {
- /// change a value here to change what "Use recommended settings" writes. Personal and hardware
- /// choices (language, region, resolution, upscaler, backend, device) stay out of it.
- template <typename Func>
--void ForEachRecommendedSetting(Values& values, Func&& func) {
-+void ForEachRecommendedSetting(Values& settings, Func&& func) {
-     const auto entry = [&func]<typename Type, bool ranged>(SwitchableSetting<Type, ranged>& setting,
-                                                            std::type_identity_t<Type> value) {
-         func(setting, value);
-     };
- 
-     // Graphics > Advanced
--    entry(values.gpu_accuracy, GpuAccuracy::Low);
--    entry(values.dma_accuracy, DmaAccuracy::Default);
--    entry(values.gpu_fence_behavior, GpuFenceBehavior::Default);
--    entry(values.native_compute_write_mark, NativeComputeWriteMark::Auto);
--    entry(values.vram_usage_mode, VramUsageMode::Conservative);
--    entry(values.nvdec_emulation, NvdecEmulation::Gpu);
--    entry(values.max_anisotropy, AnisotropyMode::Automatic);
--    entry(values.accelerate_astc, AstcDecodeMode::Gpu);
--    entry(values.frame_pacing_mode, FramePacingMode::Target_Auto);
--    entry(values.astc_recompression, AstcRecompression::Bc3);
--    entry(values.sync_memory_operations, false);
--    entry(values.renderer_force_max_clock, false);
--    entry(values.use_disk_shader_cache, true);
--    entry(values.use_vulkan_driver_pipeline_cache, true);
--    entry(values.native_async_draws, NativeAsyncDraws::Bounded);
--    entry(values.native_pipeline_wait_ms, 8);
--    entry(values.precache_shaders, PrecacheShaders::Off);
--    entry(values.use_video_framerate, false);
--    entry(values.mkw_30fps, false);
--    entry(values.mkw_dynamic_fps, false);
--    entry(values.use_reactive_flushing, true);
--    entry(values.barrier_feedback_loops, true);
--    entry(values.enable_buffer_history, false);
-+    entry(settings.gpu_accuracy, GpuAccuracy::Low);
-+    entry(settings.dma_accuracy, DmaAccuracy::Default);
-+    entry(settings.gpu_fence_behavior, GpuFenceBehavior::Default);
-+    entry(settings.native_compute_write_mark, NativeComputeWriteMark::Auto);
-+    entry(settings.vram_usage_mode, VramUsageMode::Conservative);
-+    entry(settings.nvdec_emulation, NvdecEmulation::Gpu);
-+    entry(settings.max_anisotropy, AnisotropyMode::Automatic);
-+    entry(settings.accelerate_astc, AstcDecodeMode::Gpu);
-+    entry(settings.frame_pacing_mode, FramePacingMode::Target_Auto);
-+    entry(settings.astc_recompression, AstcRecompression::Bc3);
-+    entry(settings.sync_memory_operations, false);
-+    entry(settings.renderer_force_max_clock, false);
-+    entry(settings.use_disk_shader_cache, true);
-+    entry(settings.use_vulkan_driver_pipeline_cache, true);
-+    entry(settings.native_async_draws, NativeAsyncDraws::Bounded);
-+    entry(settings.native_pipeline_wait_ms, 8);
-+    entry(settings.precache_shaders, PrecacheShaders::Off);
-+    entry(settings.use_video_framerate, false);
-+    entry(settings.mkw_30fps, false);
-+    entry(settings.mkw_dynamic_fps, false);
-+    entry(settings.use_reactive_flushing, true);
-+    entry(settings.barrier_feedback_loops, true);
-+    entry(settings.enable_buffer_history, false);
- 
-     // Graphics > Extras
--    entry(values.skip_cpu_inner_invalidation, false);
--    entry(values.async_presentation, true);
--    entry(values.fix_bloom_effects, false);
--    entry(values.use_asynchronous_shaders, true);
--    entry(values.gpu_unswizzle_texture_size, GpuUnswizzleSize::Large);
--    entry(values.gpu_unswizzle_stream_size, GpuUnswizzle::Medium);
--    entry(values.gpu_unswizzle_chunk_size, GpuUnswizzleChunk::Medium);
--    entry(values.gpu_unswizzle_enabled, false);
-+    entry(settings.skip_cpu_inner_invalidation, false);
-+    entry(settings.async_presentation, true);
-+    entry(settings.fix_bloom_effects, false);
-+    entry(settings.use_asynchronous_shaders, true);
-+    entry(settings.gpu_unswizzle_texture_size, GpuUnswizzleSize::Large);
-+    entry(settings.gpu_unswizzle_stream_size, GpuUnswizzle::Medium);
-+    entry(settings.gpu_unswizzle_chunk_size, GpuUnswizzleChunk::Medium);
-+    entry(settings.gpu_unswizzle_enabled, false);
- #if defined(_WIN32) || defined(__linux__)
-     // Other hosts skip the pinning.
--    entry(values.pin_gpu_threads, true);
-+    entry(settings.pin_gpu_threads, true);
- #endif
- #ifndef __APPLE__
-     // Extended dynamic state stays disabled on macOS: MoltenVK renders black screens with it.
--    entry(values.dyna_state, ExtendedDynamicState::EDS2);
-+    entry(settings.dyna_state, ExtendedDynamicState::EDS2);
- #endif
--    entry(values.sample_shading, 0);
--    entry(values.vertex_input_dynamic_state, true);
-+    entry(settings.sample_shading, 0);
-+    entry(settings.vertex_input_dynamic_state, true);
- 
-     // System
--    entry(values.cpu_clock, CpuClock::Normal);
--    entry(values.gpu_clock, GpuClock::Boost);
--    entry(values.use_multi_core, true);
--    entry(values.memory_layout_mode, MemoryLayout::Memory_4Gb);
--    entry(values.use_speed_limit, true);
--    entry(values.speed_limit, 100);
--    entry(values.slow_speed_limit, 50);
--    entry(values.turbo_speed_limit, 200);
--    entry(values.sync_core_speed, false);
-+    entry(settings.cpu_clock, CpuClock::Normal);
-+    entry(settings.gpu_clock, GpuClock::Boost);
-+    entry(settings.use_multi_core, true);
-+    entry(settings.memory_layout_mode, MemoryLayout::Memory_4Gb);
-+    entry(settings.use_speed_limit, true);
-+    entry(settings.speed_limit, 100);
-+    entry(settings.slow_speed_limit, 50);
-+    entry(settings.turbo_speed_limit, 200);
-+    entry(settings.sync_core_speed, false);
- 
-     // CPU
--    entry(values.cpu_accuracy, CpuAccuracy::Auto);
--    entry(values.use_custom_cpu_ticks, false);
-+    entry(settings.cpu_accuracy, CpuAccuracy::Auto);
-+    entry(settings.use_custom_cpu_ticks, false);
- }
- 
- /// A global setting that changed, with its values as BasicSetting::ToString gives them.
-@@ -92,10 +92,10 @@ struct RecommendedSettingChange {
- /// something changed, recommended_settings_backup takes the previous value of every recommended
- /// setting it does not hold yet. A value it holds stays until it is restored, so applying twice
- /// does not lose the values from before the first time.
--std::vector<RecommendedSettingChange> ApplyRecommendedSettings(Values& values);
-+std::vector<RecommendedSettingChange> ApplyRecommendedSettings(Values& settings);
- 
- /// Puts back the global values recommended_settings_backup holds, clears it and returns the
- /// settings that changed. Only settings in the recommended table are restored.
--std::vector<RecommendedSettingChange> RestorePreviousSettings(Values& values);
-+std::vector<RecommendedSettingChange> RestorePreviousSettings(Values& settings);
- 
- } // namespace Settings
 diff --git a/src/common/settings.h b/src/common/settings.h
 index ee442a51f1..b0cd0b1497 100644
 --- a/src/common/settings.h
@@ -2633,10 +2506,10 @@ index 39bc1d379b..1c3cbda578 100644
 +    CHECK_FALSE(CanFlushTexturePool(0xFFFFFFFF));
 +}
 diff --git a/src/video_core/CMakeLists.txt b/src/video_core/CMakeLists.txt
-index 21ca474810..c223069371 100644
+index 8ad13ef577..ada353e871 100644
 --- a/src/video_core/CMakeLists.txt
 +++ b/src/video_core/CMakeLists.txt
-@@ -619,7 +619,7 @@ endif()
+@@ -620,7 +620,7 @@ endif()
  # setting is on. Only Streamline's MIT-licensed headers are compiled in and nothing of NVIDIA's is
  # linked or copied: sl.interposer.dll and the DLSS plugins are loaded at run time from the user's PC.
  cmake_dependent_option(ENABLE_NVIDIA_DLSS "Enable NVIDIA DLSS through NVIDIA Streamline" ON
@@ -3079,7 +2952,7 @@ index fbe3e07086..068f6d181e 100644
      bool past_sync = !split.Active();
      using GpuWrittenList = VideoCore::RasterizerInterface::GpuWrittenList;
 diff --git a/src/video_core/engines/maxwell_3d.cpp b/src/video_core/engines/maxwell_3d.cpp
-index e20d9dd266..48f4af69e3 100644
+index e20d9dd266..a13968e4ff 100644
 --- a/src/video_core/engines/maxwell_3d.cpp
 +++ b/src/video_core/engines/maxwell_3d.cpp
 @@ -318,16 +318,6 @@ size_t Maxwell3D::EstimateIndexBufferSize() {
@@ -3099,7 +2972,7 @@ index e20d9dd266..48f4af69e3 100644
  void Maxwell3D::ConsumeSinkImpl(Core::System& system) {
      if (front_macros && !VideoCommon::GpuSplit::OnBackThread()) {
          ReleaseFront();
-@@ -356,22 +346,6 @@ void Maxwell3D::ConsumeSinkImpl(Core::System& system) {
+@@ -356,22 +346,25 @@ void Maxwell3D::ConsumeSinkImpl(Core::System& system) {
      method_sink.clear();
  }
  
@@ -3117,12 +2990,79 @@ index e20d9dd266..48f4af69e3 100644
 -    regs.reg_array[method] = argument;
 -    for (auto const& table : dirty.tables)
 -        dirty.flags[table[method]] = true;
--}
--
++namespace {
++
++// The occlusion query methods a delta draw may follow. Ocarina of Time resets the samples counter,
++// sets the render condition and reports around most of its draws, and each of these sent the next
++// draw to a full resolve. None of them touches what a delta draw keeps (pipeline, image views,
++// samplers, texture buffer bindings): they record query and conditional rendering commands, and
++// the counter is started again by the draw itself on both paths. The ones that end the render pass
++// (a condition resolved on the GPU) or submit still end the chain through the rasterizer's own
++// checks.
++bool IsFastDrawQueryMethod(u32 method) {
++    constexpr u32 render_enable = MAXWELL3D_REG_INDEX(render_enable);
++    constexpr u32 report = MAXWELL3D_REG_INDEX(report_semaphore);
++    return method == MAXWELL3D_REG_INDEX(clear_report_value) ||
++           method - render_enable < sizeof(Maxwell3D::Regs::RenderEnable) / sizeof(u32) ||
++           method - report < sizeof(Maxwell3D::Regs::ReportSemaphore) / sizeof(u32);
+ }
+ 
++} // Anonymous namespace
++
  bool Maxwell3D::IsFastDrawParameter(u32 method) {
      switch (method) {
      case MAXWELL3D_REG_INDEX(const_buffer.size):
-@@ -540,6 +514,15 @@ void Maxwell3D::CallMethod(Core::System& system, u32 method, u32 method_argument
+@@ -386,9 +379,18 @@ bool Maxwell3D::IsFastDrawParameter(u32 method) {
+     case MAXWELL3D_REG_INDEX(index_buffer.limit_addr_low):
+     case MAXWELL3D_REG_INDEX(index_buffer.format):
+         return true;
++    case MAXWELL3D_REG_INDEX(vertex_id_base):
++        // Nothing in the renderer reads this register (the draw's base vertex comes from
++        // global_base_vertex_index), yet NVN's base vertex draws write it before and after
++        // every draw, which sent each of them to a full resolve.
++        return true;
++    case 0x154: // MME memory address A and B: where a macro's memory reads go. Ocarina of
++    case 0x155: // Time sets B before the macro that reads each occlusion report; no draw
++                // reads them.
++        return true;
+     default:
+         return DrawManager::IsInstanceLoopMethod(method) || IsFastDrawDeltaMethod(method) ||
+-               IsFastDrawVertexBuffer(method);
++               IsFastDrawVertexBuffer(method) || IsFastDrawQueryMethod(method);
+     }
+ }
+ 
+@@ -397,6 +399,12 @@ bool Maxwell3D::IsFastDrawVertexBuffer(u32 method) {
+     constexpr u32 stream_words = sizeof(Regs::VertexStream) / sizeof(u32);
+     if (method >= streams && method < streams + Regs::NumVertexArrays * stream_words) {
+         const u32 word = (method - streams) % stream_words;
++        // Word 0, the stride and the enable bit, where the host binds strides dynamically: the
++        // buffers are bound again with their strides on both paths (UpdateGraphicsBuffers), and
++        // the pipeline key holds strides only without extended dynamic state.
++        if (word == 0) {
++            return VideoCommon::Nx2FastDraw::g_dynamic_strides.load(std::memory_order_relaxed);
++        }
+         return word == 1 || word == 2; // address_high, address_low
+     }
+     constexpr u32 sizes = 0x600 / sizeof(u32); // SET_VERTEX_STREAM_SIZE_A/B (NativeVertexStreamSize)
+@@ -425,7 +433,15 @@ bool Maxwell3D::IsFastDrawDeltaMethod(u32 method) {
+ 
+ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argument, bool is_last_call) {
+     if (!DrawManager::IsInstanceLoopMethod(method) && !IsFastDrawDeltaMethod(method)) {
+-        VideoCommon::Nx2FastDraw::Break(VideoCommon::Nx2FastDraw::Reason::Method, method);
++        // A fence-flagged release signals a fence: never neutral for the fast draw path.
++        const bool query_method =
++            IsFastDrawQueryMethod(method) &&
++            !(method == MAXWELL3D_REG_INDEX(report_semaphore.query) &&
++              regs.report_semaphore.query.operation == Regs::ReportSemaphore::Operation::Release &&
++              regs.report_semaphore.query.short_query != 0);
++        if (!query_method) {
++            VideoCommon::Nx2FastDraw::Break(VideoCommon::Nx2FastDraw::Reason::Method, method);
++        }
+     }
+     if (GetNativeMacroEngine().native_turing && method == MAXWELL3D_REG_INDEX(clear_surface)) {
+         LOG_DEBUG(HW_GPU, "Native GPU surface clear: value={:#x}", argument);
+@@ -540,6 +556,15 @@ void Maxwell3D::CallMethod(Core::System& system, u32 method, u32 method_argument
      if (front_macros && !VideoCommon::GpuSplit::OnBackThread()) {
          ReleaseFront();
      }
@@ -3138,7 +3078,7 @@ index e20d9dd266..48f4af69e3 100644
      if (!fast_maxwell3d || executing_macro != 0 || method >= MacroRegistersStart ||
          method == MAXWELL3D_REG_INDEX(shadow_ram_control)) {
          return CallMethodSlow(system, method, method_argument, is_last_call);
-@@ -571,13 +554,10 @@ bool IsStoreOnlyExecutable(u32 method) {
+@@ -571,13 +596,10 @@ bool IsStoreOnlyExecutable(u32 method) {
  // no write history, trace or profile, not a macro call or SET_SHADOW_RAM_CONTROL. The hot
  // executable methods go straight to their handler.
  void Maxwell3D::CallMethodFast(u32 method, u32 method_argument, bool is_last_call) {
@@ -3154,6 +3094,18 @@ index e20d9dd266..48f4af69e3 100644
      ProcessDirtyRegisters(method, argument);
      constexpr u32 cb_data = MAXWELL3D_REG_INDEX(const_buffer.buffer);
      if (method - cb_data < 16) {
+@@ -1791,7 +1813,10 @@ bool Maxwell3D::FrontRunOnBack(Core::System& system, VideoCommon::GpuSplit& spli
+                 AsyncReadback::MaybeReport();
+             }
+         },
+-        fs.parameters);
++        // The call itself does not end the fast draw path: the methods the macro calls end it
++        // or not, as any method does.
++        fs.parameters, VideoCommon::GpuSplit::Writes::Anywhere,
++        VideoCommon::GpuSplit::FastDrawNeutral);
+     const u64 position = split.Position();
+     fs.back_last = position;
+     const bool tracked = fs.control == Regs::ShadowRamControl::Track ||
 diff --git a/src/video_core/engines/maxwell_3d.h b/src/video_core/engines/maxwell_3d.h
 index 5b9ba1b1a1..1b491d5344 100644
 --- a/src/video_core/engines/maxwell_3d.h
@@ -3292,7 +3244,7 @@ index 2a7e43885d..bcc7f92fef 100644
 +} // namespace VideoCommon
 \ No newline at end of file
 diff --git a/src/video_core/gpu_split.h b/src/video_core/gpu_split.h
-index 5b38aa83b7..5733816dba 100644
+index 5b38aa83b7..072fc9b726 100644
 --- a/src/video_core/gpu_split.h
 +++ b/src/video_core/gpu_split.h
 @@ -51,6 +51,7 @@ enum class DrainSite : u32 {
@@ -3312,6 +3264,25 @@ index 5b38aa83b7..5733816dba 100644
  };
  
  // Splits the GPU thread in two (NX2_GPU_THREAD_SPLIT.md). The GPU thread (the front) takes the
+@@ -219,15 +220,15 @@ public:
+             NoteAnyWrite();
+         }
+     }
+-    /// Defer, calling `func` with a copy of `words` (a std::span<const u32>).
++    /// Defer, calling `func` with a copy of `words` (a std::span<const u32>). `flags` as Defer's.
+     template <typename Func>
+     void DeferWords(const Func& func, std::span<const u32> words,
+-                    Writes writes = Writes::Anywhere) {
++                    Writes writes = Writes::Anywhere, u64 flags = 0) {
+         static_assert(std::is_trivially_copyable_v<Func> && alignof(Func) <= alignof(u64));
+         constexpr size_t function_words = (sizeof(Func) + sizeof(u64) - 1) / sizeof(u64);
+         const size_t payload = function_words + 1 + (words.size() + 1) / 2;
+         u64* const entry = Reserve(2 + payload);
+-        entry[0] = static_cast<u64>(Kind::Call) | (u64{payload} << 8);
++        entry[0] = static_cast<u64>(Kind::Call) | flags | (u64{payload} << 8);
+         entry[1] = reinterpret_cast<u64>(&CallWordsThunk<Func>);
+         std::memcpy(entry + 2, &func, sizeof(Func));
+         entry[2 + function_words] = words.size();
 @@ -285,6 +286,11 @@ public:
      bool WaitUntil(u64 position, DrainSite site) {
          return WaitFor((std::min)(position, write_position), site);
@@ -3619,6 +3590,21 @@ index 0913a55641..6448f311a6 100644
          const u64 mask = (bits == 64 ? ~u64{0} : (u64{1} << bits) - 1) << first_bit;
          auto& word = g_nx2_gpu_written_pages[page / 64];
          if ((word.load(std::memory_order_relaxed) & mask) != mask) {
+diff --git a/src/video_core/nx2_fast_draw.h b/src/video_core/nx2_fast_draw.h
+index 13cbb253f0..d9f02e9168 100644
+--- a/src/video_core/nx2_fast_draw.h
++++ b/src/video_core/nx2_fast_draw.h
+@@ -68,6 +68,10 @@ inline std::atomic<bool> g_enabled{true};
+     return g_enabled.load(std::memory_order_relaxed);
+ }
+ 
++/// Whether the host binds vertex stream strides as dynamic state (set by the renderer): a
++/// stride change then leaves the pipeline as it is.
++inline std::atomic<bool> g_dynamic_strides{false};
++
+ /// Tests only.
+ inline void SetEnabledForTest(bool on) {
+     g_enabled.store(on, std::memory_order_relaxed);
 diff --git a/src/video_core/nx2_perf.h b/src/video_core/nx2_perf.h
 index 0fe16cfb8e..48e7698b94 100644
 --- a/src/video_core/nx2_perf.h
@@ -4477,11 +4463,147 @@ index ab2b76f10f..67d31cc3a0 100644
      bool storage_supported;
      bool use_present_thread;
      std::atomic<std::size_t> image_count{};
+diff --git a/src/video_core/renderer_vulkan/vk_query_cache.cpp b/src/video_core/renderer_vulkan/vk_query_cache.cpp
+index 76d4f129e4..2a7db459b2 100644
+--- a/src/video_core/renderer_vulkan/vk_query_cache.cpp
++++ b/src/video_core/renderer_vulkan/vk_query_cache.cpp
+@@ -215,23 +215,62 @@ public:
+     void CloseCounter() override {
+         PauseCounter();
+         // A title that counts without resetting or reporting grows the query by a slot at every
+-        // submission and render pass, and the query keeps every bank it touches alive. Ocarina of
+-        // Time's title screen and file select reached 16,384 slots over 64 banks, while gameplay
+-        // windows in Hyrule Field, Kakariko Village, and the Shooting Gallery reach up to 346
+-        // slots across two banks. Past 4 banks (1,024 slots), drop the count as a reset would.
++        // submission and render pass, and the query keeps every bank it touches alive (Ocarina of
++        // Time's title screen and file select reached 16,384 slots over 64 banks). Past 4 banks
++        // (1,024 slots) the query is synced as a report would sync it, and its count carries into
++        // the next query. Dropping the count instead made a report in that window read too low,
++        // and Ocarina's gameplay windows pass 1,024 slots.
+         static constexpr size_t MaxRunningQuerySlots = 4 * SamplesQueryBank::BANK_SIZE;
+-        if (current_query && current_query->size_slots > MaxRunningQuerySlots) {
+-            // It drops a real count. Logged on the 1st, 2nd, 4th, 8th... drop, so a window this
+-            // long during gameplay doesn't go unnoticed and a title screen doesn't flood the log.
+-            ++bank_bound_resets;
+-            if ((bank_bound_resets & (bank_bound_resets - 1)) == 0) {
+-                LOG_WARNING(Render_Vulkan,
+-                            "Samples query ran {} slots with no reset or report, dropped its "
+-                            "count (drop {})",
+-                            current_query->size_slots, bank_bound_resets);
++        // With a report pending, its sync carries the query; its guest writes aren't made here,
++        // in the middle of a submission.
++        if (!current_query || current_query->size_slots <= MaxRunningQuerySlots ||
++            !pending_sync.empty()) {
++            return;
++        }
++        // Logged on the 1st, 2nd, 4th, 8th... carry, so a title screen doesn't flood the log.
++        ++carried_queries;
++        if ((carried_queries & (carried_queries - 1)) == 0) {
++            LOG_INFO(Render_Vulkan,
++                     "Samples query ran {} slots with no reset or report, carried its count into "
++                     "a new query (carry {})",
++                     current_query->size_slots, carried_queries);
++        }
++        const size_t carry = BuildQuery();
++        auto* query = GetQuery(carry);
++        query->guest_address = 0;
++        query->value = 0;
++        query->flags &= ~VideoCommon::QueryFlagBits::IsOrphan;
++        query->start_bank_id = current_query->start_bank_id;
++        query->size_banks = current_query->size_banks;
++        query->start_slot = current_query->start_slot;
++        query->size_slots = current_query->size_slots;
++        ApplyBankOp(query, [](SamplesQueryBank* bank, size_t start, size_t amount) {
++            bank->AddReference(amount);
++        });
++        pending_sync.push_back(carry);
++        if (SkipsHostSync()) {
++            ReplicateCurrentQueryIfNeeded();
++            rasterizer->SyncOperation([this] { amend_value = accumulation_value; });
++            AbandonCurrentQuery();
++            pending_sync.clear();
++        } else {
++            // The running query holds every slot since the last reset or sync, so the resolve
++            // covers only its slots. After a reset it starts from zero, not from the accumulation
++            // the last sync left.
++            if (first_accumulation_checkpoint <= num_slots_used) {
++                scheduler.RequestOutsideRenderPassOperationContext();
++                scheduler.Record([buffer = *accumulation_buffer](vk::CommandBuffer cmdbuf) {
++                    cmdbuf.FillBuffer(buffer, 0, 8, 0);
++                });
+             }
+-            ResetCounter();
++            num_slots_used = current_query->size_slots;
++            first_accumulation_checkpoint = (std::numeric_limits<size_t>::max)();
++            last_accumulation_checkpoint = 0;
++            // Resolves the count into the accumulation buffer and amend value; with no report
++            // pending, nothing is written to guest memory.
++            PresyncWrites();
+         }
++        Free(carry);
+     }
+ 
+     bool HasPendingSync() const override {
+@@ -257,8 +296,7 @@ public:
+         }
+         PauseCounter();
+         const auto driver_id = device.GetDriverID();
+-        if (driver_id == VK_DRIVER_ID_QUALCOMM_PROPRIETARY ||
+-            driver_id == VK_DRIVER_ID_ARM_PROPRIETARY || driver_id == VK_DRIVER_ID_MESA_TURNIP) {
++        if (SkipsHostSync()) {
+             pending_sync.clear();
+             sync_values_stash.clear();
+             return;
+@@ -355,6 +393,10 @@ public:
+                 sync_value_slot = 1;
+             }
+             query->flags |= VideoCommon::QueryFlagBits::IsHostSynced;
++            if (query->guest_address == 0) {
++                // A carry (CloseCounter) syncs only the accumulated count.
++                continue;
++            }
+             auto loc_data = offsets[query->start_bank_id];
+             sync_values_stash[sync_value_slot].emplace_back(HostSyncValues{
+                 .address = query->guest_address,
+@@ -467,6 +509,13 @@ public:
+     }
+ 
+ private:
++    // These drivers don't sync reports on the GPU.
++    bool SkipsHostSync() const {
++        const auto driver_id = device.GetDriverID();
++        return driver_id == VK_DRIVER_ID_QUALCOMM_PROPRIETARY ||
++               driver_id == VK_DRIVER_ID_ARM_PROPRIETARY || driver_id == VK_DRIVER_ID_MESA_TURNIP;
++    }
++
+     template <typename Func>
+     void ApplyBankOp(VideoCommon::HostQueryBase* query, Func&& func) {
+         size_t size_slots = query->size_slots;
+@@ -668,7 +717,7 @@ private:
+     bool accumulation_since_last_sync{};
+     VideoCommon::HostQueryBase* current_query;
+     bool has_started{};
+-    u64 bank_bound_resets{}; ///< Counts CloseCounter dropped once a query outgrew the bank bound.
++    u64 carried_queries{}; ///< Queries CloseCounter carried once they outgrew the bank bound.
+     std::mutex flush_guard;
+     std::optional<QueriesPrefixScanPass> queries_prefix_scan_pass;
+ };
 diff --git a/src/video_core/renderer_vulkan/vk_rasterizer.cpp b/src/video_core/renderer_vulkan/vk_rasterizer.cpp
-index f8aa71f0e1..f0f0b92116 100644
+index f8aa71f0e1..bdc9c59b4f 100644
 --- a/src/video_core/renderer_vulkan/vk_rasterizer.cpp
 +++ b/src/video_core/renderer_vulkan/vk_rasterizer.cpp
-@@ -1108,14 +1108,20 @@ void RasterizerVulkan::PrepareDraw(bool is_indexed, Func&& draw_func, bool is_in
+@@ -421,6 +421,10 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
+       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache, device, scheduler),
+       frame_dump(device, memory_allocator, scheduler) {
+     scheduler.SetQueryCache(query_cache);
++    VideoCommon::Nx2FastDraw::g_dynamic_strides.store(
++        device.IsExtExtendedDynamicStateSupported() &&
++            device.IsExtVertexInputDynamicStateSupported(),
++        std::memory_order_relaxed);
+     buffer_cache.SetPendingCpuWrites(
+         [this](const std::function<void(DAddr, size_t)>& callback) {
+             gpu.ForEachPendingCpuWrite(callback);
+@@ -1108,14 +1112,20 @@ void RasterizerVulkan::PrepareDraw(bool is_indexed, Func&& draw_func, bool is_in
      buffer_cache.NoteWorkRecorded(false);
      constexpr u64 final_vertex = 0x16aff33d999f993fULL;
      constexpr u64 final_fragment = 0x52402d8e8ab55263ULL;
@@ -4504,7 +4626,7 @@ index f8aa71f0e1..f0f0b92116 100644
                  oot_4k_guest_present = target.ImageHandle();
              }
          }
-@@ -2617,7 +2623,16 @@ void RasterizerVulkan::SignalReference() {
+@@ -2617,7 +2627,16 @@ void RasterizerVulkan::SignalReference() {
  }
  
  void RasterizerVulkan::ReleaseFences(bool force) {
@@ -4521,7 +4643,7 @@ index f8aa71f0e1..f0f0b92116 100644
  }
  
  void RasterizerVulkan::FlushQueryResults(DAddr addr, u64 size) {
-@@ -3462,7 +3477,11 @@ std::optional<FramebufferTextureInfo> RasterizerVulkan::AccelerateDisplay(
+@@ -3462,7 +3481,11 @@ std::optional<FramebufferTextureInfo> RasterizerVulkan::AccelerateDisplay(
      if (oot_4k_scene_frame == render_trace_frame && info.image &&
          info.image == oot_4k_guest_present && info.image_view &&
          info.width == 2560 && info.height == 1440 && !scaled &&
@@ -4871,10 +4993,10 @@ index da57da6917..9ce8bec55d 100644
          UNIMPLEMENTED_MSG("Unimplemented format={}", format);
          return PixelFormat::A8B8G8R8_UNORM;
 diff --git a/src/video_core/texture_cache/texture_cache.h b/src/video_core/texture_cache/texture_cache.h
-index 397616a8d0..17776b95a8 100644
+index c80963ea22..04db45278b 100644
 --- a/src/video_core/texture_cache/texture_cache.h
 +++ b/src/video_core/texture_cache/texture_cache.h
-@@ -330,7 +330,19 @@ void TextureCache<P>::ApplyThresholdOverrides(bool log) {
+@@ -332,7 +332,19 @@ void TextureCache<P>::ApplyThresholdOverrides(bool log) {
      const u64 budget_expected = expected_memory;
      u64 max_critical = MaxCriticalMemory;
      if constexpr (requires { runtime.GetDeviceMemoryBudget(); }) {
@@ -4895,7 +5017,7 @@ index 397616a8d0..17776b95a8 100644
      }
      critical_memory = (std::min)(critical_memory, max_critical);
      expected_memory =
-@@ -349,6 +361,12 @@ void TextureCache<P>::ApplyThresholdOverrides(bool log) {
+@@ -351,6 +363,12 @@ void TextureCache<P>::ApplyThresholdOverrides(bool log) {
          }
      }
      expected_memory = (std::min)(expected_memory, critical_memory);
@@ -4908,7 +5030,7 @@ index 397616a8d0..17776b95a8 100644
      if (log) {
          LogThresholds();
      }
-@@ -1693,6 +1711,10 @@ std::pair<typename P::ImageView*, bool> TextureCache<P>::TryFindFramebufferImage
+@@ -1712,6 +1730,10 @@ std::pair<typename P::ImageView*, bool> TextureCache<P>::TryFindFramebufferImage
              return PixelFormat::R5G6B5_UNORM;
          case Service::android::PixelFormat::Bgra8888:
              return PixelFormat::B8G8R8A8_UNORM;
@@ -4957,10 +5079,10 @@ index 3ab924e37f..4321f9b83f 100644
      // Probe optional extensions against the same snapshot the caller verifies against, so the
      // check here and the verification in CreateInstance can never disagree (see TOCTOU note below).
 diff --git a/src/video_core/vulkan_common/vulkan_memory_allocator.cpp b/src/video_core/vulkan_common/vulkan_memory_allocator.cpp
-index eb129f4a43..863c621df0 100644
+index cc14c43fe1..0f12b3b1c8 100644
 --- a/src/video_core/vulkan_common/vulkan_memory_allocator.cpp
 +++ b/src/video_core/vulkan_common/vulkan_memory_allocator.cpp
-@@ -458,7 +458,22 @@ vk::Buffer MemoryAllocator::CreateBuffer(const VkBufferCreateInfo &ci, MemoryUsa
+@@ -463,7 +463,22 @@ vk::Buffer MemoryAllocator::CreateBuffer(const VkBufferCreateInfo &ci, MemoryUsa
      VkMemoryPropertyFlags property_flags{};
  
      if (!CreateBufferInSeparatePool(ci, usage, alloc_ci, handle, allocation, alloc_info)) {

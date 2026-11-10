@@ -17,9 +17,9 @@
 
 # Lichii
 
-> ## ✅ v47 recommended
+> ## ✅ v48 recommended
 >
-> v47 fixes the OoT recommended settings overwriting manual changes in the game's Properties: the preset is now applied once and preserves your per-game values. Based on the same zortos `nx2` `bcb37c49f7` as v46, with everything from v46 (#1199, expanded saved OoT preset, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154). v32 and v42 were removed; v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
+> v48 is based on zortos `nx2` `093e264c8a` (#1210 host-commit OOM fix, #1212 shadow rename), with #1219 white-light occlusion carry, #1216 OoT fast draws and Fritchii v5.6's zero-page trim. Everything from v47 stays: the OoT recommended settings applied once without overwriting per-game edits, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 
 > **Unofficial superbuild fork.** This repository is not official Lichii and is
 > not affiliated with zortos293. It carries a curated set of performance and

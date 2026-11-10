@@ -1,8 +1,8 @@
 # Lichii Superbuild (unofficial)
 
-> ## ✅ v47 recommended
+> ## ✅ v48 recommended
 >
-> v47 fixes the OoT recommended-settings preset overwriting per-game changes made in Properties: it is now offered and applied once (saved flag) and skips settings that already have a per-game value. Based on the same zortos `nx2` `bcb37c49f7` as v46; everything from v46 stays. v32 and v42 were removed; v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
+> v48 is based on zortos `nx2` `093e264c8a` (#1210 host-commit OOM fix, #1212 shadow rename) plus #1219 white-light occlusion carry, #1216 OoT fast draws and Fritchii v5.6's zero-page trim. Everything from v47 stays (one-shot saved OoT preset, #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading). v32 and v42 were removed; v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 
 ## Credits
 
