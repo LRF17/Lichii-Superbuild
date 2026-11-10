@@ -66,14 +66,14 @@ the game keeps its own pass whenever DLSS is off, unavailable or fails to start.
   Its shaders use `HDR_COLOR_INPUT=0` and `INVERTED_DEPTH=0`. Camera reconstruction alone
   converts the stored [0,1] depth to GL [-1,1] clip coordinates. Motion is previous minus
   current in render pixels, with screen-down Y, so FSR's scale is `(1,1)` before normalization.
-- Jitter (FSR only, on by default): the game has no subpixel sample sequence, so the host adds
-  one. While FSR replaced the previous frame's upscale, every draw that depth-tests against the
+- Jitter (FSR and DLSS, on by default): the game has no subpixel sample sequence, so the host adds
+  one. While FSR or DLSS replaced the previous frame's upscale, every draw that depth-tests against the
   scene depth at the scene size has its viewport offset by a Halton (2,3) sub-pixel amount
   (AMD's phase count, 8 x (output / render width)^2: 18 for 1440p -> 4K, 8 for native AA), and
-  FSR gets the same offset as the frame's jitter. Shadow maps, half-size passes, full-screen
+  the upscaler gets the same offset as the frame's jitter. Shadow maps, half-size passes, full-screen
   passes and frames the game upscales itself are not offset. A full-screen pass with depth
   writes on but the test off writes no depth (Vulkan disables writes with the test), so the
-  depth-write flag alone doesn't count. DLSS gets no jitter.
+  depth-write flag alone doesn't count.
 - Motion with jitter: FSR is told the motion vectors carry no jitter (no jitter-cancellation
   flag). Camera motion comes from the unjittered matrices, reconstructed at each depth sample's
   unjittered position (the pixel centre minus the jitter). The replay of Link's skinned draw is
