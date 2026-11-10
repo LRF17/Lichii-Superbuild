@@ -10,12 +10,6 @@ All releases are unofficial builds. See the GitHub releases for assets and check
   stuttering on first use; the second bounds each frame's wait for a pipeline
   that is still building instead of skipping the draw. Both apply with the rest
   of the preset for the session and do not change saved settings.
-- **`nx2_switches.txt` cleaned up.** `EDEN_NX2_SPLIT=2` and
-  `EDEN_NX2_FENCE_BATCH=1` are removed: both are the defaults in this build
-  (`gpu_split.cpp` defaults to 2, fence batching is on unless set to 0).
-  `EDEN_NX2_ASYNC_DISCARD=1` is removed too: it forced native draws to Skip and
-  overrode the `native_async_draws` setting (including Bounded wait). The dead
-  `EDEN_NX2_PBFLUSH` comment is gone. `EDEN_NX2_PRELOAD_ALL_PIPELINES=1` stays.
 - Based on the same zortos `nx2` `d2eaae4f3a` as v41 (nx2 has not moved), so
   everything from v41 stays: water fixes #1152/#1147, 4K HDR DLSS PR #9,
   frame-generation HDR PR #8, #1143/#1154, HDR DLSS PR #7, #1058, #1127,
