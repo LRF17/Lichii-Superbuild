@@ -2,6 +2,34 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v50
+
+- **#1236: fixed Ocarina of Time's white areas / white light columns
+  (#849, #867).** Switch 2 device (SMMU) ranges are cached by
+  `{cpu_address, size}` and were never released when sub 102 destroys the
+  memory. When the game frees that memory and maps new pages at the same CPU
+  address, the cached range was handed back, so the GPU kept reading the old
+  pages — by then recycled for actor packs, BYAML and textures — producing NaN
+  vertices, white areas behind scenery and missing objects that stayed until a
+  restart. The range is now released on destroy, and reused ranges are refreshed
+  to the CPU range's current pages before the GMMU map. This is zortos's own
+  port of #1221, unconditional (no experiment switch), superseding the closed
+  #1230.
+- **#1234:** no longer deadlocks the UI thread when terminating a stuck
+  emulation thread (#775).
+- **#1235:** rescues a stuck Equal acquire on an NVN2 queue semaphore (#925,
+  port of Eglantine #712), so boot no longer advances one ring round per two
+  seconds.
+- Based on the same zortos `nx2` `093e264c8a` as v49; everything from v49
+  stays: the manual Help -> Check for Updates... and Open Releases Page...,
+  #1210, #1219, #1216, Fritchii v5.6's zero-page trim, the one-shot saved OoT
+  preset, #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading,
+  #1200/#1197/#1196/#1154, 4K HDR DLSS PR #9, frame-generation HDR PR #8, HDR
+  DLSS PR #7, #1058, #1127, #1078, #1094/#1095, #1061, #1062, #1056, #1060,
+  #1036, #1028, #874, native HDR, DLSS presets E/F, the safe Fritchii ports and
+  the optional white-flash mitigation.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
 ## v49
 
 - **New: Help -> Check for Updates...** runs an update check on demand and

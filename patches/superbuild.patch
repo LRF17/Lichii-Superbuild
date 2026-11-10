@@ -180,10 +180,10 @@ index 873b99bec2..67960c7f41 100644
 +dist-local/
 +tools/superbuild/local/
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index bc40878ce6..15cded38d4 100644
+index bc40878ce6..76ce0c45a0 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
-@@ -1,11 +1,570 @@
+@@ -1,11 +1,598 @@
  # Changelog
  
 -All notable changes to Eglantine are documented here. Each release's notes are taken from its
@@ -192,9 +192,38 @@ index bc40878ce6..15cded38d4 100644
 +All releases are unofficial builds. See the GitHub releases for assets and checksums.
  
 -## [Unreleased]
-+## v49
++## v50
  
 -## [0.1.0]
++- **#1236: fixed Ocarina of Time's white areas / white light columns
++  (#849, #867).** Switch 2 device (SMMU) ranges are cached by
++  `{cpu_address, size}` and were never released when sub 102 destroys the
++  memory. When the game frees that memory and maps new pages at the same CPU
++  address, the cached range was handed back, so the GPU kept reading the old
++  pages — by then recycled for actor packs, BYAML and textures — producing NaN
++  vertices, white areas behind scenery and missing objects that stayed until a
++  restart. The range is now released on destroy, and reused ranges are refreshed
++  to the CPU range's current pages before the GMMU map. This is zortos's own
++  port of #1221, unconditional (no experiment switch), superseding the closed
++  #1230.
++- **#1234:** no longer deadlocks the UI thread when terminating a stuck
++  emulation thread (#775).
++- **#1235:** rescues a stuck Equal acquire on an NVN2 queue semaphore (#925,
++  port of Eglantine #712), so boot no longer advances one ring round per two
++  seconds.
++- Based on the same zortos `nx2` `093e264c8a` as v49; everything from v49
++  stays: the manual Help -> Check for Updates... and Open Releases Page...,
++  #1210, #1219, #1216, Fritchii v5.6's zero-page trim, the one-shot saved OoT
++  preset, #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading,
++  #1200/#1197/#1196/#1154, 4K HDR DLSS PR #9, frame-generation HDR PR #8, HDR
++  DLSS PR #7, #1058, #1127, #1078, #1094/#1095, #1061, #1062, #1056, #1060,
++  #1036, #1028, #874, native HDR, DLSS presets E/F, the safe Fritchii ports and
++  the optional white-flash mitigation.
++- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+ 
+-- Initial release candidate
++## v49
++
 +- **New: Help -> Check for Updates...** runs an update check on demand and
 +  always shows the result. The old check ran only once at startup and stayed
 +  silent on a network failure, on "no update", and for 24 hours after a dialog
@@ -213,8 +242,7 @@ index bc40878ce6..15cded38d4 100644
 +  DLSS presets E/F, the safe Fritchii ports and the optional white-flash
 +  mitigation.
 +- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
- 
--- Initial release candidate
++
 +## v48
 +
 +- Based on latest zortos `nx2` `093e264c8a`: **#1210** keeps the texture-cache
@@ -896,7 +924,7 @@ index 0000000000..a0496b95b6
 +expose the port to a network. Dumps and captures can contain game assets; keep
 +them local and do not upload `.rdc` captures or dumps publicly.
 diff --git a/README.md b/README.md
-index 9230cf33b0..95ad0bbfc7 100644
+index 9230cf33b0..7dbfdc1033 100644
 --- a/README.md
 +++ b/README.md
 @@ -9,7 +9,7 @@
@@ -912,9 +940,9 @@ index 9230cf33b0..95ad0bbfc7 100644
  
  # Lichii
  
-+> ## ✅ v49 recommended
++> ## ✅ v50 recommended
 +>
-+> v49 adds Help -> Check for Updates... (on demand, always shows the result) and Help -> Open Releases Page..., so an update is never silently missed. Same zortos `nx2` `093e264c8a` base; everything from v48 stays: #1210 host-commit OOM fix, #1219 white-light occlusion carry, #1216 OoT fast draws, Fritchii v5.6's zero-page trim, #1212, the one-shot saved OoT preset, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
++> v50 fixes Ocarina of Time's white areas / white light columns (#1236, stale SMMU device-range backing), the UI-thread deadlock on terminating a stuck emulation thread (#1234) and a stuck Equal acquire on NVN2 queue semaphores (#1235). Same zortos `nx2` `093e264c8a` base; everything from v49 stays: Help -> Check for Updates... and Open Releases Page..., #1210 host-commit OOM fix, #1219 white-light occlusion carry, #1216 OoT fast draws, Fritchii v5.6's zero-page trim, #1212, the one-shot saved OoT preset, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v49, v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 +
 +> **Unofficial superbuild fork.** This repository is not official Lichii and is
 +> not affiliated with zortos293. It carries a curated set of performance and
@@ -936,15 +964,15 @@ index 9230cf33b0..95ad0bbfc7 100644
  
 diff --git a/SUPERBUILD.md b/SUPERBUILD.md
 new file mode 100644
-index 0000000000..c6c34e8b0c
+index 0000000000..78a00f24cb
 --- /dev/null
 +++ b/SUPERBUILD.md
 @@ -0,0 +1,216 @@
 +# Lichii Superbuild (unofficial)
 +
-+> ## ✅ v49 recommended
++> ## ✅ v50 recommended
 +>
-+> v49 adds Help -> Check for Updates... (on demand, always shows the result) and Help -> Open Releases Page..., so updates are never silently missed. Same zortos `nx2` `093e264c8a` base; everything from v48 stays (#1210, #1219, #1216, Fritchii zero-page trim, one-shot saved OoT preset, #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading). v32 and v42 were removed; v48/v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
++> v50 fixes OoT's white areas / white light columns (#1236, stale SMMU device-range backing) plus the UI-thread deadlock (#1234) and stuck Equal acquire (#1235). Same zortos `nx2` `093e264c8a` base; everything from v49 stays (manual update check, #1210, #1219, #1216, Fritchii zero-page trim, one-shot saved OoT preset, #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading). #1218 remains held for a separate test build. v32 and v42 were removed; v49/v48/v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 +
 +## Credits
 +
@@ -1754,6 +1782,123 @@ index 84643b1fe2..acb72b3b9e 100644
      },
  };
  
+diff --git a/src/core/hle/service/nvdrv/devices/nvhost_as_gpu.cpp b/src/core/hle/service/nvdrv/devices/nvhost_as_gpu.cpp
+index 9c2d890a48..d8cdbe7843 100644
+--- a/src/core/hle/service/nvdrv/devices/nvhost_as_gpu.cpp
++++ b/src/core/hle/service/nvdrv/devices/nvhost_as_gpu.cpp
+@@ -6,6 +6,8 @@
+ // SPDX-License-Identifier: GPL-3.0-or-later
+ 
+ #include <algorithm>
++#include <atomic>
++#include <cstdint>
+ #include <cstdlib>
+ #include <cstring>
+ #include <utility>
+@@ -16,6 +18,7 @@
+ #include "common/common_types.h"
+ #include "common/logging.h"
+ #include "core/core.h"
++#include "core/hle/kernel/k_process.h"
+ #include "core/hle/service/nvdrv/core/container.h"
+ #include "core/hle/service/nvdrv/core/heap_mapper.h"
+ #include "core/hle/service/nvdrv/core/nvmap.h"
+@@ -24,6 +27,7 @@
+ #include "core/hle/service/nvdrv/devices/nvhost_gpu.h"
+ #include "core/hle/service/nvdrv/devices/nx2_stub_device.h"
+ #include "core/hle/service/nvdrv/nvdrv.h"
++#include "core/memory.h"
+ #include "video_core/control/channel_state.h"
+ #include "video_core/gpu.h"
+ #include "video_core/host1x/host1x.h"
+@@ -33,6 +37,53 @@
+ 
+ namespace Service::Nvidia::Devices {
+ 
++namespace {
++
++// A device (SMMU) range keeps the host pages that backed its CPU range when it was mapped. The
++// ranges are reused by CPU address and size: when nx2:gpu 102 destroyed the memory, the game
++// can unmap it and map new pages at the same address, register it again, and get the old device
++// range back. The GPU then reads the old pages, which the kernel may already have given to other
++// data (Ocarina of Time: meshes whose index and vertex bytes were an actor pack and texture
++// blocks, white areas after area changes). Points the range at the current pages again.
++void Nx2RefreshBacking(Tegra::MaxwellDeviceMemoryManager& smmu, Core::Memory::Memory& memory,
++                       Core::Asid asid, DAddr device_address, u64 cpu_address, u64 size) {
++    constexpr u64 PageSize = Core::Memory::YUZU_PAGESIZE;
++    constexpr uintptr_t PageMask = static_cast<uintptr_t>(Core::Memory::YUZU_PAGEMASK);
++    if ((cpu_address & Core::Memory::YUZU_PAGEMASK) != 0 ||
++        (device_address & Core::Memory::YUZU_PAGEMASK) != 0) {
++        return;
++    }
++    u64 stale_pages = 0;
++    u64 first_stale = 0;
++    for (u64 offset = 0; offset < size; offset += PageSize) {
++        const auto device_page =
++            reinterpret_cast<uintptr_t>(smmu.GetPointer<u8>(device_address + offset));
++        const auto cpu_page = reinterpret_cast<uintptr_t>(
++            memory.GetPointerSilent(Common::ProcessAddress{cpu_address + offset}));
++        if ((device_page & ~PageMask) != (cpu_page & ~PageMask)) {
++            if (stale_pages++ == 0) {
++                first_stale = offset;
++            }
++        }
++    }
++    if (stale_pages == 0) {
++        return;
++    }
++    static std::atomic<u32> reports{};
++    if (reports.fetch_add(1, std::memory_order_relaxed) < 256) {
++        LOG_WARNING(Service_NVDRV,
++                    "Switch 2 device range {:#x} of CPU {:#x}+{:#x}: {} of {} pages point at old "
++                    "memory (first at +{:#x}), mapped again",
++                    device_address, cpu_address, size, stale_pages,
++                    (size + PageSize - 1) / PageSize, first_stale);
++    }
++    // Unmapping drops the old pages from the reverse map and invalidates the caches over the range.
++    smmu.Unmap(device_address, size);
++    smmu.Map(device_address, cpu_address, size, asid, true);
++}
++
++} // namespace
++
+ nvhost_as_gpu::nvhost_as_gpu(Core::System& system_, Module& module_, NvCore::Container& core)
+     : nvdevice{system_}, module{module_}, container{core}, nvmap{core.GetNvMapFile()}, vm{},
+       gmmu{} {}
+@@ -146,6 +197,7 @@ void nvhost_as_gpu::Nx2Map(u64 gpu_address, u64 cpu_address, u64 size) {
+     // The same CPU range is often mapped twice (at its own address and in a sparse region), so
+     // reuse its SMMU mapping.
+     Nx2DeviceRange range{};
++    bool fresh = false; ///< Mapped to the current pages just now
+     if (const auto it = nx2_device_ranges.find({cpu_address, size}); it != nx2_device_ranges.end()) {
+         range = it->second;
+     } else if (session->has_preallocated_area && session->mapper->IsInBounds(cpu_address, size)) {
+@@ -156,6 +208,7 @@ void nvhost_as_gpu::Nx2Map(u64 gpu_address, u64 cpu_address, u64 size) {
+             const DAddr address = smmu.Allocate(Common::AlignUp(size, 0x20000));
+             if (address != 0) {
+                 smmu.Map(address, cpu_address, size, session->asid, true);
++                fresh = true;
+             }
+             return address;
+         };
+@@ -179,8 +232,16 @@ void nvhost_as_gpu::Nx2Map(u64 gpu_address, u64 cpu_address, u64 size) {
+     Nx2GpuMemoryRegistry::Get().RecordDeviceRange(cpu_address, size, device_address);
+     // On the GPU thread, like unmaps: a GMMU map takes the texture cache lock, and the callers hold
+     // nx2:gpu locks that the GPU thread takes under that lock (sparse blocks backed on write).
++    // A reused range is checked there too, before the GMMU map, against the pages the CPU range
++    // has now (Nx2RefreshBacking).
++    auto* const memory = fresh ? nullptr : &session->process->GetMemory();
+     system.GPU().MapInOrder(
+-        gpu_address, size, [gmmu = gmmu.get(), gpu_address, device_address, size] {
++        gpu_address, size,
++        [gmmu = gmmu.get(), &smmu = system.Host1x().MemoryManager(), memory,
++         asid = session->asid, gpu_address, cpu_address, device_address, size] {
++            if (memory != nullptr) {
++                Nx2RefreshBacking(smmu, *memory, asid, device_address, cpu_address, size);
++            }
+             gmmu->Map(gpu_address, device_address, size, Tegra::PTEKind::PITCH, false);
+         });
+     LOG_DEBUG(Service_NVDRV, "Switch 2 GPU mapping {:#x}+{:#x} -> CPU {:#x}", gpu_address, size,
 diff --git a/src/core/hle/service/nvnflinger/pixel_format.h b/src/core/hle/service/nvnflinger/pixel_format.h
 index a38c8be777..a4f8a53c72 100644
 --- a/src/core/hle/service/nvnflinger/pixel_format.h
@@ -1767,7 +1912,7 @@ index a38c8be777..a4f8a53c72 100644
  };
  
 diff --git a/src/core/hle/service/nx2_gsv.h b/src/core/hle/service/nx2_gsv.h
-index 2bf9854204..ca58aa862f 100644
+index 2bf9854204..5a03942f16 100644
 --- a/src/core/hle/service/nx2_gsv.h
 +++ b/src/core/hle/service/nx2_gsv.h
 @@ -81,6 +81,21 @@
@@ -1792,7 +1937,17 @@ index 2bf9854204..ca58aa862f 100644
  // Creates a session served by `iface` and returns its client end. Unlike PushIpcInterface this
  // works from a domain too, for callers that want a raw session handle.
  template <class T>
-@@ -1553,6 +1568,8 @@ struct Nx2NativeObjects {
+@@ -635,6 +650,9 @@ private:
+                                     m_destroy_leftovers);
+                     }
+                 }
++                // No GPU range reaches the memory any more: free its device range, so registering
++                // the address again gets a new one on the pages it has then.
++                registry.ReleaseBacking(address, size);
+             }
+             if (size == 0x2000) {
+                 Tegra::Nx2RemoveSemaphoreRegion(address);
+@@ -1553,6 +1571,8 @@ struct Nx2NativeObjects {
          std::shared_ptr<std::mutex> decoder_mutex;
          u32 gpu_maps{};     // outstanding 426 maps
          bool mapped_here{}; // 426 added its GPU mapping (no other mapping covered it)
@@ -1801,7 +1956,7 @@ index 2bf9854204..ca58aa862f 100644
      };
      std::mutex mutex;
      std::map<u32, Memory> memories;
-@@ -1966,6 +1983,7 @@ private:
+@@ -1966,6 +1986,7 @@ private:
      // Eden's GPU thread has processed the frame. Otherwise the game laps the GPU thread and
      // rewrites command memory it hasn't read yet.
      u32 m_wait_timeouts{};
@@ -1809,7 +1964,7 @@ index 2bf9854204..ca58aa862f 100644
      struct PresentStats {
          long long frame_us{}, fence_us{}, composite_us{}, pace_us{}, max_fence_us{};
          long long max_frame_us{}, hitches{};
-@@ -2027,9 +2045,13 @@ private:
+@@ -2027,9 +2048,13 @@ private:
          if (mkw_dynamic) {
              swap_interval = 1;
          }
@@ -1824,7 +1979,7 @@ index 2bf9854204..ca58aa862f 100644
          const u32 refresh_rate = (timing & 0xffff) >= 30 && (timing & 0xffff) <= 240 ? timing & 0xffff : 60;
          if (trace) {
              m_frame_trace.interval = swap_interval;
-@@ -2153,7 +2175,7 @@ private:
+@@ -2153,7 +2178,7 @@ private:
  
      // Shows a presented native image: word 5 is the image id, ~word 22 / word 24 the GPU fence
      // (syncpoint, value) to wait for (layout from changes.patch). The image is a block-linear
@@ -1833,7 +1988,7 @@ index 2bf9854204..ca58aa862f 100644
      // shown_size: the present's word 7, ((height - 1) << 16) | (width - 1) of the area the game drew
      // into from the image's top-left corner (0 when it gives none).
      void Composite(u32 image_id, u32 fence_id, u32 fence_value, u32 shown_size) {
-@@ -2162,7 +2184,9 @@ private:
+@@ -2162,7 +2187,9 @@ private:
          u64 parent_offset{};
          std::optional<Nx2NativeObjects::VideoTrace> video_trace;
          Nx2ImageLayout layout{};
@@ -1844,7 +1999,7 @@ index 2bf9854204..ca58aa862f 100644
          {
              std::scoped_lock lk{m_objects->mutex};
              const auto image = m_objects->images.find(image_id);
-@@ -2177,7 +2201,9 @@ private:
+@@ -2177,7 +2204,9 @@ private:
              parent = memory->second.parent;
              parent_offset = memory->second.parent_offset + image->second.offset;
              layout = Nx2CalculateImageLayout(image->second.preference.data());
@@ -1855,7 +2010,7 @@ index 2bf9854204..ca58aa862f 100644
              if (Nx2VideoTraceEnabled()) {
                  video_trace = m_objects->last_video_write;
              }
-@@ -2261,14 +2287,19 @@ private:
+@@ -2261,14 +2290,19 @@ private:
              .offset = 0,
              .width = layout.width,
              .height = layout.height,
@@ -1879,7 +2034,7 @@ index 2bf9854204..ca58aa862f 100644
          }};
          std::vector<Nvidia::NvFence> fences;
          if (fence_id < 192) {
-@@ -2375,22 +2406,29 @@ private:
+@@ -2375,22 +2409,29 @@ private:
          TipcReplyWords(ctx, {60, 0});
      }
  
@@ -1921,7 +2076,7 @@ index 2bf9854204..ca58aa862f 100644
      }
  
      // 212(u64 layer): u64 bits of the layer's buffer slots that are ready. The client polls it once
-@@ -3214,6 +3252,7 @@ private:
+@@ -3214,6 +3255,7 @@ private:
              pictures.clear();
              const auto decode_start = std::chrono::steady_clock::now();
              decoder->Decode(input.data, input.pts, pictures);
@@ -1929,7 +2084,7 @@ index 2bf9854204..ca58aa862f 100644
              if (input.end) {
                  decoder->Drain(pictures);
              }
-@@ -3967,6 +4006,22 @@ private:
+@@ -3967,6 +4009,22 @@ private:
          image.memory = w[19];
          std::copy_n(w + 2, image.preference.size(), image.preference.begin());
          image.size = Nx2CalculateImageLayout(w + 2).size;
@@ -2492,6 +2647,63 @@ index 4971aff31c..a6de32a37c 100644
  TEST_CASE("Native uniform banks upload directly without overwriting GPU-owned bytes",
            "[buffer_ports]") {
      Fixture f;
+diff --git a/src/tests/video_core/nx2_gpu_mapping.cpp b/src/tests/video_core/nx2_gpu_mapping.cpp
+index bfa3caab63..66097df2ab 100644
+--- a/src/tests/video_core/nx2_gpu_mapping.cpp
++++ b/src/tests/video_core/nx2_gpu_mapping.cpp
+@@ -1,5 +1,6 @@
+ // SPDX-License-Identifier: GPL-3.0-or-later
+ 
++#include <map>
+ #include <utility>
+ #include <vector>
+ 
+@@ -68,3 +69,45 @@ TEST_CASE("NX2 destroyed memory leaves no GPU range mapped into it", "[video_cor
+     REQUIRE_FALSE(registry.GpuAddressOf(7, 0));
+     REQUIRE(registry.GpuAddressOf(7, 0x1000) == 0xa1000U);
+ }
++
++TEST_CASE("NX2 destroyed memory gets a new device range when registered again",
++          "[video_core][nx2_mapping]") {
++    Service::Nvidia::Devices::Nx2GpuMemoryRegistry registry;
++    // Like nvhost_as_gpu: device ranges cached by CPU range, shared through the registry.
++    std::map<std::pair<u64, u64>, u64> ranges;
++    u64 next_device = 0x100000;
++    const auto allocate = [&next_device] {
++        const u64 device_address = next_device;
++        next_device += 0x20000;
++        return device_address;
++    };
++    registry.AddListener(
++        &ranges,
++        [&](u64, u64 cpu_address, u64 size) {
++            const std::pair key{cpu_address, size};
++            if (!ranges.contains(key)) {
++                ranges[key] = registry.AcquireDeviceRange(1, cpu_address, size, allocate);
++            }
++            registry.RecordDeviceRange(cpu_address, size, ranges[key]);
++        },
++        [](u64, u64) {},
++        [&](u64 cpu_address, u64 size) {
++            if (ranges.erase(std::pair{cpu_address, size}) != 0) {
++                registry.ReleaseDeviceRange(1, cpu_address, size);
++            }
++        });
++    registry.Register(0x10000, 0x4000);
++    const u64 first = ranges.at({0x10000, 0x4000});
++    REQUIRE(registry.DeviceAddressOf(0x10000) == first);
++
++    // Sub 102, then the game registers new memory at the same address.
++    registry.UnmapMemory(0x10000, 0x4000);
++    registry.ReleaseBacking(0x10000, 0x4000);
++    REQUIRE(ranges.empty());
++    REQUIRE_FALSE(registry.DeviceAddressOf(0x10000));
++    registry.Register(0x10000, 0x4000);
++
++    const u64 second = ranges.at({0x10000, 0x4000});
++    REQUIRE(second != first);
++    REQUIRE(registry.DeviceAddressOf(0x10000) == second);
++}
 diff --git a/src/tests/video_core/stage_translation.cpp b/src/tests/video_core/stage_translation.cpp
 index 39bc1d379b..1c3cbda578 100644
 --- a/src/tests/video_core/stage_translation.cpp
@@ -3192,6 +3404,79 @@ index 5b9ba1b1a1..1b491d5344 100644
      const bool skip_same_value_writes = [] {
          const char* value = std::getenv("EDEN_NX2_SKIP_SAME");
          return value == nullptr || value[0] != '0';
+diff --git a/src/video_core/engines/puller.cpp b/src/video_core/engines/puller.cpp
+index 8d8af23d86..ac1e865ade 100644
+--- a/src/video_core/engines/puller.cpp
++++ b/src/video_core/engines/puller.cpp
+@@ -280,6 +280,68 @@ bool Puller::CanResumeAcquire(DmaPusher& dma_pusher) {
+                     dma_pusher.memory_manager.Read<u32>((pending_acquire->address & ~GPUVAddr{0xf}) + 8),
+                     dma_pusher.memory_manager.Read<u32>((pending_acquire->address & ~GPUVAddr{0xf}) + 12));
+     }
++    if (static_cast<GpuSemaphoreOperation>(pending_acquire->operation) !=
++        GpuSemaphoreOperation::AcquireEqual) {
++        return false;
++    }
++    // A passed equality never returns: these semaphores only advance, and with the emulator's
++    // looser channel ordering the writers can already be past an AcquireEqual target when the
++    // waiting channel reaches it. A short grace covers a write racing the read; after that take
++    // the greater-or-equal reading the protocol implies. Gating this on the 2 s warning made
++    // boot advance one ring round per two seconds (Eglantine #712).
++    const auto waited = std::chrono::steady_clock::now() - pending_acquire->since;
++    if (waited >= std::chrono::milliseconds{10} && current > pending_acquire->value) {
++        VideoCommon::Count(stats.passage);
++        static std::atomic<u32> passage_logged{};
++        if (passage_logged.fetch_add(1) < 16) {
++            LOG_INFO(HW_GPU,
++                     "Channel {} acquire satisfied by passage: semaphore {:#x} wanted {:#x}, "
++                     "now {:#x}",
++                     dma_pusher.channel_state.bind_id, pending_acquire->address,
++                     pending_acquire->value, current);
++        }
++        return true;
++    }
++    // A ring round that never lands. The flip-counter semaphores around NVN2's queue regions
++    // advance as a ring of fence-carried releases, and a stuck wait's target is ahead of memory
++    // by less than a round: the value the next round writes, already committed by the game's
++    // protocol. When every carrier channel is itself parked behind such an acquire, the fence
++    // chain holds no future release and nothing recovers. After 100 ms (above normal frame
++    // pacing, far below a real stall), complete the round ourselves and notify the other waiters
++    // (Eglantine #712). Only words the mirror machinery tracks are completed: elsewhere a
++    // producer may simply be slower than 100 ms, and guest-visible progress must not be invented.
++    if (waited >= std::chrono::milliseconds{100} &&
++        Nx2InSemaphoreFirstPage(pending_acquire->address) && pending_acquire->value > current &&
++        pending_acquire->value - current <= 0x40) {
++        const u32 latest = ReadSemaphoreWord(dma_pusher, pending_acquire->address);
++        if (latest >= pending_acquire->value) {
++            return true;
++        }
++        if (pending_acquire->value - latest <= 0x40) {
++            const auto device = dma_pusher.memory_manager.GpuToCpuAddress(pending_acquire->address);
++            if (device) {
++                auto& shadow = Nx2MirrorShadow::Get();
++                if (shadow.Diverts(*device)) {
++                    shadow.Set(*device, pending_acquire->value,
++                               dma_pusher.memory_manager.Read<u32>(pending_acquire->address));
++                } else {
++                    dma_pusher.memory_manager.Write<u32>(pending_acquire->address,
++                                                         pending_acquire->value);
++                }
++                Nx2SemaphoreWaiters::Get().OnWrite(*device, pending_acquire->value);
++                VideoCommon::Count(stats.rescued);
++                static std::atomic<u32> rescue_logged{};
++                if (rescue_logged.fetch_add(1) < 64) {
++                    LOG_INFO(HW_GPU,
++                             "Channel {} acquire satisfied by ring rescue: semaphore {:#x} "
++                             "advanced {:#x} -> {:#x}",
++                             dma_pusher.channel_state.bind_id, pending_acquire->address, latest,
++                             pending_acquire->value);
++                }
++                return true;
++            }
++        }
++    }
+     return false;
+ }
+ 
 diff --git a/src/video_core/framebuffer_config.h b/src/video_core/framebuffer_config.h
 index bb041cf12f..1befb2ba29 100644
 --- a/src/video_core/framebuffer_config.h
@@ -3243,7 +3528,7 @@ index 55988006d7..e943937209 100644
      void OnCommandListEnd();
  
 diff --git a/src/video_core/gpu_split.cpp b/src/video_core/gpu_split.cpp
-index 2a7e43885d..bcc7f92fef 100644
+index 2a7e43885d..ca087dcc51 100644
 --- a/src/video_core/gpu_split.cpp
 +++ b/src/video_core/gpu_split.cpp
 @@ -341,8 +341,8 @@ bool GpuSplit::WaitForWrites(const Tegra::MemoryManager& memory, GPUVAddr addres
@@ -3257,7 +3542,39 @@ index 2a7e43885d..bcc7f92fef 100644
  }
  
  bool GpuSplit::WaitFor(u64 target, DrainSite site) {
-@@ -689,4 +689,4 @@ void GpuSplit::ReportAcquire() {
+@@ -653,6 +653,8 @@ void GpuSplit::ReportAcquire() {
+     const u64 passed = take(stats.passed);
+     const u64 by_queued = take(stats.by_queued);
+     const u64 latched = take(stats.latched);
++    const u64 passage = take(stats.passage);
++    const u64 rescued = take(stats.rescued);
+     const u64 drained = take(stats.drained);
+     const u64 drain_operation = take(stats.drain_operation);
+     const u64 drain_settings = take(stats.drain_settings);
+@@ -669,14 +671,14 @@ void GpuSplit::ReportAcquire() {
+     const double spin_ms = static_cast<double>(take(stats.back_spin_ns)) / 1e6;
+     LOG_INFO(HW_GPU,
+              "Acquires: {} passed without a drain ({} by a queued release), {} resumed by a "
+-             "latch, {} drained ({} by the 1 ms valve; {} equal or mask, {} by the settings, {} "
+-             "unmapped or GPU-written word, {} queued release unknown or short), {} polls waited "
+-             "without a drain in 10 s; polls: {} of acquires, {} of GPU-written list copies; "
+-             "back: {} waits for work, {} slept, {:.1f} ms spinning; {} early publishes, {} idle "
+-             "hooks asked by polls",
+-             passed, by_queued, latched, drained, valve_drains, drain_operation, drain_settings,
+-             drain_word, drain_queued, polls, acquire_polls, list_polls, back_waits, back_sleeps,
+-             spin_ms, early_publishes, settles);
++             "latch, {} by passage, {} ring-rescued, {} drained ({} by the 1 ms valve; {} equal "
++             "or mask, {} by the settings, {} unmapped or GPU-written word, {} queued release "
++             "unknown or short), {} polls waited without a drain in 10 s; polls: {} of acquires, "
++             "{} of GPU-written list copies; back: {} waits for work, {} slept, {:.1f} ms "
++             "spinning; {} early publishes, {} idle hooks asked by polls",
++             passed, by_queued, latched, passage, rescued, drained, valve_drains, drain_operation,
++             drain_settings, drain_word, drain_queued, polls, acquire_polls, list_polls, back_waits,
++             back_sleeps, spin_ms, early_publishes, settles);
+     const u64 mismatches = take(stats.mismatches);
+     const u64 unlanded = take(stats.unlanded);
+     const u64 late = take(stats.late);
+@@ -689,4 +691,4 @@ void GpuSplit::ReportAcquire() {
      }
  }
  
@@ -3265,7 +3582,7 @@ index 2a7e43885d..bcc7f92fef 100644
 +} // namespace VideoCommon
 \ No newline at end of file
 diff --git a/src/video_core/gpu_split.h b/src/video_core/gpu_split.h
-index 5b38aa83b7..072fc9b726 100644
+index 5b38aa83b7..7b86f1e6ed 100644
 --- a/src/video_core/gpu_split.h
 +++ b/src/video_core/gpu_split.h
 @@ -51,6 +51,7 @@ enum class DrainSite : u32 {
@@ -3276,7 +3593,16 @@ index 5b38aa83b7..072fc9b726 100644
      Count,
  };
  
-@@ -95,7 +96,7 @@ inline constexpr std::array<const char*, static_cast<size_t>(DrainSite::Count)>
+@@ -60,6 +61,8 @@ struct AcquireStats {
+     std::atomic<u64> passed{};    ///< Acquires and polls met without a drain
+     std::atomic<u64> by_queued{}; ///< Of passed: met by a release the back had not run yet
+     std::atomic<u64> latched{};   ///< Polls resumed by a release the back ran (no drain)
++    std::atomic<u64> passage{};   ///< Equal acquires satisfied by a passed value
++    std::atomic<u64> rescued{};   ///< Equal acquires completed by a ring rescue
+     std::atomic<u64> drained{};   ///< Acquires and polls that drained the split
+     std::atomic<u64> drain_operation{}; ///< Of drained: an equal or mask acquire
+     std::atomic<u64> drain_settings{};  ///< ...the split or the accuracy settings ask for it
+@@ -95,7 +98,7 @@ inline constexpr std::array<const char*, static_cast<size_t>(DrainSite::Count)>
      "other",           "fetch drain",   "acquire",    "semaphore flush", "fence release",
      "list writers",    "list sync",     "list flush", "macro dma read",  "macro dma writes",
      "macro dma flush", "gp sync fence", "map",        "front start",     "front verify",
@@ -3285,7 +3611,7 @@ index 5b38aa83b7..072fc9b726 100644
  };
  
  // Splits the GPU thread in two (NX2_GPU_THREAD_SPLIT.md). The GPU thread (the front) takes the
-@@ -219,15 +220,15 @@ public:
+@@ -219,15 +222,15 @@ public:
              NoteAnyWrite();
          }
      }
@@ -3304,7 +3630,7 @@ index 5b38aa83b7..072fc9b726 100644
          entry[1] = reinterpret_cast<u64>(&CallWordsThunk<Func>);
          std::memcpy(entry + 2, &func, sizeof(Func));
          entry[2 + function_words] = words.size();
-@@ -285,6 +286,11 @@ public:
+@@ -285,6 +288,11 @@ public:
      bool WaitUntil(u64 position, DrainSite site) {
          return WaitFor((std::min)(position, write_position), site);
      }
@@ -3316,7 +3642,7 @@ index 5b38aa83b7..072fc9b726 100644
  
      /// Compute or copy work was just sent: what can write GPU-written command lists.
      void NoteWriter() {
-@@ -316,8 +322,8 @@ public:
+@@ -316,8 +324,8 @@ public:
          u64 device_address) const;
      /// Waits until the back executed the compute and copy work sent before the last NoteSync:
      /// the writers a command list fetched now is ordered after. Returns whether any of it was
@@ -5211,7 +5537,7 @@ index 42d0b7b3d4..c528b11b56 100644
     <property name="checkable">
      <bool>true</bool>
 diff --git a/src/yuzu/main_window.cpp b/src/yuzu/main_window.cpp
-index 812ad9e983..299f1c9b92 100644
+index 812ad9e983..45cbd758c9 100644
 --- a/src/yuzu/main_window.cpp
 +++ b/src/yuzu/main_window.cpp
 @@ -452,11 +452,10 @@ MainWindow::MainWindow(bool has_broken_vulkan)
@@ -5295,7 +5621,19 @@ index 812ad9e983..299f1c9b92 100644
      Settings::LogSettings();
  
      if (UISettings::values.select_user_on_boot && !user_flag_cmd_line) {
-@@ -4967,29 +5001,83 @@ void MainWindow::OnCaptureScreenshot() {
+@@ -2483,6 +2517,11 @@ void MainWindow::OnEmulationStopTimeout() {
+ void MainWindow::TerminateEmulationThread() {
+     if (QtCommon::emu_thread && QtCommon::emu_thread->isRunning()) {
+         LOG_ERROR(Frontend, "Emulation thread failed to stop, terminating it");
++        // QThread::terminate() emits finished() while holding the thread's internal mutex, and
++        // OnEmulationStopped() calls isRunning(), which takes that mutex again: the UI thread
++        // deadlocks on itself. Both callers run OnEmulationStopped() right after this returns.
++        disconnect(QtCommon::emu_thread.get(), &QThread::finished, this,
++                   &MainWindow::OnEmulationStopped);
+         QtCommon::emu_thread->terminate();
+         QtCommon::emu_thread->wait();
+     }
+@@ -4967,29 +5006,83 @@ void MainWindow::OnCaptureScreenshot() {
  }
  
  #ifdef ENABLE_UPDATE_CHECKER
