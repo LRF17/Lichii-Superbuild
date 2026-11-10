@@ -180,10 +180,10 @@ index 873b99bec2..67960c7f41 100644
 +dist-local/
 +tools/superbuild/local/
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index bc40878ce6..340057bb15 100644
+index bc40878ce6..3b05807c7e 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
-@@ -1,11 +1,480 @@
+@@ -1,11 +1,500 @@
  # Changelog
  
 -All notable changes to Eglantine are documented here. Each release's notes are taken from its
@@ -192,9 +192,30 @@ index bc40878ce6..340057bb15 100644
 +All releases are unofficial builds. See the GitHub releases for assets and checksums.
  
 -## [Unreleased]
-+## v45
++## v46
  
 -## [0.1.0]
++- **The Ocarina of Time recommended-settings prompt now uses zortos's full
++  recommended table and saves the result.** Accepting it applies the same
++  46-setting developer baseline as the global recommended-settings offer
++  (GPU accuracy Low, conservative VRAM, BC3 ASTC, asynchronous presentation and
++  shaders, no memory-operation syncs, Bounded pipeline waits, pipeline caches
++  on, CPU/System defaults and more) plus FSR 3 scaling and NVIDIA DLSS where
++  available. The values are written to OoT's per-game configuration, so they
++  persist; other games and global settings are untouched.
++- Based on latest zortos `nx2` `bcb37c49f7`: #1199 unmaps every GPU range into
++  memory that sub 102 destroys.
++- Everything from v45 stays: water ripples #1180, descriptor-pool flush #1155,
++  texture-cache ceiling #1129, Bananza AMD crash fix #1110, the Linux pipeline
++  preloading parity, 4K HDR DLSS PR #9, frame-generation HDR PR #8, HDR DLSS
++  PR #7, #1154/#1200/#1197/#1196, #1058, #1127, #1078, #1094/#1095, #1061,
++  #1062, #1056, #1060, #1036, #1028, #874, native HDR, DLSS presets E/F, the
++  safe Fritchii ports and the optional white-flash mitigation.
++- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+ 
+-- Initial release candidate
++## v45
++
 +- **Based on latest zortos `nx2` `610bd08731`:** #1154 (build fix after #1143,
 +  now upstream), #1200 (offers the developer's recommended settings once, with
 +  a way back in the Help menu), #1197 (stand-in for damaged .zs members of a
@@ -222,8 +243,7 @@ index bc40878ce6..340057bb15 100644
 +  ports and the optional white-flash mitigation. Precache shaders stays off in
 +  the OoT preset.
 +- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
- 
--- Initial release candidate
++
 +## v43
 +
 +- **Fixed the stutter regression in the removed v42 build.** That build dropped
@@ -806,7 +826,7 @@ index 0000000000..a0496b95b6
 +expose the port to a network. Dumps and captures can contain game assets; keep
 +them local and do not upload `.rdc` captures or dumps publicly.
 diff --git a/README.md b/README.md
-index 9230cf33b0..c6ba5b9d43 100644
+index 9230cf33b0..4020394327 100644
 --- a/README.md
 +++ b/README.md
 @@ -9,7 +9,7 @@
@@ -822,9 +842,9 @@ index 9230cf33b0..c6ba5b9d43 100644
  
  # Lichii
  
-+> ## ✅ v45 recommended
++> ## ✅ v46 recommended
 +>
-+> v45 is based on zortos `nx2` `610bd08731` with #1180 water ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110 Bananza AMD crash fix, #1200 recommended-settings offer, #1197 NUP repairs and #1196 OoT ocarina crackle fix. Linux packages now preload pipelines by default like Windows. v32 and v42 were removed; v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
++> v46 is based on zortos `nx2` `bcb37c49f7` (#1199), with the OoT recommended preset now applying zortos's full 46-setting developer table plus FSR 3/DLSS and saving it to OoT's per-game config. Everything from v45 stays: #1180 water ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110 Bananza AMD crash fix, Linux pipeline preloading and #1200/#1197/#1196/#1154. v32 and v42 were removed; v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 +
 +> **Unofficial superbuild fork.** This repository is not official Lichii and is
 +> not affiliated with zortos293. It carries a curated set of performance and
@@ -846,15 +866,15 @@ index 9230cf33b0..c6ba5b9d43 100644
  
 diff --git a/SUPERBUILD.md b/SUPERBUILD.md
 new file mode 100644
-index 0000000000..9ba3fb6758
+index 0000000000..8cb7b56d6e
 --- /dev/null
 +++ b/SUPERBUILD.md
 @@ -0,0 +1,216 @@
 +# Lichii Superbuild (unofficial)
 +
-+> ## ✅ v45 recommended
++> ## ✅ v46 recommended
 +>
-+> v45 is based on zortos `nx2` `610bd08731` (#1154, #1200, #1197, #1196) plus #1180 water ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling and #1110 Bananza AMD crash fix. Linux packages now preload pipelines by default like Windows. Everything from v43 stays; v32 and v42 were removed; v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
++> v46 is based on zortos `nx2` `bcb37c49f7` (#1199) and makes the OoT recommended preset use zortos's full 46-setting developer table plus FSR 3/DLSS, saved to OoT's per-game config. Everything from v45 stays: #1180 water ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110 Bananza AMD crash fix, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 +
 +## Credits
 +
@@ -1173,10 +1193,16 @@ index 4928eb47ff..3be40fe991 100644
  
  Enhancements aimed at removing jagged lines/sharp edges and/or masking artifacts.
 diff --git a/src/common/game_presets.h b/src/common/game_presets.h
-index 83dd4d3c3f..7602618e87 100644
+index 83dd4d3c3f..f4323df329 100644
 --- a/src/common/game_presets.h
 +++ b/src/common/game_presets.h
-@@ -7,6 +7,7 @@
+@@ -2,11 +2,13 @@
+ 
+ #pragma once
+ 
++#include "common/recommended_settings.h"
+ #include "common/settings.h"
+ 
  namespace Settings {
  
  inline constexpr u64 MarioKartWorldProgramId = 0x0400C3F00006E000ULL;
@@ -1184,7 +1210,7 @@ index 83dd4d3c3f..7602618e87 100644
  
  inline void SetMarioKartWorldRecommendedSettings(Values& settings, bool global) {
      const auto session = [global](auto& setting, auto value) {
-@@ -34,4 +35,28 @@ inline bool ApplyMarioKartWorldPreset(Values& settings, u64 program_id, bool acc
+@@ -34,4 +36,27 @@ inline bool ApplyMarioKartWorldPreset(Values& settings, u64 program_id, bool acc
      return true;
  }
  
@@ -1193,13 +1219,12 @@ index 83dd4d3c3f..7602618e87 100644
 +        setting.SetGlobal(global);
 +        setting.SetValue(value);
 +    };
++    // The Lichii developer's recommended baseline, the same table the global offer uses.
++    ForEachRecommendedSetting(settings, [&](auto& setting, const auto& value) {
++        session(setting, value);
++    });
++    // OoT-specific choices the global table leaves out as personal/hardware settings.
 +    session(settings.scaling_filter, ScalingFilter::Fsr3);
-+    session(settings.gpu_accuracy, GpuAccuracy::Low);
-+    session(settings.nvdec_emulation, NvdecEmulation::Gpu);
-+    session(settings.async_presentation, true);
-+    session(settings.use_asynchronous_shaders, true);
-+    // A fence per synced command list stalls the GPU thread and OoT renders correctly without it.
-+    session(settings.sync_memory_operations, false);
 +    // Real DLSS on RTX cards; without Streamline's files or an RTX GPU this falls back to FSR 3.1.
 +    session(settings.nvidia_dlss, true);
 +}
@@ -1813,7 +1838,7 @@ index a38c8be777..a4f8a53c72 100644
  };
  
 diff --git a/src/core/hle/service/nx2_gsv.h b/src/core/hle/service/nx2_gsv.h
-index a21b4eeee9..a59349f69a 100644
+index 2bf9854204..ca58aa862f 100644
 --- a/src/core/hle/service/nx2_gsv.h
 +++ b/src/core/hle/service/nx2_gsv.h
 @@ -81,6 +81,21 @@
@@ -1838,7 +1863,7 @@ index a21b4eeee9..a59349f69a 100644
  // Creates a session served by `iface` and returns its client end. Unlike PushIpcInterface this
  // works from a domain too, for callers that want a raw session handle.
  template <class T>
-@@ -1526,6 +1541,8 @@ struct Nx2NativeObjects {
+@@ -1553,6 +1568,8 @@ struct Nx2NativeObjects {
          std::shared_ptr<std::mutex> decoder_mutex;
          u32 gpu_maps{};     // outstanding 426 maps
          bool mapped_here{}; // 426 added its GPU mapping (no other mapping covered it)
@@ -1847,7 +1872,7 @@ index a21b4eeee9..a59349f69a 100644
      };
      std::mutex mutex;
      std::map<u32, Memory> memories;
-@@ -1939,6 +1956,7 @@ private:
+@@ -1966,6 +1983,7 @@ private:
      // Eden's GPU thread has processed the frame. Otherwise the game laps the GPU thread and
      // rewrites command memory it hasn't read yet.
      u32 m_wait_timeouts{};
@@ -1855,7 +1880,7 @@ index a21b4eeee9..a59349f69a 100644
      struct PresentStats {
          long long frame_us{}, fence_us{}, composite_us{}, pace_us{}, max_fence_us{};
          long long max_frame_us{}, hitches{};
-@@ -2000,9 +2018,13 @@ private:
+@@ -2027,9 +2045,13 @@ private:
          if (mkw_dynamic) {
              swap_interval = 1;
          }
@@ -1870,7 +1895,7 @@ index a21b4eeee9..a59349f69a 100644
          const u32 refresh_rate = (timing & 0xffff) >= 30 && (timing & 0xffff) <= 240 ? timing & 0xffff : 60;
          if (trace) {
              m_frame_trace.interval = swap_interval;
-@@ -2126,7 +2148,7 @@ private:
+@@ -2153,7 +2175,7 @@ private:
  
      // Shows a presented native image: word 5 is the image id, ~word 22 / word 24 the GPU fence
      // (syncpoint, value) to wait for (layout from changes.patch). The image is a block-linear
@@ -1879,7 +1904,7 @@ index a21b4eeee9..a59349f69a 100644
      // shown_size: the present's word 7, ((height - 1) << 16) | (width - 1) of the area the game drew
      // into from the image's top-left corner (0 when it gives none).
      void Composite(u32 image_id, u32 fence_id, u32 fence_value, u32 shown_size) {
-@@ -2135,7 +2157,9 @@ private:
+@@ -2162,7 +2184,9 @@ private:
          u64 parent_offset{};
          std::optional<Nx2NativeObjects::VideoTrace> video_trace;
          Nx2ImageLayout layout{};
@@ -1890,7 +1915,7 @@ index a21b4eeee9..a59349f69a 100644
          {
              std::scoped_lock lk{m_objects->mutex};
              const auto image = m_objects->images.find(image_id);
-@@ -2150,7 +2174,9 @@ private:
+@@ -2177,7 +2201,9 @@ private:
              parent = memory->second.parent;
              parent_offset = memory->second.parent_offset + image->second.offset;
              layout = Nx2CalculateImageLayout(image->second.preference.data());
@@ -1901,7 +1926,7 @@ index a21b4eeee9..a59349f69a 100644
              if (Nx2VideoTraceEnabled()) {
                  video_trace = m_objects->last_video_write;
              }
-@@ -2234,14 +2260,19 @@ private:
+@@ -2261,14 +2287,19 @@ private:
              .offset = 0,
              .width = layout.width,
              .height = layout.height,
@@ -1925,7 +1950,7 @@ index a21b4eeee9..a59349f69a 100644
          }};
          std::vector<Nvidia::NvFence> fences;
          if (fence_id < 192) {
-@@ -2348,22 +2379,29 @@ private:
+@@ -2375,22 +2406,29 @@ private:
          TipcReplyWords(ctx, {60, 0});
      }
  
@@ -1967,7 +1992,7 @@ index a21b4eeee9..a59349f69a 100644
      }
  
      // 212(u64 layer): u64 bits of the layer's buffer slots that are ready. The client polls it once
-@@ -3187,6 +3225,7 @@ private:
+@@ -3214,6 +3252,7 @@ private:
              pictures.clear();
              const auto decode_start = std::chrono::steady_clock::now();
              decoder->Decode(input.data, input.pts, pictures);
@@ -1975,7 +2000,7 @@ index a21b4eeee9..a59349f69a 100644
              if (input.end) {
                  decoder->Drain(pictures);
              }
-@@ -3940,6 +3979,22 @@ private:
+@@ -3967,6 +4006,22 @@ private:
          image.memory = w[19];
          std::copy_n(w + 2, image.preference.size(), image.preference.begin());
          image.size = Nx2CalculateImageLayout(w + 2).size;
@@ -2172,10 +2197,10 @@ index 8e58f32288..884232e7a8 100644
  // This creates a workaround by setting the layer as a generic output and creating a
  // passthrough geometry shader that reads the generic and sets the layer.
 diff --git a/src/tests/common/game_presets.cpp b/src/tests/common/game_presets.cpp
-index 481f5c5e1d..783444313b 100644
+index 481f5c5e1d..4f1a0d78ba 100644
 --- a/src/tests/common/game_presets.cpp
 +++ b/src/tests/common/game_presets.cpp
-@@ -109,3 +109,29 @@ TEST_CASE("Declining the MKW preset preserves global and per-game preferences",
+@@ -109,3 +109,35 @@ TEST_CASE("Declining the MKW preset preserves global and per-game preferences",
          CHECK(settings->resolution_setup.UsingGlobal() == !per_game);
      }
  }
@@ -2189,6 +2214,9 @@ index 481f5c5e1d..783444313b 100644
 +    settings->use_asynchronous_shaders.SetValue(false);
 +    settings->sync_memory_operations.SetValue(true);
 +    settings->nvidia_dlss.SetValue(false);
++    settings->vram_usage_mode.SetValue(Settings::VramUsageMode::Aggressive);
++    settings->astc_recompression.SetValue(Settings::AstcRecompression::Uncompressed);
++    settings->native_async_draws.SetValue(Settings::NativeAsyncDraws::Wait);
 +
 +    CHECK_FALSE(
 +        Settings::ApplyOcarinaOfTimePreset(*settings, Settings::OcarinaOfTimeProgramId, false));
@@ -2204,6 +2232,9 @@ index 481f5c5e1d..783444313b 100644
 +    CHECK(settings->use_asynchronous_shaders.GetValue());
 +    CHECK_FALSE(settings->sync_memory_operations.GetValue());
 +    CHECK(settings->nvidia_dlss.GetValue());
++    CHECK(settings->vram_usage_mode.GetValue() == Settings::VramUsageMode::Conservative);
++    CHECK(settings->astc_recompression.GetValue() == Settings::AstcRecompression::Bc3);
++    CHECK(settings->native_async_draws.GetValue() == Settings::NativeAsyncDraws::Bounded);
 +}
 diff --git a/src/tests/core/builtin_patches.cpp b/src/tests/core/builtin_patches.cpp
 index 7aec352c6b..f1e35bf410 100644
@@ -4968,10 +4999,27 @@ index e78b069590..6e4bf72776 100644
      QComboBox* aspect_ratio_combobox;
      QComboBox* resolution_combobox;
 diff --git a/src/yuzu/main_window.cpp b/src/yuzu/main_window.cpp
-index 812ad9e983..175880beda 100644
+index 812ad9e983..fad08553d1 100644
 --- a/src/yuzu/main_window.cpp
 +++ b/src/yuzu/main_window.cpp
-@@ -2144,6 +2144,26 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+@@ -2102,6 +2102,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+     config->SaveAllValues();
+ 
+     u64 title_id{0};
++    std::unique_ptr<QtConfig> per_game_config;
+ 
+     last_filename_booted = filename;
+ 
+@@ -2118,7 +2119,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+         const auto config_file_name = title_id == 0
+                                           ? Common::FS::PathToUTF8String(file_path.filename())
+                                           : fmt::format("{:016X}", title_id);
+-        QtConfig per_game_config(config_file_name, Config::ConfigType::PerGameConfig);
++        per_game_config = std::make_unique<QtConfig>(config_file_name, Config::ConfigType::PerGameConfig);
+         QtCommon::system->HIDCore().ReloadInputDevices();
+         QtCommon::system->ApplySettings();
+     }
+@@ -2144,6 +2145,31 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
          LOG_INFO(Config, "Applied recommended MKW settings after per-game configuration");
      }
      PrepareShaderPrecache(title_id, std::filesystem::path{filename.toStdU16String()});
@@ -4982,10 +5030,11 @@ index 812ad9e983..175880beda 100644
 +            QMessageBox::question(
 +                this, tr("Recommended Ocarina of Time settings"),
 +                tr("Use the recommended performance settings for Ocarina of Time?\n\n"
-+                   "FSR3 scaling, GPU accuracy Low, GPU NVDEC, asynchronous presentation, "
-+                   "asynchronous shaders, NVIDIA DLSS where available and no memory operation "
-+                   "syncs.\n\n"
-+                   "They apply until Lichii is closed. Your saved settings are not changed."),
++                   "The Lichii developer's recommended settings (GPU accuracy Low, GPU NVDEC, "
++                   "conservative VRAM, BC3, asynchronous presentation and shaders, no memory "
++                   "operation syncs, and more) plus FSR3 scaling and NVIDIA DLSS where "
++                   "available.\n\n"
++                   "They are saved for Ocarina of Time and can be changed later."),
 +                QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
 +        LOG_INFO(Config, "OoT recommended settings accepted: {}", use_recommended_oot_settings);
 +    }
@@ -4993,6 +5042,10 @@ index 812ad9e983..175880beda 100644
 +                                           use_recommended_oot_settings)) {
 +        QtCommon::system->ApplySettings();
 +        Settings::UpdateGPUAccuracy();
++        if (per_game_config) {
++            per_game_config->SaveAllValues();
++            LOG_INFO(Config, "Saved recommended OoT settings to its per-game configuration");
++        }
 +        LOG_INFO(Config, "Applied recommended OoT settings after per-game configuration");
 +    }
      Settings::LogSettings();

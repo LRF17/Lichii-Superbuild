@@ -17,9 +17,9 @@
 
 # Lichii
 
-> ## ✅ v45 recommended
+> ## ✅ v46 recommended
 >
-> v45 is based on zortos `nx2` `610bd08731` with #1180 water ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110 Bananza AMD crash fix, #1200 recommended-settings offer, #1197 NUP repairs and #1196 OoT ocarina crackle fix. Linux packages now preload pipelines by default like Windows. v32 and v42 were removed; v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
+> v46 is based on zortos `nx2` `bcb37c49f7` (#1199), with the OoT recommended preset now applying zortos's full 46-setting developer table plus FSR 3/DLSS and saving it to OoT's per-game config. Everything from v45 stays: #1180 water ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110 Bananza AMD crash fix, Linux pipeline preloading and #1200/#1197/#1196/#1154. v32 and v42 were removed; v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 
 > **Unofficial superbuild fork.** This repository is not official Lichii and is
 > not affiliated with zortos293. It carries a curated set of performance and

@@ -2,6 +2,26 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v46
+
+- **The Ocarina of Time recommended-settings prompt now uses zortos's full
+  recommended table and saves the result.** Accepting it applies the same
+  46-setting developer baseline as the global recommended-settings offer
+  (GPU accuracy Low, conservative VRAM, BC3 ASTC, asynchronous presentation and
+  shaders, no memory-operation syncs, Bounded pipeline waits, pipeline caches
+  on, CPU/System defaults and more) plus FSR 3 scaling and NVIDIA DLSS where
+  available. The values are written to OoT's per-game configuration, so they
+  persist; other games and global settings are untouched.
+- Based on latest zortos `nx2` `bcb37c49f7`: #1199 unmaps every GPU range into
+  memory that sub 102 destroys.
+- Everything from v45 stays: water ripples #1180, descriptor-pool flush #1155,
+  texture-cache ceiling #1129, Bananza AMD crash fix #1110, the Linux pipeline
+  preloading parity, 4K HDR DLSS PR #9, frame-generation HDR PR #8, HDR DLSS
+  PR #7, #1154/#1200/#1197/#1196, #1058, #1127, #1078, #1094/#1095, #1061,
+  #1062, #1056, #1060, #1036, #1028, #874, native HDR, DLSS presets E/F, the
+  safe Fritchii ports and the optional white-flash mitigation.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
 ## v45
 
 - **Based on latest zortos `nx2` `610bd08731`:** #1154 (build fix after #1143,
