@@ -11,6 +11,7 @@
 #include "video_core/dlss_evaluation.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_streamline_dlss.h"
+#include "video_core/upscaler_status.h"
 #include "video_core/vulkan_common/streamline.h"
 #include "video_core/vulkan_common/streamline_api.h"
 #include "video_core/vulkan_common/vulkan_device.h"
@@ -441,6 +442,9 @@ bool StreamlineDlssUpscaler::Upscale(const Inputs& in) {
     });
     // DLSS binds its own pipelines and descriptors on the command buffer.
     scheduler.InvalidateState();
+    VideoCore::NoteUpscale(VideoCore::UpscalerKind::Dlss, in.render_size.width,
+                           in.render_size.height, in.upscale_size.width,
+                           in.upscale_size.height);
     return true;
 }
 
