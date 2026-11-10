@@ -17,9 +17,9 @@
 
 # Lichii
 
-> ## ✅ v43 recommended
+> ## ✅ v45 recommended
 >
-> v43 fixes the stutter regression of the removed v42 build by restoring the v41 pipeline preload and native-draw skip behaviour, on the same zortos `nx2` `d2eaae4f3a`, with the water fixes #1152/#1147, 4K HDR DLSS (PR #9), frame-generation HDR (PR #8) and jpkto's #1094/#1095 OoT speedups. v32 and v42 were removed; v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
+> v45 is based on zortos `nx2` `610bd08731` with #1180 water ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110 Bananza AMD crash fix, #1200 recommended-settings offer, #1197 NUP repairs and #1196 OoT ocarina crackle fix. Linux packages now preload pipelines by default like Windows. v32 and v42 were removed; v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 
 > **Unofficial superbuild fork.** This repository is not official Lichii and is
 > not affiliated with zortos293. It carries a curated set of performance and

@@ -2,6 +2,36 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v45
+
+- **Based on latest zortos `nx2` `610bd08731`:** #1154 (build fix after #1143,
+  now upstream), #1200 (offers the developer's recommended settings once, with
+  a way back in the Help menu), #1197 (stand-in for damaged .zs members of a
+  NUP dump) and #1196 (ADPCM nibble-step sign — fixes the OoT ocarina / Song of
+  Time crackle).
+- **Water:** replaced the earlier ripple patch with #1180, which counts single
+  ripple passes per frame and also covers Dynamic FPS, so ripples keep moving
+  above 60 fps and the surface stops jumping with the camera. Dropped #1147:
+  its Water Temple premise was withdrawn — the missing geometry came from an
+  incomplete game-data container, not the occlusion cap.
+- **Fewer pipeline stalls:** #1155 raises the texture-descriptor-pool flush cap
+  to 4 MiB, so OoT's 1,058,176-byte pool lets pipeline stages translate on the
+  worker threads instead of the GPU thread; #1129 scales the texture-cache
+  ceiling with VRAM on 10+ GiB cards, so OoT stops evicting costly ASTC
+  textures; #1110 fixes the AMD crash after Bananza's golden-banana loading
+  screen.
+- **Linux: pipeline preloading is now on by default**, matching Windows. That
+  stops the Linux-only "shaders rebuilt every couple of minutes" behaviour
+  (#747: pipelines evicted after 9,000 frames were recompiled from scratch on
+  RADV).
+- Everything from v43 stays: the shader-cache upgrade note (clear caches from
+  v34 or earlier), the 4K HDR DLSS fix (PR #9), frame-generation HDR (PR #8),
+  HDR DLSS (PR #7), #1058, #1127, #1078, #1094/#1095, #1061, #1062, #1056,
+  #1060, #1036, #1028, #874, native HDR, DLSS presets E/F, the safe Fritchii
+  ports and the optional white-flash mitigation. Precache shaders stays off in
+  the OoT preset.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
 ## v43
 
 - **Fixed the stutter regression in the removed v42 build.** That build dropped

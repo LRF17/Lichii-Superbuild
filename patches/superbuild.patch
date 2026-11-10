@@ -180,10 +180,10 @@ index 873b99bec2..67960c7f41 100644
 +dist-local/
 +tools/superbuild/local/
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index bc40878ce6..7ed78ec1bb 100644
+index bc40878ce6..340057bb15 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
-@@ -1,11 +1,450 @@
+@@ -1,11 +1,480 @@
  # Changelog
  
 -All notable changes to Eglantine are documented here. Each release's notes are taken from its
@@ -192,9 +192,40 @@ index bc40878ce6..7ed78ec1bb 100644
 +All releases are unofficial builds. See the GitHub releases for assets and checksums.
  
 -## [Unreleased]
-+## v43
++## v45
  
 -## [0.1.0]
++- **Based on latest zortos `nx2` `610bd08731`:** #1154 (build fix after #1143,
++  now upstream), #1200 (offers the developer's recommended settings once, with
++  a way back in the Help menu), #1197 (stand-in for damaged .zs members of a
++  NUP dump) and #1196 (ADPCM nibble-step sign — fixes the OoT ocarina / Song of
++  Time crackle).
++- **Water:** replaced the earlier ripple patch with #1180, which counts single
++  ripple passes per frame and also covers Dynamic FPS, so ripples keep moving
++  above 60 fps and the surface stops jumping with the camera. Dropped #1147:
++  its Water Temple premise was withdrawn — the missing geometry came from an
++  incomplete game-data container, not the occlusion cap.
++- **Fewer pipeline stalls:** #1155 raises the texture-descriptor-pool flush cap
++  to 4 MiB, so OoT's 1,058,176-byte pool lets pipeline stages translate on the
++  worker threads instead of the GPU thread; #1129 scales the texture-cache
++  ceiling with VRAM on 10+ GiB cards, so OoT stops evicting costly ASTC
++  textures; #1110 fixes the AMD crash after Bananza's golden-banana loading
++  screen.
++- **Linux: pipeline preloading is now on by default**, matching Windows. That
++  stops the Linux-only "shaders rebuilt every couple of minutes" behaviour
++  (#747: pipelines evicted after 9,000 frames were recompiled from scratch on
++  RADV).
++- Everything from v43 stays: the shader-cache upgrade note (clear caches from
++  v34 or earlier), the 4K HDR DLSS fix (PR #9), frame-generation HDR (PR #8),
++  HDR DLSS (PR #7), #1058, #1127, #1078, #1094/#1095, #1061, #1062, #1056,
++  #1060, #1036, #1028, #874, native HDR, DLSS presets E/F, the safe Fritchii
++  ports and the optional white-flash mitigation. Precache shaders stays off in
++  the OoT preset.
++- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+ 
+-- Initial release candidate
++## v43
++
 +- **Fixed the stutter regression in the removed v42 build.** That build dropped
 +  two performance presets that were doing real work: preloading every cached
 +  graphics pipeline at boot and skipping native draws whose pipeline is still
@@ -215,8 +246,7 @@ index bc40878ce6..7ed78ec1bb 100644
 +  stays off in the OoT preset.
 +- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
 +## v41
- 
--- Initial release candidate
++
 +- **Water fixes.** Two open upstream PRs taken ahead of merge because they
 +  address the water reports:
 +  - **OoT water ripples keep moving above 60 fps with FPS Unlock (#1152).**
@@ -776,7 +806,7 @@ index 0000000000..a0496b95b6
 +expose the port to a network. Dumps and captures can contain game assets; keep
 +them local and do not upload `.rdc` captures or dumps publicly.
 diff --git a/README.md b/README.md
-index 9230cf33b0..e350bc577a 100644
+index 9230cf33b0..c6ba5b9d43 100644
 --- a/README.md
 +++ b/README.md
 @@ -9,7 +9,7 @@
@@ -792,9 +822,9 @@ index 9230cf33b0..e350bc577a 100644
  
  # Lichii
  
-+> ## ✅ v43 recommended
++> ## ✅ v45 recommended
 +>
-+> v43 fixes the stutter regression of the removed v42 build by restoring the v41 pipeline preload and native-draw skip behaviour, on the same zortos `nx2` `d2eaae4f3a`, with the water fixes #1152/#1147, 4K HDR DLSS (PR #9), frame-generation HDR (PR #8) and jpkto's #1094/#1095 OoT speedups. v32 and v42 were removed; v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
++> v45 is based on zortos `nx2` `610bd08731` with #1180 water ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110 Bananza AMD crash fix, #1200 recommended-settings offer, #1197 NUP repairs and #1196 OoT ocarina crackle fix. Linux packages now preload pipelines by default like Windows. v32 and v42 were removed; v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 +
 +> **Unofficial superbuild fork.** This repository is not official Lichii and is
 +> not affiliated with zortos293. It carries a curated set of performance and
@@ -816,15 +846,15 @@ index 9230cf33b0..e350bc577a 100644
  
 diff --git a/SUPERBUILD.md b/SUPERBUILD.md
 new file mode 100644
-index 0000000000..04e0744e92
+index 0000000000..9ba3fb6758
 --- /dev/null
 +++ b/SUPERBUILD.md
 @@ -0,0 +1,216 @@
 +# Lichii Superbuild (unofficial)
 +
-+> ## ✅ v43 recommended
++> ## ✅ v45 recommended
 +>
-+> v43 restores the v41 pipeline preload and native-draw skip presets to fix the stutter regression of the removed v42 build, on the same zortos `nx2` `d2eaae4f3a`. Everything from v41 stays: precache off in the OoT preset, water fixes #1152/#1147, 4K HDR DLSS PR #9, frame-generation HDR PR #8, #1143/#1154, jpkto's #1094/#1095, #874 and our layer. v32 and v42 were removed; v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
++> v45 is based on zortos `nx2` `610bd08731` (#1154, #1200, #1197, #1196) plus #1180 water ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling and #1110 Bananza AMD crash fix. Linux packages now preload pipelines by default like Windows. Everything from v43 stays; v32 and v42 were removed; v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 +
 +## Credits
 +
@@ -1079,6 +1109,35 @@ index 095ecdede4..8d7c4f9f23 100644
 +# Hylia 52.3 -> 55.4 fps. Off by default because batching gives ~10-15% fps in
 +# Hyrule Warriors; the evidence has not been reproduced on nx2 defaults.
 +#EDEN_NX2_FENCE_FLUSH_US=0
+diff --git a/docs/nx2/ocarina-dynamic-fps.md b/docs/nx2/ocarina-dynamic-fps.md
+index 01b8cc9b2e..45a3b463dc 100644
+--- a/docs/nx2/ocarina-dynamic-fps.md
++++ b/docs/nx2/ocarina-dynamic-fps.md
+@@ -52,6 +52,24 @@ Any changed user-mod bytes in either patch record or the timer state take
+ precedence over the entire built-in patch. An incompatible build, original
+ instruction, layout, or truncated module leaves both patch records untouched.
+ 
++## Water ripple passes
++
++The ripple simulation (compute shaders `fb4203a7d928ed42` then `e2ce39e630ce65f3`,
++256x256 ping-pong textures) sets its pass count at `main+0x475F8` as
++`iterations * (int)step`, with `iterations` 6. Truncation is harmless at the
++original step of exactly 1.0, but any step below 1.0 runs no passes: at 120 fps
++the ripples stop, and the grid origin that follows the player keeps moving with
++no pass to apply the shift. Measured before this patch at the save in Zora's
++Domain, frames that ran the simulation out of 10: no patch 10, FPS Unlock capped
++at 60 fps 4 (step 0.998 to 1.003), FPS Unlock at about 99 fps 0.
++
++Both built-ins replace that `fcvtzs` with `bl 0x3C46400` and drop the `mul` that
++followed it. The routine adds `iterations * step` to a remainder at `0x4E9FE10`,
++runs the rounded whole number of passes and keeps the rest, with at least one
++pass whenever the step is positive so the origin shift is always applied. A
++paused game (step 0) still runs none. The final pass `6a7f45ab293a93b1` was never
++affected. The routine uses x9, w8, s0-s2 only, none live at the patch site.
++
+ ## Timing limits
+ 
+ The routine reads `CNTPCT_EL0` and `CNTFRQ_EL0`. After its first call, it caps
 diff --git a/docs/user/Graphics.md b/docs/user/Graphics.md
 index 4928eb47ff..3be40fe991 100644
 --- a/docs/user/Graphics.md
@@ -1236,7 +1295,7 @@ index 140225da07..cc24eacf2f 100644
      }
      return {};
 diff --git a/src/common/settings.h b/src/common/settings.h
-index 6879578b1b..ec001dd0a9 100644
+index ee442a51f1..eac3352603 100644
 --- a/src/common/settings.h
 +++ b/src/common/settings.h
 @@ -339,6 +339,11 @@ struct Values {
@@ -1500,42 +1559,63 @@ index 536b9bc190..04b2df9510 100644
      std::atomic<s64> pause_end_time{};
      /// Cycle timing
 diff --git a/src/core/file_sys/patch_manager.cpp b/src/core/file_sys/patch_manager.cpp
-index 84643b1fe2..b38ab1c732 100644
+index 84643b1fe2..acb72b3b9e 100644
 --- a/src/core/file_sys/patch_manager.cpp
 +++ b/src/core/file_sys/patch_manager.cpp
-@@ -99,9 +99,23 @@ constexpr std::array DYNAMIC_FPS_RECORDS{
+@@ -95,13 +95,35 @@ constexpr std::array<u8, 128> FPS_UNLOCK_ROUTINE{
+     0x0A, 0xD7, 0xA3, 0x3C, 0x00, 0x00, 0xC0, 0x40,
+ };
+ #undef DYNAMIC_FPS_ROUTINE_HEAD
++// The water ripple simulation runs iterations * (int)step passes per frame, so any step below 1.0
++// runs none: the ripples freeze and the grid shifts that follow the player are lost. With these
++// the pass count follows the step through an accumulator, with at least one pass while time moves.
++constexpr std::array<u8, 4> WATER_STEPS_ORIGINAL{0x09, 0x00, 0x38, 0x1E};
++constexpr std::array<u8, 4> WATER_STEPS_CALL{0x82, 0xFB, 0xEF, 0x94};
++constexpr std::array<u8, 4> WATER_MUL_ORIGINAL{0x08, 0x7D, 0x09, 0x1B};
++constexpr std::array<u8, 4> WATER_MUL_NOP{0x1F, 0x20, 0x03, 0xD5};
++// In: w8 iterations, s0 step. Out: w8 passes. Remainder kept at state + 0x10.
++constexpr std::array<u8, 84> WATER_STEPS_ROUTINE{
++    0x01, 0x01, 0x22, 0x1E, 0x00, 0x08, 0x21, 0x1E, 0x08, 0x20, 0x20, 0x1E, 0x0D, 0x02, 0x00,
++    0x54, 0xC9, 0x92, 0x00, 0xB0, 0x21, 0x11, 0x4E, 0xBD, 0x00, 0x28, 0x21, 0x1E, 0x01, 0x10,
++    0x2C, 0x1E, 0x02, 0x28, 0x21, 0x1E, 0x48, 0x00, 0x38, 0x1E, 0x1F, 0x05, 0x00, 0x71, 0x4A,
++    0x00, 0x00, 0x54, 0x28, 0x00, 0x80, 0x52, 0x01, 0x01, 0x22, 0x1E, 0x00, 0x38, 0x21, 0x1E,
++    0x01, 0x10, 0x3C, 0x1E, 0x00, 0x48, 0x21, 0x1E, 0x20, 0x11, 0x0E, 0xBD, 0xC0, 0x03, 0x5F,
++    0xD6, 0xE8, 0x03, 0x1F, 0x2A, 0xC0, 0x03, 0x5F, 0xD6,
++};
+ constexpr std::array DYNAMIC_FPS_RECORDS{
      BuiltinPatchRecord{0x6E6CC4, DYNAMIC_FPS_CALL, DYNAMIC_FPS_ORIGINAL},
      BuiltinPatchRecord{0x3C46200, DYNAMIC_FPS_ROUTINE, {}, true},
++    BuiltinPatchRecord{0x475F8, WATER_STEPS_CALL, WATER_STEPS_ORIGINAL},
++    BuiltinPatchRecord{0x4760C, WATER_MUL_NOP, WATER_MUL_ORIGINAL},
++    BuiltinPatchRecord{0x3C46400, WATER_STEPS_ROUTINE, {}, true},
  };
-+// The water renderer (main+0x472E0) runs its ripple simulation trunc(step) times per frame, so
-+// below a step of 1 (above 60 fps) the ripples freeze. The hook at main+0x475F8 (fcvtzs w9, s0)
-+// branches to an accumulator that keeps the fractional step between frames: owner (the water
-+// object, u64) at state + 0x10, the carried fraction (f32) at state + 0x18.
-+constexpr std::array<u8, 4> WATER_ORIGINAL{0x09, 0x00, 0x38, 0x1E};
-+constexpr std::array<u8, 4> WATER_HOOK{0x22, 0xFB, 0xEF, 0x14};
-+constexpr std::array<u8, 56> WATER_ACCUMULATOR{
-+    0xC9, 0x92, 0x00, 0xB0, 0x29, 0x41, 0x38, 0x91, 0x2A, 0x01, 0x40, 0xF9, 0x5F, 0x01,
-+    0x15, 0xEB, 0x60, 0x00, 0x00, 0x54, 0x35, 0x01, 0x00, 0xF9, 0x3F, 0x09, 0x00, 0xB9,
-+    0x21, 0x09, 0x40, 0xBD, 0x00, 0x28, 0x21, 0x1E, 0x01, 0xC0, 0x25, 0x1E, 0x00, 0x38,
-+    0x21, 0x1E, 0x20, 0x09, 0x00, 0xBD, 0x29, 0x00, 0x38, 0x1E, 0xD2, 0x04, 0x10, 0x17,
-+};
  constexpr std::array FPS_UNLOCK_RECORDS{
      BuiltinPatchRecord{0x6E6CC4, DYNAMIC_FPS_CALL, DYNAMIC_FPS_ORIGINAL},
      BuiltinPatchRecord{0x3C46200, FPS_UNLOCK_ROUTINE, {}, true},
-+    BuiltinPatchRecord{0x475F8, WATER_HOOK, WATER_ORIGINAL},
-+    BuiltinPatchRecord{0x3C46280, WATER_ACCUMULATOR, {}, true},
++    BuiltinPatchRecord{0x475F8, WATER_STEPS_CALL, WATER_STEPS_ORIGINAL},
++    BuiltinPatchRecord{0x4760C, WATER_MUL_NOP, WATER_MUL_ORIGINAL},
++    BuiltinPatchRecord{0x3C46400, WATER_STEPS_ROUTINE, {}, true},
  };
  
  constexpr std::array BUILTIN_PATCHES{
-@@ -123,7 +137,7 @@ constexpr std::array BUILTIN_PATCHES{
+@@ -123,7 +145,7 @@ constexpr std::array BUILTIN_PATCHES{
          .build_id = "E0F3CCFAF50065AE4EA01EB5AEB13B1A45DA3348",
          .records = FPS_UNLOCK_RECORDS,
          .state_offset = 0x4E9FE00,
 -        .state_size = 16,
-+        .state_size = 32,
++        .state_size = 24,
          .replaces = "Dynamic FPS by Dark (built-in)",
      },
      BuiltinPatch{
+@@ -133,7 +155,7 @@ constexpr std::array BUILTIN_PATCHES{
+         .build_id = "E0F3CCFAF50065AE4EA01EB5AEB13B1A45DA3348",
+         .records = DYNAMIC_FPS_RECORDS,
+         .state_offset = 0x4E9FE00,
+-        .state_size = 16,
++        .state_size = 24,
+     },
+ };
+ 
 diff --git a/src/core/hle/service/nvnflinger/pixel_format.h b/src/core/hle/service/nvnflinger/pixel_format.h
 index a38c8be777..a4f8a53c72 100644
 --- a/src/core/hle/service/nvnflinger/pixel_format.h
@@ -1827,18 +1907,6 @@ index 1ea3e70180..7aca1b89a7 100644
      INSERT(Settings, renderer_backend, tr("API:"),
             tr("Changes the output graphics API.\nVulkan is recommended."));
      INSERT(Settings, vulkan_device, tr("Device:"),
-diff --git a/src/tests/CMakeLists.txt b/src/tests/CMakeLists.txt
-index af9debf108..c556c3ef62 100644
---- a/src/tests/CMakeLists.txt
-+++ b/src/tests/CMakeLists.txt
-@@ -7,6 +7,7 @@
- add_executable(tests
-     common/addon_config.cpp
-     video_core/vulkan_overlay_filter.cpp
-+    video_core/occlusion_query_budget.cpp
-     video_core/buffer_cache_ports.cpp
-     video_core/unswizzle_workers.cpp
-     video_core/aftermath_dump.cpp
 diff --git a/src/tests/common/game_presets.cpp b/src/tests/common/game_presets.cpp
 index 481f5c5e1d..783444313b 100644
 --- a/src/tests/common/game_presets.cpp
@@ -1874,103 +1942,117 @@ index 481f5c5e1d..783444313b 100644
 +    CHECK(settings->nvidia_dlss.GetValue());
 +}
 diff --git a/src/tests/core/builtin_patches.cpp b/src/tests/core/builtin_patches.cpp
-index 7aec352c6b..436d0501ad 100644
+index 7aec352c6b..f1e35bf410 100644
 --- a/src/tests/core/builtin_patches.cpp
 +++ b/src/tests/core/builtin_patches.cpp
-@@ -47,6 +47,11 @@ constexpr size_t DynamicRoutineSize = 120;
+@@ -45,6 +45,18 @@ constexpr size_t DynamicRoutineOffset = sizeof(Loader::NSOHeader) + 0x3C46200;
+ constexpr size_t DynamicStateOffset = sizeof(Loader::NSOHeader) + 0x4E9FE00;
+ constexpr size_t DynamicRoutineSize = 120;
  constexpr size_t UnlockRoutineSize = 128;
++constexpr size_t DynamicStateSize = 24;
++constexpr size_t WaterHookOffset = sizeof(Loader::NSOHeader) + 0x475F8;
++constexpr size_t WaterMulOffset = sizeof(Loader::NSOHeader) + 0x4760C;
++constexpr size_t WaterRoutineOffset = sizeof(Loader::NSOHeader) + 0x3C46400;
++constexpr size_t WaterRoutineSize = 84;
++constexpr u32 WaterOriginalInstruction = 0x1E380009;
++constexpr u32 WaterMulOriginalInstruction = 0x1B097D08;
++constexpr u32 WaterCallInstruction = 0x94EFFB82;
++constexpr std::string_view WaterRoutine =
++    "0101221E0008211E0820201E0D020054C99200B021114EBD0028211E01102C1E0228211E"
++    "4800381E1F0500714A000054280080520101221E0038211E01103C1E0048211E20110EBD"
++    "C0035FD6E8031F2AC0035FD6";
  constexpr u32 DynamicCallInstruction = 0x94D57D4F;
  constexpr u32 DynamicOriginalInstruction = 0x1E201828;
-+constexpr size_t WaterHookOffset = sizeof(Loader::NSOHeader) + 0x475F8;
-+constexpr size_t WaterRoutineOffset = sizeof(Loader::NSOHeader) + 0x3C46280;
-+constexpr size_t WaterRoutineSize = 56;
-+constexpr u32 WaterOriginalInstruction = 0x1E380009;
-+constexpr u32 WaterHookInstruction = 0x14EFFB22;
  
- constexpr std::array<std::pair<Common::FS::EdenPath, const char*>, 4> TestDirectories{{
-     {Common::FS::EdenPath::NANDDir, "nand"},
-@@ -229,7 +234,7 @@ namespace {
+@@ -229,7 +241,7 @@ namespace {
  
  std::vector<u8> MakeDynamicMain() {
      auto nso = MakeMain(OcarinaBuildId, TbzInstruction);
 -    nso.resize(DynamicStateOffset + 16);
-+    nso.resize(DynamicStateOffset + 32);
++    nso.resize(DynamicStateOffset + DynamicStateSize);
      Loader::NSOHeader header;
      std::memcpy(&header, nso.data(), sizeof(header));
      header.segments[0].size = 63201744;
-@@ -241,6 +246,8 @@ std::vector<u8> MakeDynamicMain() {
+@@ -241,6 +253,10 @@ std::vector<u8> MakeDynamicMain() {
      std::memcpy(nso.data(), &header, sizeof(header));
      std::memcpy(nso.data() + DynamicCallOffset, &DynamicOriginalInstruction,
                  sizeof(DynamicOriginalInstruction));
 +    std::memcpy(nso.data() + WaterHookOffset, &WaterOriginalInstruction,
 +                sizeof(WaterOriginalInstruction));
++    std::memcpy(nso.data() + WaterMulOffset, &WaterMulOriginalInstruction,
++                sizeof(WaterMulOriginalInstruction));
      return nso;
  }
  
-@@ -272,6 +279,10 @@ TEST_CASE("Built-in FPS Unlock defaults on and replaces Dynamic FPS", "[patch_ma
-             fmt::format("IPS, replaced by {} when it applies", FpsUnlock));
-     auto patched = manager.PatchNSO(nso, "main");
-     REQUIRE(WordAt(patched, DynamicCallOffset) == DynamicCallInstruction);
-+    REQUIRE(WordAt(patched, WaterHookOffset) == WaterHookInstruction);
-+    REQUIRE(Common::HexToString(std::span{patched}.subspan(WaterRoutineOffset, WaterRoutineSize)) ==
-+            "C99200B0294138912A0140F95F0115EB60000054350100F93F0900B9210940BD"
-+            "0028211E01C0251E0038211E200900BD2900381ED2041017");
-     REQUIRE(routine(patched, UnlockRoutineSize) ==
+@@ -263,6 +279,17 @@ TEST_CASE("Built-in FPS Unlock defaults on and replaces Dynamic FPS", "[patch_ma
+         "2818201ECA9200B04A0138912BE03BD54C0140F94B0100F9CC0200B46B010CCB0DE03BD5"
+         "4E0180D2AE09CE9A7F010EEBCB818B9A4C0540F94C0000B5EC030BAA6E010CCB8C0D8E8B"
+         "4C0500F98201239EA301239E4218231E4208211E";
++    const auto water_patched = [](const std::vector<u8>& nso) {
++        return WordAt(nso, WaterHookOffset) == WaterCallInstruction &&
++               WordAt(nso, WaterMulOffset) == NopInstruction &&
++               Common::HexToString(std::span{nso}.subspan(WaterRoutineOffset, WaterRoutineSize)) ==
++                   WaterRoutine;
++    };
++    const auto water_untouched = [](const std::vector<u8>& nso) {
++        return WordAt(nso, WaterHookOffset) == WaterOriginalInstruction &&
++               WordAt(nso, WaterMulOffset) == WaterMulOriginalInstruction &&
++               WordAt(nso, WaterRoutineOffset) == 0;
++    };
+     const auto nso = MakeDynamicMain();
+ 
+     // Default: FPS Unlock applies, Dynamic FPS is listed as replaced by it when it applies.
+@@ -276,6 +303,7 @@ TEST_CASE("Built-in FPS Unlock defaults on and replaces Dynamic FPS", "[patch_ma
              std::string{RoutineHead} + "E300001C4268231EC300001C4278231E4840201EC0035FD6"
                                         "1F2003D50AD7A33C0000C040");
-@@ -293,6 +304,8 @@ TEST_CASE("Built-in FPS Unlock defaults on and replaces Dynamic FPS", "[patch_ma
+     REQUIRE(WordAt(patched) == BranchInstruction);
++    REQUIRE(water_patched(patched));
+ 
+     // Unchecking only Dynamic FPS keeps FPS Unlock.
+     Settings::values.disabled_addons[OcarinaTitleId] = {std::string{DynamicFps}};
+@@ -293,6 +321,7 @@ TEST_CASE("Built-in FPS Unlock defaults on and replaces Dynamic FPS", "[patch_ma
              std::string{RoutineHead} + "C300001C0309231E4020231E4D0000544840201EC0035FD6"
                                         "0AD7833F");
      REQUIRE(WordAt(patched, DynamicRoutineOffset + DynamicRoutineSize) == 0);
-+    REQUIRE(WordAt(patched, WaterHookOffset) == WaterOriginalInstruction);
-+    REQUIRE(WordAt(patched, WaterRoutineOffset) == 0);
++    REQUIRE(water_patched(patched));
  
      // Both unchecked: hook and code cave stay untouched.
      Settings::values.disabled_addons[OcarinaTitleId] = {std::string{FpsUnlock},
-@@ -300,6 +313,8 @@ TEST_CASE("Built-in FPS Unlock defaults on and replaces Dynamic FPS", "[patch_ma
+@@ -300,6 +329,7 @@ TEST_CASE("Built-in FPS Unlock defaults on and replaces Dynamic FPS", "[patch_ma
      patched = manager.PatchNSO(nso, "main");
      REQUIRE(WordAt(patched, DynamicCallOffset) == DynamicOriginalInstruction);
      REQUIRE(WordAt(patched, DynamicRoutineOffset) == 0);
-+    REQUIRE(WordAt(patched, WaterHookOffset) == WaterOriginalInstruction);
-+    REQUIRE(WordAt(patched, WaterRoutineOffset) == 0);
++    REQUIRE(water_untouched(patched));
  
      Settings::values.disabled_addons[OcarinaTitleId] = {std::string{MaxResolution}};
      patched = manager.PatchNSO(nso, "main");
-@@ -311,6 +326,34 @@ TEST_CASE("Built-in FPS Unlock defaults on and replaces Dynamic FPS", "[patch_ma
-     REQUIRE(std::ranges::find(unrelated, FpsUnlock, &FileSys::Patch::name) == unrelated.end());
- }
- 
-+TEST_CASE("Built-in FPS Unlock rejects invalid water hook, cave or state transactionally",
-+          "[patch_manager]") {
-+    PatchManagerTestContext context;
-+    Settings::values.disabled_addons[OcarinaTitleId] = {std::string{MaxResolution},
-+                                                     std::string{DynamicFps}};
-+    auto nso = MakeDynamicMain();
+@@ -337,7 +367,7 @@ TEST_CASE("Built-in Dynamic FPS rejects mismatched or truncated modules transact
+         nso.resize(DynamicRoutineOffset + DynamicRoutineSize - 1);
+     }
+     SECTION("Incomplete timer state") {
+-        nso.resize(DynamicStateOffset + 15);
++        nso.resize(DynamicStateOffset + DynamicStateSize - 1);
+     }
+     SECTION("Timer state outside BSS") {
+         Loader::NSOHeader header;
+@@ -352,7 +382,16 @@ TEST_CASE("Built-in Dynamic FPS rejects mismatched or truncated modules transact
+         nso[DynamicRoutineOffset + DynamicRoutineSize - 1] = 1;
+     }
+     SECTION("Nonzero timer state") {
+-        nso[DynamicStateOffset + 15] = 1;
++        nso[DynamicStateOffset + DynamicStateSize - 1] = 1;
++    }
 +    SECTION("Wrong original water hook") {
 +        nso[WaterHookOffset] ^= 1;
 +    }
++    SECTION("Wrong original water multiply") {
++        nso[WaterMulOffset] ^= 1;
++    }
 +    SECTION("Nonzero water code cave") {
 +        nso[WaterRoutineOffset + WaterRoutineSize - 1] = 1;
-+    }
-+    SECTION("Nonzero accumulator state") {
-+        nso[DynamicStateOffset + 31] = 1;
-+    }
-+    SECTION("Incomplete accumulator state") {
-+        nso.resize(DynamicStateOffset + 31);
-+    }
-+    SECTION("Accumulator state outside BSS") {
-+        Loader::NSOHeader header;
-+        std::memcpy(&header, nso.data(), sizeof(header));
-+        header.segments[2].bss_size =
-+            0x4E9FE00 + 31 - header.segments[2].location - header.segments[2].size;
-+        std::memcpy(nso.data(), &header, sizeof(header));
-+    }
-+    REQUIRE(context.Manager().PatchNSO(nso, "main") == nso);
-+}
-+
- TEST_CASE("Built-in Dynamic FPS rejects mismatched or truncated modules transactionally",
-           "[patch_manager]") {
-     PatchManagerTestContext context;
+     }
+     SECTION("Code cave outside executable padding") {
+         Loader::NSOHeader header;
 diff --git a/src/tests/core/nx2_image_layout.cpp b/src/tests/core/nx2_image_layout.cpp
 index 66528c1ebe..9e81a4cc4c 100644
 --- a/src/tests/core/nx2_image_layout.cpp
@@ -2182,47 +2264,45 @@ index 4971aff31c..a6de32a37c 100644
  TEST_CASE("Native uniform banks upload directly without overwriting GPU-owned bytes",
            "[buffer_ports]") {
      Fixture f;
-diff --git a/src/tests/video_core/occlusion_query_budget.cpp b/src/tests/video_core/occlusion_query_budget.cpp
-new file mode 100644
-index 0000000000..b6bb5f441e
---- /dev/null
-+++ b/src/tests/video_core/occlusion_query_budget.cpp
-@@ -0,0 +1,22 @@
-+// SPDX-FileCopyrightText: Copyright 2026 Eden Emulator Project
-+// SPDX-License-Identifier: GPL-3.0-or-later
+diff --git a/src/tests/video_core/stage_translation.cpp b/src/tests/video_core/stage_translation.cpp
+index 39bc1d379b..1c3cbda578 100644
+--- a/src/tests/video_core/stage_translation.cpp
++++ b/src/tests/video_core/stage_translation.cpp
+@@ -453,3 +453,29 @@ TEST_CASE("Compute SPIR-V emitted by a job matches the GPU thread's", "[stage_tr
+     }
+     CHECK(compute_fixtures > 0);
+ }
 +
-+#include <catch2/catch_test_macros.hpp>
++TEST_CASE("Texture descriptor pools up to 4 MiB are flushed for translation on workers",
++          "[stage_translation]") {
++    using VideoCommon::CanFlushTexturePool;
++    using VideoCommon::MaxFlushedTexturePoolBytes;
++    using VideoCommon::TexturePoolBytes;
 +
-+#include "video_core/renderer_vulkan/vk_query_budget.h"
++    // Pools under the old 1 MiB cap still flush
++    CHECK(TexturePoolBytes(0) == 32);
++    CHECK(CanFlushTexturePool(0));
++    CHECK(TexturePoolBytes(32767) == (u64{1} << 20));
++    CHECK(CanFlushTexturePool(32767));
 +
-+TEST_CASE("Occlusion query windows retain the Water Temple counts within a bounded bank budget",
-+          "[video_core][query_cache]") {
-+    using namespace Vulkan::OcclusionQueryBudget;
++    // Ocarina of Time's pool of 33,068 descriptors, just over 1 MiB
++    CHECK(TexturePoolBytes(33067) == 1'058'176);
++    CHECK(CanFlushTexturePool(33067));
 +
-+    STATIC_REQUIRE(MaxRunningSlots == 2048);
-+    REQUIRE_FALSE(MustDrop(0));
-+    REQUIRE_FALSE(MustDrop(346));   // earlier Hyrule/Kakariko measurements
-+    REQUIRE_FALSE(MustDrop(1024));  // previous inclusive boundary
-+    REQUIRE_FALSE(MustDrop(1025));  // Water Temple A3
-+    REQUIRE_FALSE(MustDrop(1027));
-+    REQUIRE_FALSE(MustDrop(1035));
-+    REQUIRE_FALSE(MustDrop(MaxRunningSlots));
-+    REQUIRE(MustDrop(MaxRunningSlots + 1));
-+    REQUIRE(MustDrop(16384));       // unreported menu counter still gets capped
++    // The cap is 4 MiB, it is inclusive, and the largest limit does not overflow
++    CHECK(MaxFlushedTexturePoolBytes == (u64{4} << 20));
++    constexpr u32 last_index = static_cast<u32>(MaxFlushedTexturePoolBytes / 32 - 1);
++    CHECK(TexturePoolBytes(last_index) == MaxFlushedTexturePoolBytes);
++    CHECK(CanFlushTexturePool(last_index));
++    CHECK_FALSE(CanFlushTexturePool(last_index + 1));
++    CHECK(TexturePoolBytes(0xFFFFFFFF) == (u64{1} << 37));
++    CHECK_FALSE(CanFlushTexturePool(0xFFFFFFFF));
 +}
 diff --git a/src/video_core/CMakeLists.txt b/src/video_core/CMakeLists.txt
-index 21ca474810..de6fc19d80 100644
+index 21ca474810..c223069371 100644
 --- a/src/video_core/CMakeLists.txt
 +++ b/src/video_core/CMakeLists.txt
-@@ -239,6 +239,7 @@ add_library(video_core STATIC
-     renderer_vulkan/vk_present_manager.h
-     renderer_vulkan/vk_query_cache.cpp
-     renderer_vulkan/vk_query_cache.h
-+    renderer_vulkan/vk_query_budget.h
-     renderer_vulkan/vk_rasterizer.cpp
-     renderer_vulkan/vk_rasterizer.h
-     renderer_vulkan/submission_policy.h
-@@ -619,7 +620,7 @@ endif()
+@@ -619,7 +619,7 @@ endif()
  # setting is on. Only Streamline's MIT-licensed headers are compiled in and nothing of NVIDIA's is
  # linked or copied: sl.interposer.dll and the DLSS plugins are loaded at run time from the user's PC.
  cmake_dependent_option(ENABLE_NVIDIA_DLSS "Enable NVIDIA DLSS through NVIDIA Streamline" ON
@@ -3795,21 +3875,43 @@ index 5bc8be1010..cacc8cb69b 100644
      void SaveSceneReference(VkImageView color);
      /// Composite the HUD from the guest image over the matching 4K scene.
 diff --git a/src/video_core/renderer_vulkan/vk_pipeline_cache.cpp b/src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
-index 9a0c8f69bc..22831f329a 100644
+index 22831f329a..fa5625aab1 100644
 --- a/src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
 +++ b/src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
-@@ -2583,9 +2583,9 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
-     }
-     static_assert(VideoCommon::EvictedPointerSlots::NumPrograms == Maxwell::MaxShaderProgram);
-     VideoCommon::EvictedPointerSlots::Slots mapped_pointers;
--    for (size_t index = 0, env_index = 0; index < Maxwell::MaxShaderProgram; ++index) {
-+    for (size_t index = 0, mapped_env = 0; index < Maxwell::MaxShaderProgram; ++index) {
-         if (key.unique_hashes[index] != 0) {
--            mapped_pointers[index] = envs[env_index++]->MappedStoragePointerKeys();
-+            mapped_pointers[index] = envs[mapped_env++]->MappedStoragePointerKeys();
-         }
-     }
-     auto pipeline = std::make_unique<GraphicsPipeline>(
+@@ -2497,6 +2497,14 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
+         const size_t stage_index{index - 1};
+         infos[stage_index] = &program.info;
+ 
++        if (program.is_geometry_passthrough && previous_stage != nullptr &&
++            !host_info.support_geometry_shader_passthrough) {
++            // Emulated passthrough: only the previous stage's outputs can pass through. Copying all
++            // 32 generics exceeds AMD's 128 output components, and amdvlk fail-fasts instead of
++            // returning an error. The previous stage's legacy outputs are generics by now, so the
++            // ones they were mapped to are kept.
++            Shader::Maxwell::TrimGeometryPassthrough(program, previous_stage->info.stores);
++        }
+         auto runtime_info{MakeRuntimeInfo(programs, key, program, previous_stage, device)};
+         if (mesh_emulation && (program.stage == Shader::Stage::Mesh ||
+                                program.stage == Shader::Stage::Task)) {
+@@ -2751,13 +2759,14 @@ std::unique_ptr<GraphicsPipeline> PipelineCache::CreateGraphicsPipeline(
+     // Shader cache v2: two or more stages translate at once on the shader jobs' CPU workers while
+     // this thread waits. Only this thread may flush guest memory, as reading a texture descriptor
+     // does, so the descriptor pool is flushed here first; with this thread waiting nothing can
+-    // make it dirty again. A pool too large to flush on every miss translates here as before.
++    // make it dirty again. A pool too large to flush on every miss translates here as before
++    // (VideoCommon::MaxFlushedTexturePoolBytes).
+     if (std::ranges::count_if(graphics_key.unique_hashes, [](u64 hash) { return hash != 0; }) >=
+         2) {
+-        constexpr u64 MaxFlushedTexturePoolBytes = u64{1} << 20;
++        static_assert(sizeof(Tegra::Texture::TICEntry) == VideoCommon::TextureDescriptorBytes);
+         const auto& tex_header = maxwell3d->regs.tex_header;
+-        const u64 pool_bytes = (u64{tex_header.limit} + 1) * sizeof(Tegra::Texture::TICEntry);
+-        if (pool_bytes <= MaxFlushedTexturePoolBytes) {
++        const u64 pool_bytes = VideoCommon::TexturePoolBytes(tex_header.limit);
++        if (VideoCommon::CanFlushTexturePool(tex_header.limit)) {
+             gpu_memory->FlushRegion(tex_header.Address(), pool_bytes);
+             for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
+                 if (graphics_key.unique_hashes[index] != 0) {
 diff --git a/src/video_core/renderer_vulkan/vk_present_manager.cpp b/src/video_core/renderer_vulkan/vk_present_manager.cpp
 index ea2a913ad8..25d4b5a4fd 100644
 --- a/src/video_core/renderer_vulkan/vk_present_manager.cpp
@@ -4026,58 +4128,6 @@ index ab2b76f10f..67d31cc3a0 100644
      bool storage_supported;
      bool use_present_thread;
      std::atomic<std::size_t> image_count{};
-diff --git a/src/video_core/renderer_vulkan/vk_query_budget.h b/src/video_core/renderer_vulkan/vk_query_budget.h
-new file mode 100644
-index 0000000000..7d48ee0fca
---- /dev/null
-+++ b/src/video_core/renderer_vulkan/vk_query_budget.h
-@@ -0,0 +1,19 @@
-+// SPDX-FileCopyrightText: Copyright 2026 Eden Emulator Project
-+// SPDX-License-Identifier: GPL-3.0-or-later
-+
-+#pragma once
-+
-+#include <cstddef>
-+
-+namespace Vulkan::OcclusionQueryBudget {
-+
-+// See SamplesStreamer::CloseCounter. Eight banks retain the >1,024-slot gameplay
-+// windows observed in OoT Water Temple A3 while keeping unreported menu queries bounded.
-+inline constexpr std::size_t SlotsPerBank = 256;
-+inline constexpr std::size_t MaxRunningSlots = 8 * SlotsPerBank;
-+
-+[[nodiscard]] constexpr bool MustDrop(std::size_t running_slots) noexcept {
-+    return running_slots > MaxRunningSlots;
-+}
-+
-+} // namespace Vulkan::OcclusionQueryBudget
-diff --git a/src/video_core/renderer_vulkan/vk_query_cache.cpp b/src/video_core/renderer_vulkan/vk_query_cache.cpp
-index 76d4f129e4..6d957095b7 100644
---- a/src/video_core/renderer_vulkan/vk_query_cache.cpp
-+++ b/src/video_core/renderer_vulkan/vk_query_cache.cpp
-@@ -24,6 +24,7 @@
- #include "video_core/renderer_vulkan/vk_buffer_cache.h"
- #include "video_core/renderer_vulkan/vk_compute_pass.h"
- #include "video_core/renderer_vulkan/vk_query_cache.h"
-+#include "video_core/renderer_vulkan/vk_query_budget.h"
- #include "video_core/renderer_vulkan/vk_resource_pool.h"
- #include "video_core/renderer_vulkan/vk_scheduler.h"
- #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
-@@ -218,9 +219,11 @@ public:
-         // submission and render pass, and the query keeps every bank it touches alive. Ocarina of
-         // Time's title screen and file select reached 16,384 slots over 64 banks, while gameplay
-         // windows in Hyrule Field, Kakariko Village, and the Shooting Gallery reach up to 346
--        // slots across two banks. Past 4 banks (1,024 slots), drop the count as a reset would.
--        static constexpr size_t MaxRunningQuerySlots = 4 * SamplesQueryBank::BANK_SIZE;
--        if (current_query && current_query->size_slots > MaxRunningQuerySlots) {
-+        // slots; Water Temple room A3 reports windows past 1,024 slots (#1142).
-+        // Allow up to 8 banks (2,048 slots), still bounded far below the 64-bank menu
-+        // case. Larger windows need a count-preserving rollover, not a larger cap.
-+        static_assert(SamplesQueryBank::BANK_SIZE == OcclusionQueryBudget::SlotsPerBank);
-+        if (current_query && OcclusionQueryBudget::MustDrop(current_query->size_slots)) {
-             // It drops a real count. Logged on the 1st, 2nd, 4th, 8th... drop, so a window this
-             // long during gameplay doesn't go unnoticed and a title screen doesn't flood the log.
-             ++bank_bound_resets;
 diff --git a/src/video_core/renderer_vulkan/vk_rasterizer.cpp b/src/video_core/renderer_vulkan/vk_rasterizer.cpp
 index f8aa71f0e1..f0f0b92116 100644
 --- a/src/video_core/renderer_vulkan/vk_rasterizer.cpp
@@ -4427,6 +4477,37 @@ index 584399567d..0a194f7f0d 100644
      bool has_imm{false};
      bool has_mailbox{false};
      bool has_fifo_relaxed{false};
+diff --git a/src/video_core/shader_stage_translation.h b/src/video_core/shader_stage_translation.h
+index 40ef7bb078..b2f648cdc8 100644
+--- a/src/video_core/shader_stage_translation.h
++++ b/src/video_core/shader_stage_translation.h
+@@ -52,6 +52,26 @@ struct StageTranslation {
+     Shader::IR::Program Take();
+ };
+ 
++/// Bytes of one texture descriptor (Tegra::Texture::TICEntry)
++inline constexpr u64 TextureDescriptorBytes = 32;
++
++/// The largest texture descriptor pool the GPU thread flushes before a pipeline's stages
++/// translate on workers; past it they translate on the GPU thread. The flush copies nothing: the
++/// caches write back what the host GPU wrote over the range, one call per mapped big page (64 or
++/// 128 KiB), so a pool this size costs at most 64 calls per miss. Ocarina of Time's pool is
++/// 1,058,176 bytes, just over the 1 MiB this was before.
++inline constexpr u64 MaxFlushedTexturePoolBytes = u64{4} << 20;
++
++/// Bytes of a texture descriptor pool whose last index is `tic_limit`
++[[nodiscard]] constexpr u64 TexturePoolBytes(u32 tic_limit) noexcept {
++    return (u64{tic_limit} + 1) * TextureDescriptorBytes;
++}
++
++/// True when the pool of `tic_limit` is small enough to flush for a translation on workers
++[[nodiscard]] constexpr bool CanFlushTexturePool(u32 tic_limit) noexcept {
++    return TexturePoolBytes(tic_limit) <= MaxFlushedTexturePoolBytes;
++}
++
+ /// Translates every stage as a NeedNow job of `jobs`, the calling thread running those no worker
+ /// took, and returns once all are done. The environments must not be used elsewhere meanwhile.
+ void TranslateStages(ShaderJobScheduler& jobs, std::span<StageTranslation> stages,
 diff --git a/src/video_core/surface.cpp b/src/video_core/surface.cpp
 index da57da6917..9ce8bec55d 100644
 --- a/src/video_core/surface.cpp
@@ -4441,10 +4522,31 @@ index da57da6917..9ce8bec55d 100644
          UNIMPLEMENTED_MSG("Unimplemented format={}", format);
          return PixelFormat::A8B8G8R8_UNORM;
 diff --git a/src/video_core/texture_cache/texture_cache.h b/src/video_core/texture_cache/texture_cache.h
-index 397616a8d0..28a066c647 100644
+index 397616a8d0..17776b95a8 100644
 --- a/src/video_core/texture_cache/texture_cache.h
 +++ b/src/video_core/texture_cache/texture_cache.h
-@@ -349,6 +349,12 @@ void TextureCache<P>::ApplyThresholdOverrides(bool log) {
+@@ -330,7 +330,19 @@ void TextureCache<P>::ApplyThresholdOverrides(bool log) {
+     const u64 budget_expected = expected_memory;
+     u64 max_critical = MaxCriticalMemory;
+     if constexpr (requires { runtime.GetDeviceMemoryBudget(); }) {
+-        max_critical = (std::max)(max_critical, runtime.GetDeviceMemoryBudget() / 8 * 5);
++        const u64 budget = runtime.GetDeviceMemoryBudget();
++        max_critical = (std::max)(max_critical, budget / 8 * 5);
++        // Larger budgets, native titles only: 5/8 left ~7.3 GiB on a 12 GB RX 6700 XT, under what
++        // Ocarina's Kokiri Forest keeps alive, so every aggressive pass evicted its CostlyLoad ASTC
++        // textures (a 6144x6144 5x5 one, 31 MiB) and the game re-created them ~128 frames later:
++        // a 24 ms texture stall every ~3 s. From 10 GiB of budget on, keep 2.5 GiB for everything
++        // else; between 8 and 10 GiB ramp up to that from 5/8, so a budget moving across a size
++        // does not move the threshold in a step. Only the native path re-reads the budget (every
++        // 30 frames), so only it may sit this close to the budget.
++        if (native_thresholds_applied && budget > 8_GiB) {
++            const u64 ramp = budget + budget / 4 - 5_GiB; // 5/8 of it at 8 GiB, joins below at 10
++            max_critical = (std::max)(max_critical, (std::min)(ramp, budget - 2560_MiB));
++        }
+     }
+     critical_memory = (std::min)(critical_memory, max_critical);
+     expected_memory =
+@@ -349,6 +361,12 @@ void TextureCache<P>::ApplyThresholdOverrides(bool log) {
          }
      }
      expected_memory = (std::min)(expected_memory, critical_memory);
@@ -4457,7 +4559,7 @@ index 397616a8d0..28a066c647 100644
      if (log) {
          LogThresholds();
      }
-@@ -1693,6 +1699,10 @@ std::pair<typename P::ImageView*, bool> TextureCache<P>::TryFindFramebufferImage
+@@ -1693,6 +1711,10 @@ std::pair<typename P::ImageView*, bool> TextureCache<P>::TryFindFramebufferImage
              return PixelFormat::R5G6B5_UNORM;
          case Service::android::PixelFormat::Bgra8888:
              return PixelFormat::B8G8R8A8_UNORM;
@@ -4587,10 +4689,10 @@ index e78b069590..6e4bf72776 100644
      QComboBox* aspect_ratio_combobox;
      QComboBox* resolution_combobox;
 diff --git a/src/yuzu/main_window.cpp b/src/yuzu/main_window.cpp
-index be3a45f527..6cf6827b72 100644
+index 812ad9e983..175880beda 100644
 --- a/src/yuzu/main_window.cpp
 +++ b/src/yuzu/main_window.cpp
-@@ -2132,6 +2132,26 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+@@ -2144,6 +2144,26 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
          LOG_INFO(Config, "Applied recommended MKW settings after per-game configuration");
      }
      PrepareShaderPrecache(title_id, std::filesystem::path{filename.toStdU16String()});
@@ -4618,10 +4720,10 @@ index be3a45f527..6cf6827b72 100644
  
      if (UISettings::values.select_user_on_boot && !user_flag_cmd_line) {
 diff --git a/src/yuzu/main_window.h b/src/yuzu/main_window.h
-index 5cce51ccdf..0c010c004c 100644
+index 64ddb1f693..38f575135b 100644
 --- a/src/yuzu/main_window.h
 +++ b/src/yuzu/main_window.h
-@@ -517,6 +517,8 @@ private:
+@@ -520,6 +520,8 @@ private:
      MultiplayerState* multiplayer_state = nullptr;
      bool use_recommended_mkw_settings = false;
      bool asked_recommended_mkw_settings = false;

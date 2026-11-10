@@ -1,8 +1,8 @@
 # Lichii Superbuild (unofficial)
 
-> ## ✅ v43 recommended
+> ## ✅ v45 recommended
 >
-> v43 restores the v41 pipeline preload and native-draw skip presets to fix the stutter regression of the removed v42 build, on the same zortos `nx2` `d2eaae4f3a`. Everything from v41 stays: precache off in the OoT preset, water fixes #1152/#1147, 4K HDR DLSS PR #9, frame-generation HDR PR #8, #1143/#1154, jpkto's #1094/#1095, #874 and our layer. v32 and v42 were removed; v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
+> v45 is based on zortos `nx2` `610bd08731` (#1154, #1200, #1197, #1196) plus #1180 water ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling and #1110 Bananza AMD crash fix. Linux packages now preload pipelines by default like Windows. Everything from v43 stays; v32 and v42 were removed; v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 
 ## Credits
 
