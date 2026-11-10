@@ -33,6 +33,7 @@ add_executable(tests
     video_core/texture_rect_descriptor.cpp
     video_core/join_whole_copy.cpp
     audio_core/batch_decoder.cpp
+    audio_core/adpcm_decode.cpp
     audio_core/microphone.cpp
     audio_core/hardware_audio_codec.cpp
     core/gpu_dirty_memory.cpp
@@ -300,6 +301,7 @@ if (NOT ANDROID)
 
     add_executable(config_tests
         common/first_run_config.cpp
+        common/recommended_settings.cpp
         ../frontend_common/config.cpp)
     target_link_libraries(config_tests PRIVATE common SimpleIni::SimpleIni Catch2::Catch2WithMain
         ${PLATFORM_LIBRARIES})
