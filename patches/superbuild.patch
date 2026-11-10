@@ -180,10 +180,10 @@ index 873b99bec2..67960c7f41 100644
 +dist-local/
 +tools/superbuild/local/
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index bc40878ce6..3b05807c7e 100644
+index bc40878ce6..8a50817424 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
-@@ -1,11 +1,500 @@
+@@ -1,11 +1,520 @@
  # Changelog
  
 -All notable changes to Eglantine are documented here. Each release's notes are taken from its
@@ -192,9 +192,30 @@ index bc40878ce6..3b05807c7e 100644
 +All releases are unofficial builds. See the GitHub releases for assets and checksums.
  
 -## [Unreleased]
-+## v46
++## v47
  
 -## [0.1.0]
++- **Fixed: the Ocarina of Time recommended settings were overwriting changes
++  made in the game's Properties.** v46 applied the full recommended table on
++  every OoT launch and saved it to OoT's per-game config, so a value you set
++  yourself — for example `Precache shaders before game start = Always` — was
++  reset to the recommended `Off` at the next boot. The recommended settings
++  are now offered and applied **once** (a saved flag), and the preset skips any
++  setting that already has a per-game value, so manual edits stick. The prompt
++  says so explicitly.
++- Based on the same zortos `nx2` `bcb37c49f7` as v46; everything from v46
++  stays: #1199, the expanded OoT preset saved per game, #1180 water ripples,
++  #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110 Bananza AMD
++  crash fix, Linux pipeline preloading, #1200/#1197/#1196/#1154, 4K HDR DLSS
++  PR #9, frame-generation HDR PR #8, HDR DLSS PR #7, #1058, #1127, #1078,
++  #1094/#1095, #1061, #1062, #1056, #1060, #1036, #1028, #874, native HDR,
++  DLSS presets E/F, the safe Fritchii ports and the optional white-flash
++  mitigation.
++- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+ 
+-- Initial release candidate
++## v46
++
 +- **The Ocarina of Time recommended-settings prompt now uses zortos's full
 +  recommended table and saves the result.** Accepting it applies the same
 +  46-setting developer baseline as the global recommended-settings offer
@@ -212,8 +233,7 @@ index bc40878ce6..3b05807c7e 100644
 +  #1062, #1056, #1060, #1036, #1028, #874, native HDR, DLSS presets E/F, the
 +  safe Fritchii ports and the optional white-flash mitigation.
 +- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
- 
--- Initial release candidate
++
 +## v45
 +
 +- **Based on latest zortos `nx2` `610bd08731`:** #1154 (build fix after #1143,
@@ -826,7 +846,7 @@ index 0000000000..a0496b95b6
 +expose the port to a network. Dumps and captures can contain game assets; keep
 +them local and do not upload `.rdc` captures or dumps publicly.
 diff --git a/README.md b/README.md
-index 9230cf33b0..4020394327 100644
+index 9230cf33b0..06cbf2a150 100644
 --- a/README.md
 +++ b/README.md
 @@ -9,7 +9,7 @@
@@ -842,9 +862,9 @@ index 9230cf33b0..4020394327 100644
  
  # Lichii
  
-+> ## ✅ v46 recommended
++> ## ✅ v47 recommended
 +>
-+> v46 is based on zortos `nx2` `bcb37c49f7` (#1199), with the OoT recommended preset now applying zortos's full 46-setting developer table plus FSR 3/DLSS and saving it to OoT's per-game config. Everything from v45 stays: #1180 water ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110 Bananza AMD crash fix, Linux pipeline preloading and #1200/#1197/#1196/#1154. v32 and v42 were removed; v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
++> v47 fixes the OoT recommended settings overwriting manual changes in the game's Properties: the preset is now applied once and preserves your per-game values. Based on the same zortos `nx2` `bcb37c49f7` as v46, with everything from v46 (#1199, expanded saved OoT preset, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154). v32 and v42 were removed; v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 +
 +> **Unofficial superbuild fork.** This repository is not official Lichii and is
 +> not affiliated with zortos293. It carries a curated set of performance and
@@ -866,15 +886,15 @@ index 9230cf33b0..4020394327 100644
  
 diff --git a/SUPERBUILD.md b/SUPERBUILD.md
 new file mode 100644
-index 0000000000..8cb7b56d6e
+index 0000000000..8d2ec08d5e
 --- /dev/null
 +++ b/SUPERBUILD.md
 @@ -0,0 +1,216 @@
 +# Lichii Superbuild (unofficial)
 +
-+> ## ✅ v46 recommended
++> ## ✅ v47 recommended
 +>
-+> v46 is based on zortos `nx2` `bcb37c49f7` (#1199) and makes the OoT recommended preset use zortos's full 46-setting developer table plus FSR 3/DLSS, saved to OoT's per-game config. Everything from v45 stays: #1180 water ripples, #1155 descriptor-pool flush, #1129 texture-cache ceiling, #1110 Bananza AMD crash fix, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
++> v47 fixes the OoT recommended-settings preset overwriting per-game changes made in Properties: it is now offered and applied once (saved flag) and skips settings that already have a per-game value. Based on the same zortos `nx2` `bcb37c49f7` as v46; everything from v46 stays. v32 and v42 were removed; v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 +
 +## Credits
 +
@@ -1193,7 +1213,7 @@ index 4928eb47ff..3be40fe991 100644
  
  Enhancements aimed at removing jagged lines/sharp edges and/or masking artifacts.
 diff --git a/src/common/game_presets.h b/src/common/game_presets.h
-index 83dd4d3c3f..f4323df329 100644
+index 83dd4d3c3f..afcd5972c9 100644
 --- a/src/common/game_presets.h
 +++ b/src/common/game_presets.h
 @@ -2,11 +2,13 @@
@@ -1210,12 +1230,16 @@ index 83dd4d3c3f..f4323df329 100644
  
  inline void SetMarioKartWorldRecommendedSettings(Values& settings, bool global) {
      const auto session = [global](auto& setting, auto value) {
-@@ -34,4 +36,27 @@ inline bool ApplyMarioKartWorldPreset(Values& settings, u64 program_id, bool acc
+@@ -34,4 +36,31 @@ inline bool ApplyMarioKartWorldPreset(Values& settings, u64 program_id, bool acc
      return true;
  }
  
 +inline void SetOcarinaOfTimeRecommendedSettings(Values& settings, bool global) {
 +    const auto session = [global](auto& setting, auto value) {
++        // Keep a per-game value the user already chose; fill in the rest.
++        if (!global && !setting.UsingGlobal()) {
++            return;
++        }
 +        setting.SetGlobal(global);
 +        setting.SetValue(value);
 +    };
@@ -1504,7 +1528,7 @@ index e956dec102..3b8baa9e61 100644
  
  } // namespace Settings
 diff --git a/src/common/settings.h b/src/common/settings.h
-index ee442a51f1..eac3352603 100644
+index ee442a51f1..b0cd0b1497 100644
 --- a/src/common/settings.h
 +++ b/src/common/settings.h
 @@ -339,6 +339,11 @@ struct Values {
@@ -1519,6 +1543,17 @@ index ee442a51f1..eac3352603 100644
      SwitchableSetting<RendererBackend, true> renderer_backend{linkage,
  #if defined(__sun__) || defined(__managarm__)
          RendererBackend::OpenGL_GLSL,
+@@ -1032,6 +1037,10 @@ struct Values {
+         linkage, false, "recommended_settings_prompt_shown", Category::Miscellaneous};
+     Setting<std::string> recommended_settings_backup{
+         linkage, {}, "recommended_settings_backup", Category::Miscellaneous};
++    // The Ocarina of Time recommended settings are offered and applied only once, so a later
++    // change the user makes in the per-game properties is never overwritten at the next boot.
++    Setting<bool> oot_recommended_settings_applied{
++        linkage, false, "oot_recommended_settings_applied", Category::Miscellaneous};
+ 
+     // Network
+     Setting<std::string> network_interface{linkage, std::string(), "network_interface",
 diff --git a/src/common/windows/timer_resolution.cpp b/src/common/windows/timer_resolution.cpp
 index 1fb985b735..56ff996b63 100644
 --- a/src/common/windows/timer_resolution.cpp
@@ -2197,10 +2232,10 @@ index 8e58f32288..884232e7a8 100644
  // This creates a workaround by setting the layer as a generic output and creating a
  // passthrough geometry shader that reads the generic and sets the layer.
 diff --git a/src/tests/common/game_presets.cpp b/src/tests/common/game_presets.cpp
-index 481f5c5e1d..4f1a0d78ba 100644
+index 481f5c5e1d..b0ecda3b25 100644
 --- a/src/tests/common/game_presets.cpp
 +++ b/src/tests/common/game_presets.cpp
-@@ -109,3 +109,35 @@ TEST_CASE("Declining the MKW preset preserves global and per-game preferences",
+@@ -109,3 +109,39 @@ TEST_CASE("Declining the MKW preset preserves global and per-game preferences",
          CHECK(settings->resolution_setup.UsingGlobal() == !per_game);
      }
  }
@@ -2217,6 +2252,8 @@ index 481f5c5e1d..4f1a0d78ba 100644
 +    settings->vram_usage_mode.SetValue(Settings::VramUsageMode::Aggressive);
 +    settings->astc_recompression.SetValue(Settings::AstcRecompression::Uncompressed);
 +    settings->native_async_draws.SetValue(Settings::NativeAsyncDraws::Wait);
++    settings->precache_shaders.SetGlobal(false);
++    settings->precache_shaders.SetValue(Settings::PrecacheShaders::Always);
 +
 +    CHECK_FALSE(
 +        Settings::ApplyOcarinaOfTimePreset(*settings, Settings::OcarinaOfTimeProgramId, false));
@@ -2235,6 +2272,8 @@ index 481f5c5e1d..4f1a0d78ba 100644
 +    CHECK(settings->vram_usage_mode.GetValue() == Settings::VramUsageMode::Conservative);
 +    CHECK(settings->astc_recompression.GetValue() == Settings::AstcRecompression::Bc3);
 +    CHECK(settings->native_async_draws.GetValue() == Settings::NativeAsyncDraws::Bounded);
++    // A value the user already set for this game is never overwritten by the recommended table.
++    CHECK(settings->precache_shaders.GetValue() == Settings::PrecacheShaders::Always);
 +}
 diff --git a/src/tests/core/builtin_patches.cpp b/src/tests/core/builtin_patches.cpp
 index 7aec352c6b..f1e35bf410 100644
@@ -4999,7 +5038,7 @@ index e78b069590..6e4bf72776 100644
      QComboBox* aspect_ratio_combobox;
      QComboBox* resolution_combobox;
 diff --git a/src/yuzu/main_window.cpp b/src/yuzu/main_window.cpp
-index 812ad9e983..fad08553d1 100644
+index 812ad9e983..ef89b1171e 100644
 --- a/src/yuzu/main_window.cpp
 +++ b/src/yuzu/main_window.cpp
 @@ -2102,6 +2102,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
@@ -5019,14 +5058,16 @@ index 812ad9e983..fad08553d1 100644
          QtCommon::system->HIDCore().ReloadInputDevices();
          QtCommon::system->ApplySettings();
      }
-@@ -2144,6 +2145,31 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+@@ -2144,6 +2145,33 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
          LOG_INFO(Config, "Applied recommended MKW settings after per-game configuration");
      }
      PrepareShaderPrecache(title_id, std::filesystem::path{filename.toStdU16String()});
 +
-+    if (title_id == Settings::OcarinaOfTimeProgramId && !asked_recommended_oot_settings) {
-+        asked_recommended_oot_settings = true;
-+        use_recommended_oot_settings =
++    if (title_id == Settings::OcarinaOfTimeProgramId &&
++        !Settings::values.oot_recommended_settings_applied.GetValue()) {
++        Settings::values.oot_recommended_settings_applied = true;
++        OnSaveConfig();
++        const bool accepted =
 +            QMessageBox::question(
 +                this, tr("Recommended Ocarina of Time settings"),
 +                tr("Use the recommended performance settings for Ocarina of Time?\n\n"
@@ -5034,36 +5075,23 @@ index 812ad9e983..fad08553d1 100644
 +                   "conservative VRAM, BC3, asynchronous presentation and shaders, no memory "
 +                   "operation syncs, and more) plus FSR3 scaling and NVIDIA DLSS where "
 +                   "available.\n\n"
-+                   "They are saved for Ocarina of Time and can be changed later."),
++                   "They are saved for Ocarina of Time. This is offered once; you can change any "
++                   "of them later in the game's Properties and they will stay changed."),
 +                QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
-+        LOG_INFO(Config, "OoT recommended settings accepted: {}", use_recommended_oot_settings);
-+    }
-+    if (Settings::ApplyOcarinaOfTimePreset(Settings::values, title_id,
-+                                           use_recommended_oot_settings)) {
-+        QtCommon::system->ApplySettings();
-+        Settings::UpdateGPUAccuracy();
-+        if (per_game_config) {
-+            per_game_config->SaveAllValues();
-+            LOG_INFO(Config, "Saved recommended OoT settings to its per-game configuration");
++        LOG_INFO(Config, "OoT recommended settings accepted: {}", accepted);
++        if (accepted && Settings::ApplyOcarinaOfTimePreset(Settings::values, title_id, true)) {
++            QtCommon::system->ApplySettings();
++            Settings::UpdateGPUAccuracy();
++            if (per_game_config) {
++                per_game_config->SaveAllValues();
++                LOG_INFO(Config, "Saved recommended OoT settings to its per-game configuration");
++            }
++            LOG_INFO(Config, "Applied recommended OoT settings after per-game configuration");
 +        }
-+        LOG_INFO(Config, "Applied recommended OoT settings after per-game configuration");
 +    }
      Settings::LogSettings();
  
      if (UISettings::values.select_user_on_boot && !user_flag_cmd_line) {
-diff --git a/src/yuzu/main_window.h b/src/yuzu/main_window.h
-index 64ddb1f693..38f575135b 100644
---- a/src/yuzu/main_window.h
-+++ b/src/yuzu/main_window.h
-@@ -520,6 +520,8 @@ private:
-     MultiplayerState* multiplayer_state = nullptr;
-     bool use_recommended_mkw_settings = false;
-     bool asked_recommended_mkw_settings = false;
-+    bool use_recommended_oot_settings = false;
-+    bool asked_recommended_oot_settings = false;
- 
-     GRenderWindow* render_window = nullptr;
-     GameList* game_list = nullptr;
 diff --git a/tools/superbuild/README.md b/tools/superbuild/README.md
 new file mode 100644
 index 0000000000..6e485ee7a0
