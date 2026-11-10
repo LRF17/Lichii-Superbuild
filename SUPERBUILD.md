@@ -1,8 +1,8 @@
 # Lichii Superbuild (unofficial)
 
-> ## ✅ v48 recommended
+> ## ✅ v49 recommended
 >
-> v48 is based on zortos `nx2` `093e264c8a` (#1210 host-commit OOM fix, #1212 shadow rename) plus #1219 white-light occlusion carry, #1216 OoT fast draws and Fritchii v5.6's zero-page trim. Everything from v47 stays (one-shot saved OoT preset, #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading). v32 and v42 were removed; v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
+> v49 adds Help -> Check for Updates... (on demand, always shows the result) and Help -> Open Releases Page..., so updates are never silently missed. Same zortos `nx2` `093e264c8a` base; everything from v48 stays (#1210, #1219, #1216, Fritchii zero-page trim, one-shot saved OoT preset, #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading). v32 and v42 were removed; v48/v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 
 ## Credits
 

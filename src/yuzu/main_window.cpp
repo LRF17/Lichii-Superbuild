@@ -452,11 +452,10 @@ MainWindow::MainWindow(bool has_broken_vulkan)
     show();
 
 #ifdef ENABLE_UPDATE_CHECKER
-    if (UISettings::values.check_for_updates) {
-        update_future = QtConcurrent::run([]() { return UpdateChecker::Check(); });
-        update_watcher.connect(&update_watcher, &QFutureWatcher<QString>::finished, this,
-                               &MainWindow::OnEmulatorUpdateAvailable);
-        update_watcher.setFuture(update_future);
+    connect(&update_watcher, &QFutureWatcher<UpdateChecker::CheckResult>::finished, this,
+            &MainWindow::OnEmulatorUpdateAvailable);
+    if (UISettings::values.check_for_updates.GetValue()) {
+        StartUpdateCheck(false);
     }
 #endif
 
@@ -1716,6 +1715,13 @@ void MainWindow::ConnectMenuEvents() {
     connect_menu(ui->action_Eden_Dependencies, &MainWindow::OnEdenDependencies);
     connect_menu(ui->action_Apply_Recommended_Settings, &MainWindow::OnApplyRecommendedSettings);
     connect_menu(ui->action_Restore_Previous_Settings, &MainWindow::OnRestorePreviousSettings);
+#ifdef ENABLE_UPDATE_CHECKER
+    connect_menu(ui->action_Check_For_Updates, &MainWindow::OnCheckForUpdates);
+    connect_menu(ui->action_Open_Releases_Page, &MainWindow::OnOpenReleasesPage);
+#else
+    ui->action_Check_For_Updates->setVisible(false);
+    ui->action_Open_Releases_Page->setVisible(false);
+#endif
     connect(ui->menu_Help, &QMenu::aboutToShow, this, [this] {
         ui->action_Apply_Recommended_Settings->setEnabled(!emulation_running);
         ui->action_Restore_Previous_Settings->setEnabled(!emulation_running);
@@ -4995,29 +5001,83 @@ void MainWindow::OnCaptureScreenshot() {
 }
 
 #ifdef ENABLE_UPDATE_CHECKER
+void MainWindow::StartUpdateCheck(bool manual) {
+    if (update_future.isRunning()) {
+        return;
+    }
+    manual_update_check = manual;
+    ui->action_Check_For_Updates->setEnabled(false);
+    update_future = QtConcurrent::run([]() { return UpdateChecker::Check(); });
+    update_watcher.setFuture(update_future);
+}
+
+void MainWindow::OnCheckForUpdates() {
+    if (update_future.isRunning()) {
+        QMessageBox::information(this, tr("Check for Updates"),
+                                 tr("An update check is already running."));
+        return;
+    }
+    statusBar()->showMessage(tr("Checking for updates..."), 15000);
+    StartUpdateCheck(true);
+}
+
+void MainWindow::OnOpenReleasesPage() {
+    QDesktopServices::openUrl(
+        QUrl{QStringLiteral("https://github.com/callme-sy/Lichii-Superbuild/releases")});
+}
+
 void MainWindow::OnEmulatorUpdateAvailable() {
+    ui->action_Check_For_Updates->setEnabled(true);
     const auto result = update_future.result();
-    if (result.failure == UpdateChecker::Failure::RateLimited) {
-        statusBar()->showMessage(
-            tr("Could not check for updates: GitHub rate limit reached. Lichii will try again at "
-               "the next start."),
-            15000);
+    const bool manual = manual_update_check;
+    manual_update_check = false;
+
+    if (result.failure != UpdateChecker::Failure::None) {
+        QString message;
+        switch (result.failure) {
+        case UpdateChecker::Failure::RateLimited:
+            message = tr("Could not check for updates: GitHub rate limit reached. "
+                         "Try again later, or open the releases page in your browser.");
+            break;
+        case UpdateChecker::Failure::Http:
+            message = tr("Could not check for updates: GitHub answered with HTTP %1.")
+                          .arg(result.status);
+            break;
+        default:
+            message = tr("Could not check for updates: no answer from GitHub. "
+                         "Check your connection, or open the releases page in your browser.");
+            break;
+        }
+        if (manual) {
+            QMessageBox::warning(this, tr("Check for Updates"), message);
+        } else {
+            statusBar()->showMessage(message, 15000);
+            // A failed check at startup (network not up yet, a transient GitHub error) used to
+            // leave the update unnoticed until the next launch. Retry once, quietly.
+            if (!update_check_retried) {
+                update_check_retried = true;
+                QTimer::singleShot(120 * 1000, this, [this] { StartUpdateCheck(false); });
+            }
+        }
         return;
     }
-    if (result.failure == UpdateChecker::Failure::Http) {
-        statusBar()->showMessage(
-            tr("Could not check for updates: GitHub answered with HTTP %1.").arg(result.status),
-            15000);
-        return;
-    }
+    update_check_retried = false;
     if (!result.update) {
+        if (manual) {
+            QMessageBox::information(
+                this, tr("Check for Updates"),
+                tr("You are up to date: %1 is the latest release.")
+                    .arg(QString::fromUtf8(Common::g_build_release_tag)));
+        }
         return;
     }
 
     const auto& release = *result.update;
     const auto now = static_cast<unsigned long long>(QDateTime::currentSecsSinceEpoch());
-    if (UISettings::values.skipped_update_tag.GetValue() == release.tag ||
-        UISettings::values.update_remind_at.GetValue() > now) {
+    // A manual check always shows the result; dismissed or skipped versions only quiet the
+    // automatic check at startup.
+    if (!manual && (UISettings::values.skipped_update_tag.GetValue() == release.tag ||
+                    UISettings::values.update_remind_at.GetValue() > now)) {
         return;
     }
 

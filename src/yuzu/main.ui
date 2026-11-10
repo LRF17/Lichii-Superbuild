@@ -235,6 +235,8 @@
     <addaction name="action_Report_Compatibility"/>
     <addaction name="action_Open_Mods_Page"/>
     <addaction name="action_Open_UserHandbook"/>
+    <addaction name="action_Check_For_Updates"/>
+    <addaction name="action_Open_Releases_Page"/>
     <addaction name="separator"/>
     <addaction name="action_Apply_Recommended_Settings"/>
     <addaction name="action_Restore_Previous_Settings"/>
@@ -296,6 +298,16 @@
   <action name="action_About">
    <property name="text">
     <string>&amp;About Lichii</string>
+   </property>
+  </action>
+  <action name="action_Check_For_Updates">
+   <property name="text">
+    <string>Check for &amp;Updates...</string>
+   </property>
+  </action>
+  <action name="action_Open_Releases_Page">
+   <property name="text">
+    <string>Open &amp;Releases Page...</string>
    </property>
   </action>
   <action name="action_Single_Window_Mode">

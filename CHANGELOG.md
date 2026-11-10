@@ -2,6 +2,27 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v49
+
+- **New: Help -> Check for Updates...** runs an update check on demand and
+  always shows the result. The old check ran only once at startup and stayed
+  silent on a network failure, on "no update", and for 24 hours after a dialog
+  was dismissed (or forever after "Skip this version") — which is why an update
+  sometimes went unnoticed. The manual check bypasses those suppressions and
+  reports rate limits, HTTP errors, offline failures and "you are up to date"
+  in a dialog. A failed startup check now also retries once after two minutes.
+- **New: Help -> Open Releases Page...** opens this repository's releases page
+  directly, so an update can always be downloaded even when GitHub's API is
+  rate limited.
+- Everything from v48 stays: #1210, #1219, #1216, Fritchii v5.6's zero-page
+  trim, the one-shot saved OoT preset, #1199, #1180, #1155, #1129, #1110,
+  Linux pipeline preloading, #1200/#1197/#1196/#1154, 4K HDR DLSS PR #9,
+  frame-generation HDR PR #8, HDR DLSS PR #7, #1058, #1127, #1078,
+  #1094/#1095, #1061, #1062, #1056, #1060, #1036, #1028, #874, native HDR,
+  DLSS presets E/F, the safe Fritchii ports and the optional white-flash
+  mitigation.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
 ## v48
 
 - Based on latest zortos `nx2` `093e264c8a`: **#1210** keeps the texture-cache
