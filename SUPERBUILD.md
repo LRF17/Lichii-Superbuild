@@ -2,7 +2,7 @@
 
 > ## ✅ v43 recommended
 >
-> v43 restores the v41 pipeline preload and native-draw skip presets to fix the v42 stutter regression, on the same zortos `nx2` `d2eaae4f3a`. Everything from v42 stays: precache off in the OoT preset, water fixes #1152/#1147, 4K HDR DLSS PR #9, frame-generation HDR PR #8, #1143/#1154, jpkto's #1094/#1095, #874 and our layer. v32 was removed for AMD graphics issues; v42/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
+> v43 restores the v41 pipeline preload and native-draw skip presets to fix the stutter regression of the removed v42 build, on the same zortos `nx2` `d2eaae4f3a`. Everything from v41 stays: precache off in the OoT preset, water fixes #1152/#1147, 4K HDR DLSS PR #9, frame-generation HDR PR #8, #1143/#1154, jpkto's #1094/#1095, #874 and our layer. v32 and v42 were removed; v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 
 ## Credits
 

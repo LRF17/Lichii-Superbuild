@@ -4,21 +4,11 @@ All releases are unofficial builds. See the GitHub releases for assets and check
 
 ## v43
 
-- **Fixed the stutter regression in v42.** v42 removed two performance presets
-  that were doing real work: preloading every cached graphics pipeline at boot
-  and skipping native draws whose pipeline is still building. Without them,
-  pipelines were rebuilt while playing and frames stalled while builds
-  finished. Both are restored, matching v41's smoothness.
-- Everything from v42 stays: the shader-cache upgrade note (clear caches from
-  v34 or earlier), the water fixes #1152/#1147, 4K HDR DLSS PR #9,
-  frame-generation HDR PR #8, #1143/#1154, HDR DLSS PR #7, #1058, #1127,
-  #1078, #1094/#1095, #1061, #1062, #1056, #1060, #1036, #1028, #874, native
-  HDR, DLSS presets E/F, the safe Fritchii ports and the optional white-flash
-  mitigation. Precache shaders stays off in the OoT preset.
-- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
-
-## v42
-
+- **Fixed the stutter regression in the removed v42 build.** That build dropped
+  two performance presets that were doing real work: preloading every cached
+  graphics pipeline at boot and skipping native draws whose pipeline is still
+  building. Without them, pipelines were rebuilt while playing and frames
+  stalled while builds finished. Both are restored, matching v41's smoothness.
 - **Before playing: if your shader cache is from v34 or earlier, clear it.**
   v35 replaced the Vulkan pipeline cache with shader cache v2, and caches from
   older builds can cause wrong graphics or repeated rebuilds. If you enable
@@ -26,19 +16,13 @@ All releases are unofficial builds. See the GitHub releases for assets and check
   loading screen while shaders are built — this is normal, there is a Skip
   button, and later launches only build what is new until the GPU driver
   changes.
-- **The Ocarina of Time recommended-settings prompt now also sets Switch 2
-  draws with unbuilt pipelines = Bounded wait.** Each frame waits up to the
-  pipeline-wait budget (8 ms by default) for a pipeline that is still building,
-  then skips the draw instead of stalling the frame. It applies with the rest of
-  the preset for the session and does not change saved settings.
-- Based on the same zortos `nx2` `d2eaae4f3a` as v41 (nx2 has not moved), so
-  everything from v41 stays: water fixes #1152/#1147, 4K HDR DLSS PR #9,
-  frame-generation HDR PR #8, #1143/#1154, HDR DLSS PR #7, #1058, #1127,
-  #1078, #1094/#1095, #1061, #1062, #1056, #1060, #1036, #1028, #874, native
-  HDR, DLSS presets E/F, the safe Fritchii ports and the optional white-flash
-  mitigation.
+- Based on the same zortos `nx2` `d2eaae4f3a` as v41, so everything from v41
+  stays: the water fixes #1152/#1147, 4K HDR DLSS PR #9, frame-generation HDR
+  PR #8, #1143/#1154, HDR DLSS PR #7, #1058, #1127, #1078, #1094/#1095, #1061,
+  #1062, #1056, #1060, #1036, #1028, #874, native HDR, DLSS presets E/F, the
+  safe Fritchii ports and the optional white-flash mitigation. Precache shaders
+  stays off in the OoT preset.
 - Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
-
 ## v41
 
 - **Water fixes.** Two open upstream PRs taken ahead of merge because they

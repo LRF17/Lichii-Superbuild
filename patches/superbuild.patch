@@ -180,10 +180,10 @@ index 873b99bec2..67960c7f41 100644
 +dist-local/
 +tools/superbuild/local/
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index bc40878ce6..7fe8193640 100644
+index bc40878ce6..7ed78ec1bb 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
-@@ -1,11 +1,466 @@
+@@ -1,11 +1,450 @@
  # Changelog
  
 -All notable changes to Eglantine are documented here. Each release's notes are taken from its
@@ -195,22 +195,11 @@ index bc40878ce6..7fe8193640 100644
 +## v43
  
 -## [0.1.0]
-+- **Fixed the stutter regression in v42.** v42 removed two performance presets
-+  that were doing real work: preloading every cached graphics pipeline at boot
-+  and skipping native draws whose pipeline is still building. Without them,
-+  pipelines were rebuilt while playing and frames stalled while builds
-+  finished. Both are restored, matching v41's smoothness.
-+- Everything from v42 stays: the shader-cache upgrade note (clear caches from
-+  v34 or earlier), the water fixes #1152/#1147, 4K HDR DLSS PR #9,
-+  frame-generation HDR PR #8, #1143/#1154, HDR DLSS PR #7, #1058, #1127,
-+  #1078, #1094/#1095, #1061, #1062, #1056, #1060, #1036, #1028, #874, native
-+  HDR, DLSS presets E/F, the safe Fritchii ports and the optional white-flash
-+  mitigation. Precache shaders stays off in the OoT preset.
-+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
- 
--- Initial release candidate
-+## v42
-+
++- **Fixed the stutter regression in the removed v42 build.** That build dropped
++  two performance presets that were doing real work: preloading every cached
++  graphics pipeline at boot and skipping native draws whose pipeline is still
++  building. Without them, pipelines were rebuilt while playing and frames
++  stalled while builds finished. Both are restored, matching v41's smoothness.
 +- **Before playing: if your shader cache is from v34 or earlier, clear it.**
 +  v35 replaced the Vulkan pipeline cache with shader cache v2, and caches from
 +  older builds can cause wrong graphics or repeated rebuilds. If you enable
@@ -218,21 +207,16 @@ index bc40878ce6..7fe8193640 100644
 +  loading screen while shaders are built — this is normal, there is a Skip
 +  button, and later launches only build what is new until the GPU driver
 +  changes.
-+- **The Ocarina of Time recommended-settings prompt now also sets Switch 2
-+  draws with unbuilt pipelines = Bounded wait.** Each frame waits up to the
-+  pipeline-wait budget (8 ms by default) for a pipeline that is still building,
-+  then skips the draw instead of stalling the frame. It applies with the rest of
-+  the preset for the session and does not change saved settings.
-+- Based on the same zortos `nx2` `d2eaae4f3a` as v41 (nx2 has not moved), so
-+  everything from v41 stays: water fixes #1152/#1147, 4K HDR DLSS PR #9,
-+  frame-generation HDR PR #8, #1143/#1154, HDR DLSS PR #7, #1058, #1127,
-+  #1078, #1094/#1095, #1061, #1062, #1056, #1060, #1036, #1028, #874, native
-+  HDR, DLSS presets E/F, the safe Fritchii ports and the optional white-flash
-+  mitigation.
++- Based on the same zortos `nx2` `d2eaae4f3a` as v41, so everything from v41
++  stays: the water fixes #1152/#1147, 4K HDR DLSS PR #9, frame-generation HDR
++  PR #8, #1143/#1154, HDR DLSS PR #7, #1058, #1127, #1078, #1094/#1095, #1061,
++  #1062, #1056, #1060, #1036, #1028, #874, native HDR, DLSS presets E/F, the
++  safe Fritchii ports and the optional white-flash mitigation. Precache shaders
++  stays off in the OoT preset.
 +- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
-+
 +## v41
-+
+ 
+-- Initial release candidate
 +- **Water fixes.** Two open upstream PRs taken ahead of merge because they
 +  address the water reports:
 +  - **OoT water ripples keep moving above 60 fps with FPS Unlock (#1152).**
@@ -792,7 +776,7 @@ index 0000000000..a0496b95b6
 +expose the port to a network. Dumps and captures can contain game assets; keep
 +them local and do not upload `.rdc` captures or dumps publicly.
 diff --git a/README.md b/README.md
-index 9230cf33b0..4c11c8ec1f 100644
+index 9230cf33b0..e350bc577a 100644
 --- a/README.md
 +++ b/README.md
 @@ -9,7 +9,7 @@
@@ -810,7 +794,7 @@ index 9230cf33b0..4c11c8ec1f 100644
  
 +> ## ✅ v43 recommended
 +>
-+> v43 fixes the v42 stutter regression by restoring the v41 pipeline preload and native-draw skip behaviour, on the same zortos `nx2` `d2eaae4f3a`, with the water fixes #1152/#1147, 4K HDR DLSS (PR #9), frame-generation HDR (PR #8) and jpkto's #1094/#1095 OoT speedups. v32 was removed for AMD graphics issues; v42, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
++> v43 fixes the stutter regression of the removed v42 build by restoring the v41 pipeline preload and native-draw skip behaviour, on the same zortos `nx2` `d2eaae4f3a`, with the water fixes #1152/#1147, 4K HDR DLSS (PR #9), frame-generation HDR (PR #8) and jpkto's #1094/#1095 OoT speedups. v32 and v42 were removed; v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 +
 +> **Unofficial superbuild fork.** This repository is not official Lichii and is
 +> not affiliated with zortos293. It carries a curated set of performance and
@@ -832,7 +816,7 @@ index 9230cf33b0..4c11c8ec1f 100644
  
 diff --git a/SUPERBUILD.md b/SUPERBUILD.md
 new file mode 100644
-index 0000000000..64dbc8931c
+index 0000000000..04e0744e92
 --- /dev/null
 +++ b/SUPERBUILD.md
 @@ -0,0 +1,216 @@
@@ -840,7 +824,7 @@ index 0000000000..64dbc8931c
 +
 +> ## ✅ v43 recommended
 +>
-+> v43 restores the v41 pipeline preload and native-draw skip presets to fix the v42 stutter regression, on the same zortos `nx2` `d2eaae4f3a`. Everything from v42 stays: precache off in the OoT preset, water fixes #1152/#1147, 4K HDR DLSS PR #9, frame-generation HDR PR #8, #1143/#1154, jpkto's #1094/#1095, #874 and our layer. v32 was removed for AMD graphics issues; v42/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
++> v43 restores the v41 pipeline preload and native-draw skip presets to fix the stutter regression of the removed v42 build, on the same zortos `nx2` `d2eaae4f3a`. Everything from v41 stays: precache off in the OoT preset, water fixes #1152/#1147, 4K HDR DLSS PR #9, frame-generation HDR PR #8, #1143/#1154, jpkto's #1094/#1095, #874 and our layer. v32 and v42 were removed; v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 +
 +## Credits
 +
