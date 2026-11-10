@@ -15,6 +15,14 @@
 # set here: EDEN_NX2_SPLIT=0 runs everything on one thread, EDEN_NX2_FENCE_BATCH=0 releases one
 # fence at a time, both for comparisons.
 
+# Build every cached graphics pipeline at boot and keep unused ones, instead of building them
+# when a place is first visited (removes first-visit pipeline stutter at some driver memory cost).
+EDEN_NX2_PRELOAD_ALL_PIPELINES=1
+
+# Native draws skip unbuilt pipelines instead of stalling while the pipeline builds
+# (experimental, from PR #224; may leave an effect missing for a frame).
+EDEN_NX2_ASYNC_DISCARD=1
+
 # Leave buffer downloads disabled on Switch 2 (default): forcing downloads (=1) copies back
 # 90-220 MB/s of buffers CPU never touches, causing heavy mutex contention and dropping FPS by ~38-63%.
 #EDEN_NX2_BUFFER_DOWNLOADS=1
@@ -40,10 +48,6 @@
 #EDEN_NX2_SPLIT_SKIP=1
 #EDEN_NX2_AUTO_STUB=1
 #EDEN_NX2_KEEP_ASTC=1
-
-# Optional: build every cached pipeline at boot instead of only the used ones. Uses several GB
-# of driver memory; Precache shaders before game start = Always covers this for Ocarina of Time.
-#EDEN_NX2_PRELOAD_ALL_PIPELINES=1
 
 # Optional: rare white-screen / sky flashes in Ocarina of Time (upstream issues #607,
 # #704, #981). Uncomment to submit fences immediately instead of batching them for

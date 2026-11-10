@@ -2,6 +2,21 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v43
+
+- **Fixed the stutter regression in v42.** v42 removed two performance presets
+  that were doing real work: preloading every cached graphics pipeline at boot
+  and skipping native draws whose pipeline is still building. Without them,
+  pipelines were rebuilt while playing and frames stalled while builds
+  finished. Both are restored, matching v41's smoothness.
+- Everything from v42 stays: the shader-cache upgrade note (clear caches from
+  v34 or earlier), the water fixes #1152/#1147, 4K HDR DLSS PR #9,
+  frame-generation HDR PR #8, #1143/#1154, HDR DLSS PR #7, #1058, #1127,
+  #1078, #1094/#1095, #1061, #1062, #1056, #1060, #1036, #1028, #874, native
+  HDR, DLSS presets E/F, the safe Fritchii ports and the optional white-flash
+  mitigation. Precache shaders stays off in the OoT preset.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
 ## v42
 
 - **Before playing: if your shader cache is from v34 or earlier, clear it.**

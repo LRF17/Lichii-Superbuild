@@ -17,9 +17,9 @@
 
 # Lichii
 
-> ## ✅ v42 recommended
+> ## ✅ v43 recommended
 >
-> v42 includes the #874 payload-release fix, based on zortos `nx2` `d2eaae4f3a`, with the OoT recommended preset now enabling Precache = Always and Bounded pipeline waits, plus the water fixes #1152/#1147, 4K HDR DLSS (PR #9), frame-generation HDR (PR #8) and jpkto's #1094/#1095 OoT speedups. v32 was removed for AMD graphics issues; v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
+> v43 fixes the v42 stutter regression by restoring the v41 pipeline preload and native-draw skip behaviour, on the same zortos `nx2` `d2eaae4f3a`, with the water fixes #1152/#1147, 4K HDR DLSS (PR #9), frame-generation HDR (PR #8) and jpkto's #1094/#1095 OoT speedups. v32 was removed for AMD graphics issues; v42, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 
 > **Unofficial superbuild fork.** This repository is not official Lichii and is
 > not affiliated with zortos293. It carries a curated set of performance and

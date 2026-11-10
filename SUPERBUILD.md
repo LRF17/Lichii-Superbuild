@@ -1,8 +1,8 @@
 # Lichii Superbuild (unofficial)
 
-> ## ✅ v42 recommended
+> ## ✅ v43 recommended
 >
-> v42 is based on zortos `nx2` `d2eaae4f3a` (unchanged) plus the OoT preset now enabling Precache = Always and Bounded pipeline waits, and a cleaned `nx2_switches.txt` (SPLIT/FENCE_BATCH are defaults, ASYNC_DISCARD is a GUI setting now). Everything from v41 stays: water fixes #1152/#1147, 4K HDR DLSS PR #9, frame-generation HDR PR #8, #1143/#1154, jpkto's #1094/#1095, #874 and our layer. v32 was removed for AMD graphics issues; v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
+> v43 restores the v41 pipeline preload and native-draw skip presets to fix the v42 stutter regression, on the same zortos `nx2` `d2eaae4f3a`. Everything from v42 stays: precache off in the OoT preset, water fixes #1152/#1147, 4K HDR DLSS PR #9, frame-generation HDR PR #8, #1143/#1154, jpkto's #1094/#1095, #874 and our layer. v32 was removed for AMD graphics issues; v42/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 
 ## Credits
 
@@ -160,12 +160,11 @@ mja00 `be437dd4` and Nolar `63650298` variants are not re-applied on top of it.
 
 ## Environment switches
 
-- `EDEN_NX2_PRELOAD_ALL_PIPELINES=1` is no longer preset; it builds every
-  cached pipeline at boot and costs several GB of driver memory. Precache
-  shaders before game start = Always covers it for Ocarina of Time.
-- `EDEN_NX2_ASYNC_DISCARD=1` is no longer preset: Switch 2 draws with unbuilt
-  pipelines follow the `native_async_draws` setting (the OoT preset uses Bounded
-  wait). The environment variable still forces Skip for testing.
+- `EDEN_NX2_PRELOAD_ALL_PIPELINES=1` is preset in the packaged
+  `nx2_switches.txt` again: every cached pipeline is built at boot and
+  unused ones are kept, removing first-visit pipeline stutter.
+- `EDEN_NX2_ASYNC_DISCARD=1` is preset again: native draws skip unbuilt
+  pipelines instead of stalling (experimental, from PR #224).
 - `EDEN_NX2_COMPUTE_MAPPING_SIZED=1` restores the old compute-buffer sizing for
   A/B testing of the OoT overexposure candidate.
 - `EDEN_NX2_TC_MINIMUM_MIB` controls the texture-cache collection threshold.

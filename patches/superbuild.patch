@@ -180,10 +180,10 @@ index 873b99bec2..67960c7f41 100644
 +dist-local/
 +tools/superbuild/local/
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index bc40878ce6..d47e234fcd 100644
+index bc40878ce6..7fe8193640 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
-@@ -1,11 +1,451 @@
+@@ -1,11 +1,466 @@
  # Changelog
  
 -All notable changes to Eglantine are documented here. Each release's notes are taken from its
@@ -192,9 +192,25 @@ index bc40878ce6..d47e234fcd 100644
 +All releases are unofficial builds. See the GitHub releases for assets and checksums.
  
 -## [Unreleased]
-+## v42
++## v43
  
 -## [0.1.0]
++- **Fixed the stutter regression in v42.** v42 removed two performance presets
++  that were doing real work: preloading every cached graphics pipeline at boot
++  and skipping native draws whose pipeline is still building. Without them,
++  pipelines were rebuilt while playing and frames stalled while builds
++  finished. Both are restored, matching v41's smoothness.
++- Everything from v42 stays: the shader-cache upgrade note (clear caches from
++  v34 or earlier), the water fixes #1152/#1147, 4K HDR DLSS PR #9,
++  frame-generation HDR PR #8, #1143/#1154, HDR DLSS PR #7, #1058, #1127,
++  #1078, #1094/#1095, #1061, #1062, #1056, #1060, #1036, #1028, #874, native
++  HDR, DLSS presets E/F, the safe Fritchii ports and the optional white-flash
++  mitigation. Precache shaders stays off in the OoT preset.
++- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+ 
+-- Initial release candidate
++## v42
++
 +- **Before playing: if your shader cache is from v34 or earlier, clear it.**
 +  v35 replaced the Vulkan pipeline cache with shader cache v2, and caches from
 +  older builds can cause wrong graphics or repeated rebuilds. If you enable
@@ -214,8 +230,7 @@ index bc40878ce6..d47e234fcd 100644
 +  HDR, DLSS presets E/F, the safe Fritchii ports and the optional white-flash
 +  mitigation.
 +- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
- 
--- Initial release candidate
++
 +## v41
 +
 +- **Water fixes.** Two open upstream PRs taken ahead of merge because they
@@ -777,7 +792,7 @@ index 0000000000..a0496b95b6
 +expose the port to a network. Dumps and captures can contain game assets; keep
 +them local and do not upload `.rdc` captures or dumps publicly.
 diff --git a/README.md b/README.md
-index 9230cf33b0..db17390c92 100644
+index 9230cf33b0..4c11c8ec1f 100644
 --- a/README.md
 +++ b/README.md
 @@ -9,7 +9,7 @@
@@ -793,9 +808,9 @@ index 9230cf33b0..db17390c92 100644
  
  # Lichii
  
-+> ## ✅ v42 recommended
++> ## ✅ v43 recommended
 +>
-+> v42 includes the #874 payload-release fix, based on zortos `nx2` `d2eaae4f3a`, with the OoT recommended preset now enabling Precache = Always and Bounded pipeline waits, plus the water fixes #1152/#1147, 4K HDR DLSS (PR #9), frame-generation HDR (PR #8) and jpkto's #1094/#1095 OoT speedups. v32 was removed for AMD graphics issues; v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
++> v43 fixes the v42 stutter regression by restoring the v41 pipeline preload and native-draw skip behaviour, on the same zortos `nx2` `d2eaae4f3a`, with the water fixes #1152/#1147, 4K HDR DLSS (PR #9), frame-generation HDR (PR #8) and jpkto's #1094/#1095 OoT speedups. v32 was removed for AMD graphics issues; v42, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 +
 +> **Unofficial superbuild fork.** This repository is not official Lichii and is
 +> not affiliated with zortos293. It carries a curated set of performance and
@@ -817,15 +832,15 @@ index 9230cf33b0..db17390c92 100644
  
 diff --git a/SUPERBUILD.md b/SUPERBUILD.md
 new file mode 100644
-index 0000000000..348865d0b0
+index 0000000000..64dbc8931c
 --- /dev/null
 +++ b/SUPERBUILD.md
-@@ -0,0 +1,217 @@
+@@ -0,0 +1,216 @@
 +# Lichii Superbuild (unofficial)
 +
-+> ## ✅ v42 recommended
++> ## ✅ v43 recommended
 +>
-+> v42 is based on zortos `nx2` `d2eaae4f3a` (unchanged) plus the OoT preset now enabling Precache = Always and Bounded pipeline waits, and a cleaned `nx2_switches.txt` (SPLIT/FENCE_BATCH are defaults, ASYNC_DISCARD is a GUI setting now). Everything from v41 stays: water fixes #1152/#1147, 4K HDR DLSS PR #9, frame-generation HDR PR #8, #1143/#1154, jpkto's #1094/#1095, #874 and our layer. v32 was removed for AMD graphics issues; v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
++> v43 restores the v41 pipeline preload and native-draw skip presets to fix the v42 stutter regression, on the same zortos `nx2` `d2eaae4f3a`. Everything from v42 stays: precache off in the OoT preset, water fixes #1152/#1147, 4K HDR DLSS PR #9, frame-generation HDR PR #8, #1143/#1154, jpkto's #1094/#1095, #874 and our layer. v32 was removed for AMD graphics issues; v42/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 +
 +## Credits
 +
@@ -983,12 +998,11 @@ index 0000000000..348865d0b0
 +
 +## Environment switches
 +
-+- `EDEN_NX2_PRELOAD_ALL_PIPELINES=1` is no longer preset; it builds every
-+  cached pipeline at boot and costs several GB of driver memory. Precache
-+  shaders before game start = Always covers it for Ocarina of Time.
-+- `EDEN_NX2_ASYNC_DISCARD=1` is no longer preset: Switch 2 draws with unbuilt
-+  pipelines follow the `native_async_draws` setting (the OoT preset uses Bounded
-+  wait). The environment variable still forces Skip for testing.
++- `EDEN_NX2_PRELOAD_ALL_PIPELINES=1` is preset in the packaged
++  `nx2_switches.txt` again: every cached pipeline is built at boot and
++  unused ones are kept, removing first-visit pipeline stutter.
++- `EDEN_NX2_ASYNC_DISCARD=1` is preset again: native draws skip unbuilt
++  pipelines instead of stalling (experimental, from PR #224).
 +- `EDEN_NX2_COMPUTE_MAPPING_SIZED=1` restores the old compute-buffer sizing for
 +  A/B testing of the OoT overexposure candidate.
 +- `EDEN_NX2_TC_MINIMUM_MIB` controls the texture-cache collection threshold.
@@ -1039,25 +1053,32 @@ index 0000000000..348865d0b0
 +git apply patches/superbuild.patch
 +```
 diff --git a/dist/nx2_switches.txt b/dist/nx2_switches.txt
-index 095ecdede4..29b328e3c7 100644
+index 095ecdede4..8d7c4f9f23 100644
 --- a/dist/nx2_switches.txt
 +++ b/dist/nx2_switches.txt
-@@ -11,11 +11,9 @@
+@@ -11,11 +11,17 @@
  # Restart the emulator after editing.
  
  # --- Performance tuning defaults for Switch 2 ---
 -# Offload GPU method/macro execution to the back thread (SPLIT=2 delivers up to +54% FPS alone).
 -EDEN_NX2_SPLIT=2
--
--# Batch GPU fence syncpoints to reduce host driver overhead and smooth frametimes.
--EDEN_NX2_FENCE_BATCH=1
 +# The GPU thread split and fence batching are on by default for Switch 2 titles, so neither is
 +# set here: EDEN_NX2_SPLIT=0 runs everything on one thread, EDEN_NX2_FENCE_BATCH=0 releases one
 +# fence at a time, both for comparisons.
  
+-# Batch GPU fence syncpoints to reduce host driver overhead and smooth frametimes.
+-EDEN_NX2_FENCE_BATCH=1
++# Build every cached graphics pipeline at boot and keep unused ones, instead of building them
++# when a place is first visited (removes first-visit pipeline stutter at some driver memory cost).
++EDEN_NX2_PRELOAD_ALL_PIPELINES=1
++
++# Native draws skip unbuilt pipelines instead of stalling while the pipeline builds
++# (experimental, from PR #224; may leave an effect missing for a frame).
++EDEN_NX2_ASYNC_DISCARD=1
+ 
  # Leave buffer downloads disabled on Switch 2 (default): forcing downloads (=1) copies back
  # 90-220 MB/s of buffers CPU never touches, causing heavy mutex contention and dropping FPS by ~38-63%.
-@@ -37,9 +35,19 @@ EDEN_NX2_FENCE_BATCH=1
+@@ -37,9 +43,15 @@ EDEN_NX2_FENCE_BATCH=1
  #EDEN_NX2_NO_REACTIVE=1
  
  #EDEN_NX2_MME_JIT=0
@@ -1067,10 +1088,6 @@ index 095ecdede4..29b328e3c7 100644
  #EDEN_NX2_SPLIT_SKIP=1
  #EDEN_NX2_AUTO_STUB=1
  #EDEN_NX2_KEEP_ASTC=1
-+
-+# Optional: build every cached pipeline at boot instead of only the used ones. Uses several GB
-+# of driver memory; Precache shaders before game start = Always covers this for Ocarina of Time.
-+#EDEN_NX2_PRELOAD_ALL_PIPELINES=1
 +
 +# Optional: rare white-screen / sky flashes in Ocarina of Time (upstream issues #607,
 +# #704, #981). Uncomment to submit fences immediately instead of batching them for
@@ -1113,7 +1130,7 @@ index 4928eb47ff..3be40fe991 100644
  
  Enhancements aimed at removing jagged lines/sharp edges and/or masking artifacts.
 diff --git a/src/common/game_presets.h b/src/common/game_presets.h
-index 83dd4d3c3f..c7e4df32e8 100644
+index 83dd4d3c3f..7602618e87 100644
 --- a/src/common/game_presets.h
 +++ b/src/common/game_presets.h
 @@ -7,6 +7,7 @@
@@ -1124,7 +1141,7 @@ index 83dd4d3c3f..c7e4df32e8 100644
  
  inline void SetMarioKartWorldRecommendedSettings(Values& settings, bool global) {
      const auto session = [global](auto& setting, auto value) {
-@@ -34,4 +35,31 @@ inline bool ApplyMarioKartWorldPreset(Values& settings, u64 program_id, bool acc
+@@ -34,4 +35,28 @@ inline bool ApplyMarioKartWorldPreset(Values& settings, u64 program_id, bool acc
      return true;
  }
  
@@ -1142,9 +1159,6 @@ index 83dd4d3c3f..c7e4df32e8 100644
 +    session(settings.sync_memory_operations, false);
 +    // Real DLSS on RTX cards; without Streamline's files or an RTX GPU this falls back to FSR 3.1.
 +    session(settings.nvidia_dlss, true);
-+    // Bound the wait for unbuilt Switch 2 pipelines instead of skipping draws. Precache shaders
-+    // stays at its saved setting: the per-session preset is applied after the precache decision.
-+    session(settings.native_async_draws, NativeAsyncDraws::Bounded);
 +}
 +
 +inline bool ApplyOcarinaOfTimePreset(Values& settings, u64 program_id, bool accepted) {
@@ -1842,10 +1856,10 @@ index af9debf108..c556c3ef62 100644
      video_core/unswizzle_workers.cpp
      video_core/aftermath_dump.cpp
 diff --git a/src/tests/common/game_presets.cpp b/src/tests/common/game_presets.cpp
-index 481f5c5e1d..2f405c5115 100644
+index 481f5c5e1d..783444313b 100644
 --- a/src/tests/common/game_presets.cpp
 +++ b/src/tests/common/game_presets.cpp
-@@ -109,3 +109,31 @@ TEST_CASE("Declining the MKW preset preserves global and per-game preferences",
+@@ -109,3 +109,29 @@ TEST_CASE("Declining the MKW preset preserves global and per-game preferences",
          CHECK(settings->resolution_setup.UsingGlobal() == !per_game);
      }
  }
@@ -1859,7 +1873,6 @@ index 481f5c5e1d..2f405c5115 100644
 +    settings->use_asynchronous_shaders.SetValue(false);
 +    settings->sync_memory_operations.SetValue(true);
 +    settings->nvidia_dlss.SetValue(false);
-+    settings->native_async_draws.SetValue(Settings::NativeAsyncDraws::Wait);
 +
 +    CHECK_FALSE(
 +        Settings::ApplyOcarinaOfTimePreset(*settings, Settings::OcarinaOfTimeProgramId, false));
@@ -1875,7 +1888,6 @@ index 481f5c5e1d..2f405c5115 100644
 +    CHECK(settings->use_asynchronous_shaders.GetValue());
 +    CHECK_FALSE(settings->sync_memory_operations.GetValue());
 +    CHECK(settings->nvidia_dlss.GetValue());
-+    CHECK(settings->native_async_draws.GetValue() == Settings::NativeAsyncDraws::Bounded);
 +}
 diff --git a/src/tests/core/builtin_patches.cpp b/src/tests/core/builtin_patches.cpp
 index 7aec352c6b..436d0501ad 100644
