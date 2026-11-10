@@ -160,8 +160,9 @@ mja00 `be437dd4` and Nolar `63650298` variants are not re-applied on top of it.
 
 ## Environment switches
 
-- `EDEN_NX2_PRELOAD_ALL_PIPELINES=1` is preset in the packaged
-  `nx2_switches.txt`.
+- `EDEN_NX2_PRELOAD_ALL_PIPELINES=1` is no longer preset; it builds every
+  cached pipeline at boot and costs several GB of driver memory. Precache
+  shaders before game start = Always covers it for Ocarina of Time.
 - `EDEN_NX2_ASYNC_DISCARD=1` is no longer preset: Switch 2 draws with unbuilt
   pipelines follow the `native_async_draws` setting (the OoT preset uses Bounded
   wait). The environment variable still forces Skip for testing.
