@@ -2,6 +2,37 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v53
+
+- **New: status-bar upscaler button (PR #12 by LRF17).** The window now shows
+  which upscaler is drawing: `DLSS`, `FSR 3.1`, `FSR 4`, `GAME UPSCALER`,
+  `DLSS (IDLE)` / `FSR 3.1 (IDLE)` when the setting is on but nothing was
+  replaced, or `DLSS UNAVAILABLE`. The tooltip gives the sizes (for example
+  "2560x1440 to 3840x2160") and, for Ocarina of Time, the reason the renderer
+  fell back. This came from a real case: a game patch silently made the game's
+  own upscaler draw while NVIDIA DLSS was ticked, and the log was the only clue.
+- **Fixed: v51/v52 could over-allocate video memory in Ocarina of Time
+  (upstream #1333).** Read-only native compute storage bindings reached to the
+  end of their mapping (up to 1 GiB), so OoT's ~1 GiB heap became a single
+  1 GiB device-local buffer. Build 150 logs measured a median buffer cache of
+  1594 MiB against 509 MiB before, and 24 of 27 sessions with failed image
+  allocations were on 8 GB AMD cards. Bindings now size from their size word
+  again.
+- **Fixed: right-clicking a game could abort Lichii on Windows (upstream
+  #1258)** when the game path held non-ASCII characters (UTF-8 decoded as ANSI,
+  `c0000409`). Also from upstream: NUP add-ons are registered from external
+  content scans (#1257), duplicate stub registrations are dropped (#1252),
+  `FlushCommands` no longer submits an empty command buffer (#1329), AMD
+  drivers may overallocate device memory (#1335), and Ocarina of Time's guard
+  house freeze gets the built-in Texture Pool x2 patch (#1313).
+- Everything from v52 stays: LRF17's DLSS scene jitter and -1.58 texture LOD
+  bias (PR #10), Help -> Check for Updates... and Open Releases Page..., #1234,
+  #1216, #1210, Fritchii v5.6's zero-page trim, the one-shot saved OoT preset,
+  #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading, the DLSS/HDR
+  work (PR #7/#8/#9), native HDR, DLSS presets E/F and the optional white-flash
+  mitigation.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
 ## v52
 
 - **PR #10 by LRF17: NVIDIA DLSS now gets Ocarina of Time's scene jitter and

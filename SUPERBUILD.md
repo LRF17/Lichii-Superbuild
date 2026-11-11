@@ -1,8 +1,8 @@
 # Lichii Superbuild (unofficial)
 
-> ## ✅ v52 recommended
+> ## ✅ v53 recommended
 >
-> v52 adds PR #10 by LRF17: NVIDIA DLSS gets OoT's scene jitter and the -1.58 texture LOD bias (roughly double the measured sharpness on distant grass, foliage and roofs, stable in motion). Same `nx2` `7dddff2d0e` base; everything from v51 stays (16 upstream merges, #1231/#1236/#959/#1245/#1246, the manual update check, #1234, #1216, Fritchii zero-page trim, one-shot saved OoT preset, #1180, #1155, #1129, #1110, Linux pipeline preloading). #1218 remains held for a separate test build. v32 and v42 were removed; v51/v50/v49/v48/v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
+> v53 adds LRF17's status-bar upscaler button (PR #12: DLSS / FSR 3.1 / FSR 4 / GAME UPSCALER / DLSS (IDLE) / UNAVAILABLE, with sizes and fallback reason) and fixes the v51/v52 OoT video-memory over-allocation from #1231 (upstream #1333), the Windows right-click abort on non-ASCII paths (#1258), plus #1257, #1252, #1292/#1329, #1335 and the OoT guard-house Texture Pool x2 patch (#1313). Same `nx2` `7dddff2d0e` base as v51/v52. Held back deliberately: upstream #1253 (data-folder migration, open save-loss report #1273), #1249 (DLSS presets replace our env override), #1264 (removes the recommended-settings prompt) and #1326 (native HDR rework). #1218 remains held for a separate test build. v32 and v42 were removed; v52/v51/v50/v49/v48/v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 
 ## Credits
 

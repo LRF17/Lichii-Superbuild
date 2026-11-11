@@ -17,9 +17,9 @@
 
 # Lichii
 
-> ## ✅ v52 recommended
+> ## ✅ v53 recommended
 >
-> v52 adds PR #10 by LRF17: NVIDIA DLSS now gets Ocarina of Time's scene jitter and the -1.58 texture LOD bias, roughly doubling measured sharpness on distant grass, foliage and roofs while staying stable in motion. Same `nx2` `7dddff2d0e` base; everything from v51 stays: the 16 upstream merges (#1231, #1236, #959, #1245/#1246 and more), Help -> Check for Updates... and Open Releases Page..., #1234, #1216, Fritchii v5.6's zero-page trim, the one-shot saved OoT preset, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v51, v50, v49, v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
+> v53 adds LRF17's status-bar upscaler button (PR #12) showing whether NVIDIA DLSS, AMD FSR 3.1/4 or the game's own upscaler is drawing, with sizes and the OoT fallback reason. It also fixes the v51/v52 OoT video-memory over-allocation from #1231 (upstream #1333), the Windows right-click abort on non-ASCII game paths (#1258), and brings #1257, #1252, #1329, #1335 and the OoT guard-house Texture Pool x2 patch (#1313). Same `nx2` `7dddff2d0e` base as v51/v52; upstream's data-folder migration (#1253, open save-loss report) and DLSS-preset/HDR reworks are deliberately held back. v32 and v42 were removed; v52, v51, v50, v49, v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 
 > **Unofficial superbuild fork.** This repository is not official Lichii and is
 > not affiliated with zortos293. It carries a curated set of performance and
