@@ -1144,6 +1144,24 @@ void RasterizerVulkan::PrepareDraw(bool is_indexed, Func&& draw_func, bool is_in
             }
         }
     }
+    // With its compositor image patched to RGBA16F the game tonemaps into a half-float image
+    // that holds a wider gamut. The temporal upscaler then takes that image instead of the one
+    // encoded for the game's upscaler: a shader replacement may encode it another way. The
+    // fragment shader changes with the place and the time of day, the vertex shader doesn't.
+    constexpr u64 tonemap_vertex = 0x7bb354754112ad1aULL;
+    if (hashes[1] == tonemap_vertex && OcarinaTemporalEnabled()) {
+        const auto scene_id = texture_cache.GetRenderTargets().color_buffer_ids[0];
+        if (scene_id) {
+            const auto& scene = texture_cache.GetImageView(scene_id);
+            if (scene.format == VideoCore::Surface::PixelFormat::R16G16B16A16_FLOAT &&
+                scene.size.width == oot_motion.extent.width &&
+                scene.size.height == oot_motion.extent.height && !scene.IsRescaled() &&
+                scene.range == VideoCommon::SubresourceRange{}) {
+                oot_tonemapped_scene = scene_id;
+                oot_tonemapped_frame = render_trace_frame;
+            }
+        }
+    }
     // The game draws Navi's glow, fireflies and dust right after the fog. They write no depth and
     // move on their own, so FSR must not take them from its history. DLSS doesn't use the mask.
     constexpr u64 fog_fragment = 0x3ddfb1d7a854c849ULL;
@@ -3141,18 +3159,31 @@ bool RasterizerVulkan::TryOcarinaUpscale(const ComputePipeline& pipeline, bool r
         ? target.size.width == extent.width && target.size.height == extent.height
         : target.size.width == extent.width * 4 / 3 &&
             target.size.height == extent.height * 4 / 3;
+    // The game's own formats, or half floats for both when its compositor image is patched to
+    // RGBA16F.
+    const bool wide_scene = target.format == PixelFormat::R16G16B16A16_FLOAT;
+    const bool valid_formats =
+        wide_scene ? color.format == PixelFormat::R16G16B16A16_FLOAT
+                   : color.format == PixelFormat::E5B9G9R9_FLOAT &&
+                         target.format == PixelFormat::B10G11R11_FLOAT;
+    if (wide_scene && oot_tonemapped_frame != render_trace_frame) {
+        return fail("no tonemapped scene");
+    }
     if (!valid_extents || !color.BackingImage() || !target.BackingImage() ||
         color.IsRescaled() || target.IsRescaled() ||
         color.Samples() != VK_SAMPLE_COUNT_1_BIT || target.Samples() != VK_SAMPLE_COUNT_1_BIT ||
         color.range != VideoCommon::SubresourceRange{} || target.range != VideoCommon::SubresourceRange{} ||
-        color.format != PixelFormat::E5B9G9R9_FLOAT || target.format != PixelFormat::B10G11R11_FLOAT ||
+        !valid_formats ||
         color.size.width != extent.width || color.size.height != extent.height ||
         color.ImageHandle() == target.ImageHandle() || depth.ImageHandle() == target.ImageHandle()) {
         return fail("unexpected upscale images");
     }
 
-    constexpr VkFormat output_format = VK_FORMAT_B10G11R11_UFLOAT_PACK32;
-    const auto color_view = color.Handle(Shader::TextureType::Color2D);
+    const VkFormat output_format =
+        wide_scene ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_B10G11R11_UFLOAT_PACK32;
+    const auto color_view =
+        (wide_scene ? texture_cache.GetImageView(oot_tonemapped_scene) : color)
+            .Handle(Shader::TextureType::Color2D);
     if (!color_view || !device.IsStorageImageExtendedFormatsSupported() ||
         !device.IsFormatSupported(output_format, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT, FormatType::Optimal) ||
         (target.BackingImage()->UsageFlags() & VK_IMAGE_USAGE_STORAGE_BIT) == 0 ||
@@ -3185,7 +3216,7 @@ bool RasterizerVulkan::TryOcarinaUpscale(const ComputePipeline& pipeline, bool r
         const bool recorded = oot_live_dlss->Record(color_view, depth.DepthView(), target_view,
                                                    extent, output_extent, target_extent, oot_motion.current,
                                                    oot_motion.previous, mesh, depth.ImageHandle(),
-                                                   render_trace_frame, jitter);
+                                                   render_trace_frame, jitter, wide_scene);
         if (!recorded) {
             return fail("temporal upscaler declined the frame");
         }

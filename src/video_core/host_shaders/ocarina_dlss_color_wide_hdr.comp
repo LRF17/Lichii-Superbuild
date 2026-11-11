@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+layout(binding = 0) uniform sampler2D guest_scene;
+layout(binding = 1, rgba16f) uniform writeonly image2D dlss_color;
+
+// BT.709 to BT.2020: the wide-gamut scene has negative BT.709 components, which the upscaler
+// can't take. They are positive in BT.2020.
+const mat3 BT709_TO_BT2020 = mat3(0.627404, 0.069097, 0.016391,
+                                  0.329283, 0.919540, 0.088013,
+                                  0.043313, 0.011362, 0.895595);
+
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    if (any(greaterThanEqual(pixel, imageSize(dlss_color)))) {
+        return;
+    }
+    // The guest's tonemapped scene, linear, before the guest encodes it for its own upscaler.
+    vec3 linear = max(BT709_TO_BT2020 * texelFetch(guest_scene, pixel, 0).rgb, vec3(0.0));
+    imageStore(dlss_color, pixel, vec4(linear, 1.0));
+}

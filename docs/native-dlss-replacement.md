@@ -57,6 +57,14 @@ the game keeps its own pass whenever DLSS is off, unavailable or fails to start.
   runs at 1:1 (`c033c3ddc9f0897b`, 1920x1080 to 1920x1080); the game's final pass then scales to
   its 2560x1440 output. FSR replaces it as native anti-aliasing (no upscale). DLSS leaves the
   game's pass there (DLAA through it is untested).
+- Half-float compositor (a game patch that turns the game's R11G11B10F compositor image into
+  RGBA16F for a wider gamut): the tonemap target, the image encoded for the upscale and the
+  upscale target are then all RGBA16F. The replacement takes the tonemap target itself (the
+  last draw with vertex shader `7bb354754112ad1a` into a scene-sized RGBA16F image) instead of
+  the encoded image, which a shader replacement can encode another way. That image has negative
+  BT.709 components, so the upscaler gets it in BT.2020 (square-root encoded in SDR, linear in
+  HDR) and the result goes back to BT.709 into the game's target; the 4K composite is told the
+  4K scene is BT.2020. Without that patch the formats and the path are the game's own.
 - The game has no motion vectors or jitter. Motion comes from the scene depth reprojected
   through this and the previous frame's camera (vertex constant buffer 3). Link's recognized
   skinned draw is replayed with both poses where his depth matches. Without his pose the frame

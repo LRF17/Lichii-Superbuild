@@ -18,6 +18,10 @@
 #include "video_core/host_shaders/ocarina_dlss_color_hdr_comp_spv.h"
 #include "video_core/host_shaders/ocarina_dlss_output_comp_spv.h"
 #include "video_core/host_shaders/ocarina_dlss_output_hdr_comp_spv.h"
+#include "video_core/host_shaders/ocarina_dlss_color_wide_comp_spv.h"
+#include "video_core/host_shaders/ocarina_dlss_color_wide_hdr_comp_spv.h"
+#include "video_core/host_shaders/ocarina_dlss_output_wide_comp_spv.h"
+#include "video_core/host_shaders/ocarina_dlss_output_wide_hdr_comp_spv.h"
 #include "video_core/host_shaders/ocarina_dlss_4k_composite_comp_spv.h"
 #include "video_core/host_shaders/ocarina_dlss_4k_composite_hdr_comp_spv.h"
 #include "video_core/host_shaders/ocarina_dlss_4k_reference_comp_spv.h"
@@ -524,8 +528,9 @@ public:
         : ComputePass(device_, scheduler, pool, bindings, templates, bank, push, code) {}
 
     void Record(Scheduler& scheduler, const void* descriptors, VkImage image,
-                const OcarinaUpscaler& upscaler, u64 frame) {
-        scheduler.Record([this, descriptors, image, &upscaler, frame](vk::CommandBuffer cmd) {
+                const OcarinaUpscaler& upscaler, u64 frame, bool wide_scene) {
+        scheduler.Record([this, descriptors, image, &upscaler, frame,
+                          wide_scene](vk::CommandBuffer cmd) {
             const auto output = ProbeBarrier(image, VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
                                              VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
                                              VK_IMAGE_LAYOUT_GENERAL);
@@ -541,7 +546,8 @@ public:
             cmd.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline);
             cmd.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, *layout, 0, set, {});
             const u32 enabled = !upscaler.EvaluationFailed();
-            cmd.PushConstants(*layout, VK_SHADER_STAGE_COMPUTE_BIT, enabled);
+            const u32 flags = enabled | (wide_scene ? 2U : 0U);
+            cmd.PushConstants(*layout, VK_SHADER_STAGE_COMPUTE_BIT, flags);
             cmd.Dispatch(3840 / 8, 2160 / 8, 1);
             const VkMemoryBarrier complete{
                 .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -715,7 +721,13 @@ struct OcarinaUpscaler::Impl {
                                : std::span<const u32>{OCARINA_DLSS_COLOR_COMP_SPV}},
           output_pass{device, scheduler, pool_,
                       hdr_scene ? std::span<const u32>{OCARINA_DLSS_OUTPUT_HDR_COMP_SPV}
-                                : std::span<const u32>{OCARINA_DLSS_OUTPUT_COMP_SPV}} {
+                                : std::span<const u32>{OCARINA_DLSS_OUTPUT_COMP_SPV}},
+          wide_color_pass{device, scheduler, pool_,
+                          hdr_scene ? std::span<const u32>{OCARINA_DLSS_COLOR_WIDE_HDR_COMP_SPV}
+                                    : std::span<const u32>{OCARINA_DLSS_COLOR_WIDE_COMP_SPV}},
+          wide_output_pass{device, scheduler, pool_,
+                           hdr_scene ? std::span<const u32>{OCARINA_DLSS_OUTPUT_WIDE_HDR_COMP_SPV}
+                                     : std::span<const u32>{OCARINA_DLSS_OUTPUT_WIDE_COMP_SPV}} {
 #ifdef EGLANTINE_STREAMLINE
         if (backend == VideoCommon::OcarinaUpscaleBackend::Dlss) {
             dlss = std::make_unique<StreamlineDlssUpscaler>(device, scheduler, allocator);
@@ -794,6 +806,9 @@ struct OcarinaUpscaler::Impl {
     CameraMotionPass motion_pass;
     OcarinaColorPass color_pass;
     OcarinaColorPass output_pass;
+    // For a half-float guest target: the linear wide-gamut scene in, BT.709 out.
+    OcarinaColorPass wide_color_pass;
+    OcarinaColorPass wide_output_pass;
     std::array<std::unique_ptr<OcarinaFrameSlot>, 4> slots;
     std::optional<u64> last_frame;
     Matrix last_view_projection{};
@@ -805,6 +820,7 @@ struct OcarinaUpscaler::Impl {
     std::unique_ptr<OcarinaCompositePass> composite_pass;
     vk::Sampler linear_sampler;
     std::optional<u64> composited_frame;
+    bool wide_scene{}; ///< the upscaler's output is BT.2020 (a half-float guest target)
     std::unique_ptr<OcarinaEffects> effects;
     std::unique_ptr<OcarinaEffectsPass<1>> effects_base_pass;
     std::unique_ptr<OcarinaEffectsPass<2>> effects_mark_pass;
@@ -889,7 +905,7 @@ void OcarinaUpscaler::Composite4k(VkImageView native_composite, u64 frame) {
     state.queue.AddSampledImage(native_composite, sampler);
     state.queue.AddImage(*state.composite_view);
     state.composite_pass->Record(state.scheduler, state.queue.UpdateData(), *state.composite,
-                                 *this, frame);
+                                 *this, frame, state.wide_scene);
     state.scheduler.InvalidateState();
     state.composited_frame = frame;
 }
@@ -953,7 +969,7 @@ bool OcarinaUpscaler::Record(VkImageView color, VkImageView depth, VkImageView t
                             VkExtent2D output_extent, VkExtent2D target_extent,
                             const Matrix& current, const Matrix& previous,
                             const OcarinaActorMesh& mesh, VkImage depth_image, u64 frame,
-                            std::array<f32, 2> jitter) {
+                            std::array<f32, 2> jitter, bool wide_scene) {
     auto& state = *impl;
     if (state.last_frame == frame || state.Failed()) {
         return false;
@@ -999,7 +1015,8 @@ bool OcarinaUpscaler::Record(VkImageView color, VkImageView depth, VkImageView t
     state.queue.Acquire(state.scheduler, 2);
     state.queue.AddSampledImage(color, sampler);
     state.queue.AddImage(*resources.color_view);
-    state.color_pass.Record(state.scheduler, state.queue.UpdateData(), *resources.color, extent);
+    (wide_scene ? state.wide_color_pass : state.color_pass)
+        .Record(state.scheduler, state.queue.UpdateData(), *resources.color, extent);
 
     VkImageView bias_view{};
     VkImage bias_image{};
@@ -1123,12 +1140,14 @@ bool OcarinaUpscaler::Record(VkImageView color, VkImageView depth, VkImageView t
         const auto output_sampler = same_size ? sampler : state.LinearSampler();
         state.queue.AddSampledImage(state.OutputView(), output_sampler);
         state.queue.AddImage(target);
-        state.output_pass.RecordOutput(state.scheduler, state.queue.UpdateData(), *this,
-                                        target_extent, frame, reset);
+        (wide_scene ? state.wide_output_pass : state.output_pass)
+            .RecordOutput(state.scheduler, state.queue.UpdateData(), *this, target_extent, frame,
+                          reset);
     }
     state.scheduler.InvalidateState();
     state.last_frame = frame;
     state.last_view_projection = current;
+    state.wide_scene = wide_scene;
     return true;
 }
 VideoCommon::OcarinaUpscaleBackend ResolveOcarinaUpscaler(const Device& device) {
