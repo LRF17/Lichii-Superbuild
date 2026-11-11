@@ -136,7 +136,7 @@ index 0000000000..e742ba992a
 +          if-no-files-found: error
 +          compression-level: 0
 diff --git a/.github/workflows/release-binaries.yml b/.github/workflows/release-binaries.yml
-index c444917a49..edfa53a60c 100644
+index c444917a49..b9117bfb14 100644
 --- a/.github/workflows/release-binaries.yml
 +++ b/.github/workflows/release-binaries.yml
 @@ -7,6 +7,14 @@ on:
@@ -154,7 +154,36 @@ index c444917a49..edfa53a60c 100644
    push:
      branches:
        - nx2-experimental
-@@ -320,6 +328,7 @@ jobs:
+@@ -126,7 +134,11 @@ jobs:
+             libxcb-cursor0 libxcb-icccm4 libxcb-image0 \
+             libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxcb-xkb1
+ 
+-      # The packages docs/Deps.md lists for macOS, plus ccache.
++      # The packages docs/Deps.md lists for macOS, plus ccache. The runner image can carry a
++      # freetype 2.15.0 bottle that links /usr/lib/libhvf.dylib, which macOS has only from 15.4, so
++      # the bundled copy stopped the app from starting on 15.0 to 15.3 (#892). Homebrew rebuilt the
++      # Sequoia bottle without HVF (homebrew-core 85373af); a rebuilt bottle keeps the version
++      # number, so only an updated tap and an explicit reinstall replace the image's copy.
+       - name: Install macOS dependencies
+         if: startsWith(matrix.platform, 'macos')
+         shell: bash
+@@ -137,6 +149,15 @@ jobs:
+           brew install autoconf automake boost ffmpeg fmt glslang hidapi libtool libusb lz4 ninja \
+             nlohmann-json openssl pkg-config qt@6 sdl3 speexdsp zlib zstd cmake catch2 molten-vk \
+             vulkan-loader spirv-tools vulkan-utility-libraries ccache
++          freetype="$(brew --prefix freetype)/lib/libfreetype.6.dylib"
++          if otool -L "$freetype" | grep -F /usr/lib/libhvf.dylib > /dev/null; then
++            brew update --quiet
++            HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 brew reinstall freetype
++            if otool -L "$freetype" | grep -F /usr/lib/libhvf.dylib; then
++              echo "::error::$freetype still links libhvf.dylib, which macOS 15.0 to 15.3 lack"
++              exit 1
++            fi
++          fi
+ 
+       - name: Install Qt on Linux x86_64
+         if: startsWith(matrix.platform, 'linux') && runner.arch != 'ARM64'
+@@ -320,6 +341,7 @@ jobs:
              -DENABLE_UPDATE_CHECKER=ON \
              -DLICHII_BUILD_TAG=build-${{ github.run_number }} \
              -DLICHII_BUILD_PLATFORM=${{ matrix.platform }} \
@@ -162,6 +191,83 @@ index c444917a49..edfa53a60c 100644
              -DUSE_DISCORD_PRESENCE=OFF \
              -DCMAKE_C_COMPILER_LAUNCHER=sccache \
              -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+@@ -384,9 +406,13 @@ jobs:
+             .sccache
+           key: ${{ steps.compiler-cache.outputs.cache-primary-key }}
+ 
+-      # Plain tar.gz with the two programs and switch defaults. GitHub artifacts drop executable
+-      # bits, so a tar preserves them. This needs Qt 6 and the usual system libraries installed.
+-      - name: Package Linux tar.gz
++      # Both Linux packages are self-contained: linuxdeploy bundles every library the two programs
++      # need except the base system ones (glibc, X11/Wayland client libraries, the GPU driver and
++      # Vulkan loader), and its Qt plugin adds the Qt libraries and platform plugins. The AppImage
++      # packs that folder into one file; the tar.gz holds the same folder for systems without FUSE,
++      # with lichii and eden-cli links at its top. Both run on glibc 2.39+ systems. A tar.gz of the
++      # bare programs needed the Qt 6.8 they were built against installed system-wide (#901).
++      - name: Package Linux AppImage and tar.gz
+         if: startsWith(matrix.platform, 'linux')
+         shell: bash
+         run: |
+@@ -395,20 +421,6 @@ jobs:
+           test -x build/release/bin/eden-cli
+           test -f build/release/bin/libnxformat.so
+           strip build/release/bin/lichii build/release/bin/eden-cli
+-          tar -czf "lichii-${GITHUB_SHA}-${{ matrix.platform }}.tar.gz" \
+-            -C build/release/bin lichii eden-cli nx2_switches.txt libnxformat.so
+-          ls -la "lichii-${GITHUB_SHA}-${{ matrix.platform }}.tar.gz"
+-
+-      # A self-contained AppImage: linuxdeploy bundles every library the two programs need except
+-      # the base system ones (glibc, X11/Wayland client libraries, the GPU driver and Vulkan loader),
+-      # and its Qt plugin adds the Qt libraries and platform plugins. Runs on glibc 2.39+ systems.
+-      - name: Package Linux AppImage
+-        if: startsWith(matrix.platform, 'linux')
+-        shell: bash
+-        run: |
+-          set -euo pipefail
+-          test -x build/release/bin/lichii
+-          test -x build/release/bin/eden-cli
+           tools="$RUNNER_TEMP/linuxdeploy"
+           mkdir -p "$tools"
+           arch=$(uname -m)   # aarch64 or x86_64
+@@ -441,6 +453,13 @@ jobs:
+             --output appimage
+           test -s "$LDAI_OUTPUT"
+           ls -la "$LDAI_OUTPUT"
++          test -f AppDir/usr/lib/libnxformat.so
++          test -f AppDir/usr/bin/qt.conf
++          mv AppDir lichii
++          ln -s usr/bin/lichii lichii/lichii
++          ln -s usr/bin/eden-cli lichii/eden-cli
++          tar -czf "lichii-${GITHUB_SHA}-${{ matrix.platform }}.tar.gz" lichii
++          ls -la "lichii-${GITHUB_SHA}-${{ matrix.platform }}.tar.gz"
+ 
+       - name: Package Windows binary
+         if: startsWith(matrix.platform, 'windows')
+@@ -495,6 +514,15 @@ jobs:
+             echo "$leaks" | sort -u
+             exit 1
+           fi
++          # dyld refuses to start the app when a linked system library is missing, and libhvf.dylib
++          # ships only with macOS 15.4 and later, newer than the 15.0 deployment target (#892).
++          hvf=$(for binary in $binaries; do
++            otool -L "$binary" | grep -F /usr/lib/libhvf.dylib > /dev/null && echo "$binary"
++          done || true)
++          if [ -n "$hvf" ]; then
++            echo "::error::these link /usr/lib/libhvf.dylib, which macOS 15.0 to 15.3 lack: $hvf"
++            exit 1
++          fi
+           # macdeployqt invalidates the signatures. The programs get the entitlements when the
+           # tree has them (the Hypervisor CPU backend needs com.apple.security.hypervisor).
+           codesign --force --deep --sign - "$app"
+@@ -698,7 +726,7 @@ jobs:
+ 
+           ## Linux
+ 
+-          Linux packages come as an AppImage (self-contained, needs glibc 2.39 or newer: Ubuntu 24.04, Fedora 40, Debian 13, Arch) and a tar.gz (uses your system libraries, so Qt 6 and the usual libraries must be installed).
++          Linux packages come as an AppImage and a tar.gz. Both are self-contained and need glibc 2.39 or newer (Ubuntu 24.04, Fedora 40, Debian 13, Arch). The tar.gz holds the same files unpacked, for systems without FUSE: extract it and run \`lichii/lichii\`.
+ 
+           $({
+             row amd64 "$(appimage_tar lichii-linux-x86_64)" "$(appimage_tar lichii-linux-x86_64-pgo)" "Make the AppImage executable (\`chmod +x\`) and run it"
 diff --git a/.gitignore b/.gitignore
 index 873b99bec2..67960c7f41 100644
 --- a/.gitignore
@@ -179,11 +285,24 @@ index 873b99bec2..67960c7f41 100644
 +nx2_switches.local.txt
 +dist-local/
 +tools/superbuild/local/
+diff --git a/AGENTS.md b/AGENTS.md
+index 51c4f0bfef..3c557bf69b 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -28,6 +28,8 @@ Users report game bugs with Lichii logs (`eden_log.txt`, `eden_log.txt.old`). Ea
+ | 0400D1D02399A000 | The Duskbloods network test |
+ | 0400486024DEC000 | The Legend of Zelda: Ocarina of Time |
+ | 0400245021D2C000 | Yoshi and the Mysterious Book |
++| 0400DDB020648000 | Cyberpunk 2077: Ultimate Edition |
++| 0100606026F12000 | Final Fantasy Resonance |
+ 
+ Add ids here when a report identifies a new game.
+ 
 diff --git a/CHANGELOG.md b/CHANGELOG.md
-index bc40878ce6..7171ca6dde 100644
+index bc40878ce6..5bbd60bfd7 100644
 --- a/CHANGELOG.md
 +++ b/CHANGELOG.md
-@@ -1,11 +1,655 @@
+@@ -1,11 +1,686 @@
  # Changelog
  
 -All notable changes to Eglantine are documented here. Each release's notes are taken from its
@@ -192,9 +311,41 @@ index bc40878ce6..7171ca6dde 100644
 +All releases are unofficial builds. See the GitHub releases for assets and checksums.
  
 -## [Unreleased]
-+## v52
++## v53
  
 -## [0.1.0]
++- **New: status-bar upscaler button (PR #12 by LRF17).** The window now shows
++  which upscaler is drawing: `DLSS`, `FSR 3.1`, `FSR 4`, `GAME UPSCALER`,
++  `DLSS (IDLE)` / `FSR 3.1 (IDLE)` when the setting is on but nothing was
++  replaced, or `DLSS UNAVAILABLE`. The tooltip gives the sizes (for example
++  "2560x1440 to 3840x2160") and, for Ocarina of Time, the reason the renderer
++  fell back. This came from a real case: a game patch silently made the game's
++  own upscaler draw while NVIDIA DLSS was ticked, and the log was the only clue.
++- **Fixed: v51/v52 could over-allocate video memory in Ocarina of Time
++  (upstream #1333).** Read-only native compute storage bindings reached to the
++  end of their mapping (up to 1 GiB), so OoT's ~1 GiB heap became a single
++  1 GiB device-local buffer. Build 150 logs measured a median buffer cache of
++  1594 MiB against 509 MiB before, and 24 of 27 sessions with failed image
++  allocations were on 8 GB AMD cards. Bindings now size from their size word
++  again.
++- **Fixed: right-clicking a game could abort Lichii on Windows (upstream
++  #1258)** when the game path held non-ASCII characters (UTF-8 decoded as ANSI,
++  `c0000409`). Also from upstream: NUP add-ons are registered from external
++  content scans (#1257), duplicate stub registrations are dropped (#1252),
++  `FlushCommands` no longer submits an empty command buffer (#1329), AMD
++  drivers may overallocate device memory (#1335), and Ocarina of Time's guard
++  house freeze gets the built-in Texture Pool x2 patch (#1313).
++- Everything from v52 stays: LRF17's DLSS scene jitter and -1.58 texture LOD
++  bias (PR #10), Help -> Check for Updates... and Open Releases Page..., #1234,
++  #1216, #1210, Fritchii v5.6's zero-page trim, the one-shot saved OoT preset,
++  #1199, #1180, #1155, #1129, #1110, Linux pipeline preloading, the DLSS/HDR
++  work (PR #7/#8/#9), native HDR, DLSS presets E/F and the optional white-flash
++  mitigation.
++- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+ 
+-- Initial release candidate
++## v52
++
 +- **PR #10 by LRF17: NVIDIA DLSS now gets Ocarina of Time's scene jitter and
 +  texture LOD bias.** The host adds a Halton sub-pixel jitter sequence for
 +  temporal upscalers, but DLSS was left with `{0, 0}` and an unjittered scene,
@@ -213,8 +364,7 @@ index bc40878ce6..7171ca6dde 100644
 +  #1036, #1028, #874, native HDR, DLSS presets E/F, the safe Fritchii ports and
 +  the optional white-flash mitigation.
 +- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
- 
--- Initial release candidate
++
 +## v51
 +
 +- Rebased on the latest zortos `nx2` `7dddff2d0e` (16 upstream merges since
@@ -981,7 +1131,7 @@ index 0000000000..a0496b95b6
 +expose the port to a network. Dumps and captures can contain game assets; keep
 +them local and do not upload `.rdc` captures or dumps publicly.
 diff --git a/README.md b/README.md
-index 9230cf33b0..e0c47f9d5b 100644
+index 9230cf33b0..e30bf0e761 100644
 --- a/README.md
 +++ b/README.md
 @@ -9,7 +9,7 @@
@@ -997,9 +1147,9 @@ index 9230cf33b0..e0c47f9d5b 100644
  
  # Lichii
  
-+> ## ✅ v52 recommended
++> ## ✅ v53 recommended
 +>
-+> v52 adds PR #10 by LRF17: NVIDIA DLSS now gets Ocarina of Time's scene jitter and the -1.58 texture LOD bias, roughly doubling measured sharpness on distant grass, foliage and roofs while staying stable in motion. Same `nx2` `7dddff2d0e` base; everything from v51 stays: the 16 upstream merges (#1231, #1236, #959, #1245/#1246 and more), Help -> Check for Updates... and Open Releases Page..., #1234, #1216, Fritchii v5.6's zero-page trim, the one-shot saved OoT preset, #1199, #1180 water ripples, #1155, #1129, #1110, Linux pipeline preloading, #1200/#1197/#1196/#1154. v32 and v42 were removed; v51, v50, v49, v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
++> v53 adds LRF17's status-bar upscaler button (PR #12) showing whether NVIDIA DLSS, AMD FSR 3.1/4 or the game's own upscaler is drawing, with sizes and the OoT fallback reason. It also fixes the v51/v52 OoT video-memory over-allocation from #1231 (upstream #1333), the Windows right-click abort on non-ASCII game paths (#1258), and brings #1257, #1252, #1329, #1335 and the OoT guard-house Texture Pool x2 patch (#1313). Same `nx2` `7dddff2d0e` base as v51/v52; upstream's data-folder migration (#1253, open save-loss report) and DLSS-preset/HDR reworks are deliberately held back. v32 and v42 were removed; v52, v51, v50, v49, v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 +
 +> **Unofficial superbuild fork.** This repository is not official Lichii and is
 +> not affiliated with zortos293. It carries a curated set of performance and
@@ -1066,15 +1216,15 @@ index 9230cf33b0..e0c47f9d5b 100644
  Lichii inherits the work of the Eglantine, Eden, yuzu and Sudachi projects and their contributors, including Eglantine's original developer Camille LaVey. Original copyright notices and third-party licenses are retained.
 diff --git a/SUPERBUILD.md b/SUPERBUILD.md
 new file mode 100644
-index 0000000000..65c24b2194
+index 0000000000..15783267d2
 --- /dev/null
 +++ b/SUPERBUILD.md
 @@ -0,0 +1,216 @@
 +# Lichii Superbuild (unofficial)
 +
-+> ## ✅ v52 recommended
++> ## ✅ v53 recommended
 +>
-+> v52 adds PR #10 by LRF17: NVIDIA DLSS gets OoT's scene jitter and the -1.58 texture LOD bias (roughly double the measured sharpness on distant grass, foliage and roofs, stable in motion). Same `nx2` `7dddff2d0e` base; everything from v51 stays (16 upstream merges, #1231/#1236/#959/#1245/#1246, the manual update check, #1234, #1216, Fritchii zero-page trim, one-shot saved OoT preset, #1180, #1155, #1129, #1110, Linux pipeline preloading). #1218 remains held for a separate test build. v32 and v42 were removed; v51/v50/v49/v48/v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
++> v53 adds LRF17's status-bar upscaler button (PR #12: DLSS / FSR 3.1 / FSR 4 / GAME UPSCALER / DLSS (IDLE) / UNAVAILABLE, with sizes and fallback reason) and fixes the v51/v52 OoT video-memory over-allocation from #1231 (upstream #1333), the Windows right-click abort on non-ASCII paths (#1258), plus #1257, #1252, #1292/#1329, #1335 and the OoT guard-house Texture Pool x2 patch (#1313). Same `nx2` `7dddff2d0e` base as v51/v52. Held back deliberately: upstream #1253 (data-folder migration, open save-loss report #1273), #1249 (DLSS presets replace our env override), #1264 (removes the recommended-settings prompt) and #1326 (native HDR rework). #1218 remains held for a separate test build. v32 and v42 were removed; v52/v51/v50/v49/v48/v47/v46/v45/v43/v41/v40/v39/v38/v37/v36/v35/v34/v31/v30/v29/v28/v24 remain fallbacks.
 +
 +## Credits
 +
@@ -1341,6 +1491,19 @@ index 095ecdede4..8d7c4f9f23 100644
 +# Hylia 52.3 -> 55.4 fps. Off by default because batching gives ~10-15% fps in
 +# Hyrule Warriors; the evidence has not been reproduced on nx2 defaults.
 +#EDEN_NX2_FENCE_FLUSH_US=0
+diff --git a/docs/CI.md b/docs/CI.md
+index 0954df28eb..893a221cd9 100644
+--- a/docs/CI.md
++++ b/docs/CI.md
+@@ -83,7 +83,7 @@ Both the scheme-preparation job and the publishing job check out CI helper scrip
+ | Windows x86_64      | clang-cl + ThinLTO `.zip`    | clang-cl + ThinLTO + PGO `.zip` |
+ | macOS Apple Silicon | App bundle `.zip` and `.dmg` | Not built              |
+ 
+-The existing build steps use the repository's current CMake targets (`yuzu` and `yuzu-cmd`) and package the produced `eglantine` and `eden-cli` binaries. Linux AppImages require glibc 2.39 or newer. Linux tarballs use system Qt and other shared libraries. The standard Windows build uses clang-cl from a pinned LLVM release (`tools/windows/install-llvm.ps1`, shared with the Windows build-check job) in Release mode with ThinLTO, against the MSVC headers, runtime and SDK. MSVC itself still builds the project for development but is not used for releases. Windows archives contain the deployed runtime dependencies. macOS artifacts are ad-hoc signed, not notarized; Gatekeeper may require the user to approve the app on first launch.
++The existing build steps use the repository's current CMake targets (`yuzu` and `yuzu-cmd`) and package the produced `eglantine` and `eden-cli` binaries. Linux AppImages require glibc 2.39 or newer. Linux tarballs hold the same files as the AppImage, unpacked, with `lichii` and `eden-cli` links at the top. The standard Windows build uses clang-cl from a pinned LLVM release (`tools/windows/install-llvm.ps1`, shared with the Windows build-check job) in Release mode with ThinLTO, against the MSVC headers, runtime and SDK. MSVC itself still builds the project for development but is not used for releases. Windows archives contain the deployed runtime dependencies. macOS artifacts are ad-hoc signed, not notarized; Gatekeeper may require the user to approve the app on first launch.
+ 
+ Build artifacts are retained for seven days. Published GitHub Release assets remain available until a release is deleted. Daily releases are pruned to approximately the seven most recent; branch releases are rolling and are cleaned up when no longer needed.
+ 
 diff --git a/docs/native-dlss-replacement.md b/docs/native-dlss-replacement.md
 index d1e3f1895c..dac2b76618 100644
 --- a/docs/native-dlss-replacement.md
@@ -1891,10 +2054,29 @@ index 536b9bc190..04b2df9510 100644
      std::atomic<s64> pause_end_time{};
      /// Cycle timing
 diff --git a/src/core/file_sys/patch_manager.cpp b/src/core/file_sys/patch_manager.cpp
-index 84643b1fe2..acb72b3b9e 100644
+index 84643b1fe2..554473981b 100644
 --- a/src/core/file_sys/patch_manager.cpp
 +++ b/src/core/file_sys/patch_manager.cpp
-@@ -95,13 +95,35 @@ constexpr std::array<u8, 128> FPS_UNLOCK_ROUTINE{
+@@ -71,6 +71,18 @@ constexpr std::array MAX_RESOLUTION_RECORDS{
+     BuiltinPatchRecord{0x805BD0, MAX_RESOLUTION_BRANCH, MAX_RESOLUTION_ORIGINAL},
+ };
+ 
++// RsMan-Dev's texture pool patch: stp x8, x9, [sp, #0x10] stores the graphics allocator's
++// initial pool size (x8); the call doubles it first (lsl x8, x8, #1 ; stp ; ret).
++constexpr std::array<u8, 4> TEXTURE_POOL_ORIGINAL{0xE8, 0x27, 0x01, 0xA9};
++constexpr std::array<u8, 4> TEXTURE_POOL_CALL{0xD5, 0x6F, 0xC0, 0x94};
++constexpr std::array<u8, 12> TEXTURE_POOL_ROUTINE{
++    0x08, 0xF9, 0x7F, 0xD3, 0xE8, 0x27, 0x01, 0xA9, 0xC0, 0x03, 0x5F, 0xD6,
++};
++constexpr std::array TEXTURE_POOL_RECORDS{
++    BuiltinPatchRecord{0xC2A36C, TEXTURE_POOL_CALL, TEXTURE_POOL_ORIGINAL},
++    BuiltinPatchRecord{0x3C462C0, TEXTURE_POOL_ROUTINE, {}, true},
++};
++
+ constexpr std::array<u8, 4> DYNAMIC_FPS_ORIGINAL{0x28, 0x18, 0x20, 0x1E};
+ constexpr std::array<u8, 4> DYNAMIC_FPS_CALL{0x4F, 0x7D, 0xD5, 0x94};
+ // Dark's routine up to the step computation; the two built-ins differ only in the tail.
+@@ -95,13 +107,35 @@ constexpr std::array<u8, 128> FPS_UNLOCK_ROUTINE{
      0x0A, 0xD7, 0xA3, 0x3C, 0x00, 0x00, 0xC0, 0x40,
  };
  #undef DYNAMIC_FPS_ROUTINE_HEAD
@@ -1930,7 +2112,23 @@ index 84643b1fe2..acb72b3b9e 100644
  };
  
  constexpr std::array BUILTIN_PATCHES{
-@@ -123,7 +145,7 @@ constexpr std::array BUILTIN_PATCHES{
+@@ -114,6 +148,15 @@ constexpr std::array BUILTIN_PATCHES{
+         .build_id = "E0F3CCFAF50065AE4EA01EB5AEB13B1A45DA3348",
+         .records = MAX_RESOLUTION_RECORDS,
+     },
++    // With Max Resolution the guard house outgrows the initial pool and dereferences a null
++    // allocation.
++    BuiltinPatch{
++        .name = "Texture Pool x2 (built-in)",
++        .title_id = 0x0400486024DEC000,
++        .module = "main",
++        .build_id = "E0F3CCFAF50065AE4EA01EB5AEB13B1A45DA3348",
++        .records = TEXTURE_POOL_RECORDS,
++    },
+     // Dark's routine with a tail that also lowers the step above 60 fps, so the game keeps real
+     // speed at any frame rate limit (Settings frame_rate_limit).
+     BuiltinPatch{
+@@ -123,7 +166,7 @@ constexpr std::array BUILTIN_PATCHES{
          .build_id = "E0F3CCFAF50065AE4EA01EB5AEB13B1A45DA3348",
          .records = FPS_UNLOCK_RECORDS,
          .state_offset = 0x4E9FE00,
@@ -1939,7 +2137,7 @@ index 84643b1fe2..acb72b3b9e 100644
          .replaces = "Dynamic FPS by Dark (built-in)",
      },
      BuiltinPatch{
-@@ -133,7 +155,7 @@ constexpr std::array BUILTIN_PATCHES{
+@@ -133,7 +176,7 @@ constexpr std::array BUILTIN_PATCHES{
          .build_id = "E0F3CCFAF50065AE4EA01EB5AEB13B1A45DA3348",
          .records = DYNAMIC_FPS_RECORDS,
          .state_offset = 0x4E9FE00,
@@ -1948,6 +2146,63 @@ index 84643b1fe2..acb72b3b9e 100644
      },
  };
  
+diff --git a/src/core/file_sys/registered_cache.cpp b/src/core/file_sys/registered_cache.cpp
+index 26e73d260a..fd08a9846b 100644
+--- a/src/core/file_sys/registered_cache.cpp
++++ b/src/core/file_sys/registered_cache.cpp
+@@ -21,7 +21,9 @@
+ #include "core/file_sys/common_funcs.h"
+ #include "core/file_sys/content_archive.h"
+ #include "core/file_sys/control_metadata.h"
++#include "core/file_sys/decrypted_nca.h"
+ #include "core/file_sys/nca_metadata.h"
++#include "core/file_sys/nup_container.h"
+ #include "core/file_sys/registered_cache.h"
+ #include "core/file_sys/romfs.h"
+ #include "core/file_sys/submission_package.h"
+@@ -1295,6 +1297,42 @@ void ManualContentProvider::AddEntryWithVersion(TitleType title_type, ContentRec
+ 
+ bool ManualContentProvider::AddEntriesFromContainer(VirtualFile file, bool only_content,
+                                                     std::optional<u64> base_program_id) {
++    if (NupContainer::IsNupFile(file)) {
++        // A NUP holds loose trees: its add-ons are served as decrypted add-on NCAs, newest
++        // version per title (as in Eglantine-Community/Eglantine#724). Its updates are left to
++        // the NUP loader, which merges them into the program's RomFS.
++        NupContainer nup{file};
++        if (nup.GetStatus() != Loader::ResultStatus::Success) {
++            return false;
++        }
++        const auto& packages = nup.GetPackages();
++        std::map<u64, std::size_t> newest;
++        for (std::size_t i = 0; i < packages.size(); ++i) {
++            const auto& package = packages[i];
++            if (package.kind != NupContainer::PackageKind::Addon ||
++                (base_program_id && GetBaseTitleID(package.title_id) != *base_program_id)) {
++                continue;
++            }
++            const auto [it, inserted] = newest.try_emplace(package.title_id, i);
++            if (!inserted && package.version > packages[it->second].version) {
++                it->second = i;
++            }
++        }
++        bool added = false;
++        for (const auto& [title_id, index] : newest) {
++            const auto romfs_dir = nup.GetRomFSDir(index);
++            const auto romfs = romfs_dir != nullptr ? CreateRomFS(romfs_dir) : nullptr;
++            if (romfs == nullptr) {
++                LOG_WARNING(Loader, "NUP add-on {:016X} has no RomFS", title_id);
++                continue;
++            }
++            AddEntry(TitleType::AOC, ContentRecordType::Data, title_id,
++                     BuildAddOnContentNca(title_id, romfs));
++            added = true;
++        }
++        return added;
++    }
++
+     const auto nsp = OpenContainerAsNsp(file, Loader::FileType::Unknown);
+     if (!nsp) {
+         return false;
 diff --git a/src/core/hle/service/nvnflinger/pixel_format.h b/src/core/hle/service/nvnflinger/pixel_format.h
 index a38c8be777..a4f8a53c72 100644
 --- a/src/core/hle/service/nvnflinger/pixel_format.h
@@ -1961,7 +2216,7 @@ index a38c8be777..a4f8a53c72 100644
  };
  
 diff --git a/src/core/hle/service/nx2_gsv.h b/src/core/hle/service/nx2_gsv.h
-index 3a71db3a7f..5a03942f16 100644
+index 3a71db3a7f..acd7c6ccd3 100644
 --- a/src/core/hle/service/nx2_gsv.h
 +++ b/src/core/hle/service/nx2_gsv.h
 @@ -81,6 +81,21 @@
@@ -1995,7 +2250,26 @@ index 3a71db3a7f..5a03942f16 100644
      };
      std::mutex mutex;
      std::map<u32, Memory> memories;
-@@ -1969,6 +1986,7 @@ private:
+@@ -1777,18 +1794,6 @@ public:
+             {232, &INx2Vi2Session::StubReplyZeroed, "Unknown232"},
+             {251, &INx2Vi2Session::StubReplyZeroed, "Unknown251"},
+             {252, &INx2Vi2Session::StubReplyZeroed, "Unknown252"},
+-            {261, &INx2Vi2Session::StubReplyZeroed, "Unknown261"},
+-            {262, &INx2Vi2Session::StubReplyZeroed, "Unknown262"},
+-            {263, &INx2Vi2Session::StubReplyZeroed, "Unknown263"},
+-            {264, &INx2Vi2Session::StubReplyZeroed, "Unknown264"},
+-            {265, &INx2Vi2Session::StubReplyZeroed, "Unknown265"},
+-            {266, &INx2Vi2Session::StubReplyZeroed, "Unknown266"},
+-            {267, &INx2Vi2Session::StubReplyZeroed, "Unknown267"},
+-            {268, &INx2Vi2Session::StubReplyZeroed, "Unknown268"},
+-            {269, &INx2Vi2Session::StubReplyZeroed, "Unknown269"},
+-            {270, &INx2Vi2Session::StubReplyZeroed, "Unknown270"},
+-            {271, &INx2Vi2Session::StubReplyZeroed, "Unknown271"},
+-            {272, &INx2Vi2Session::StubReplyZeroed, "Unknown272"},
+             {301, &INx2Vi2Session::StubReplyZeroed, "Unknown301"},
+             {302, &INx2Vi2Session::StubReplyZeroed, "Unknown302"},
+             {351, &INx2Vi2Session::StubReplyZeroed, "Unknown351"},
+@@ -1969,6 +1974,7 @@ private:
      // Eden's GPU thread has processed the frame. Otherwise the game laps the GPU thread and
      // rewrites command memory it hasn't read yet.
      u32 m_wait_timeouts{};
@@ -2003,7 +2277,7 @@ index 3a71db3a7f..5a03942f16 100644
      struct PresentStats {
          long long frame_us{}, fence_us{}, composite_us{}, pace_us{}, max_fence_us{};
          long long max_frame_us{}, hitches{};
-@@ -2030,9 +2048,13 @@ private:
+@@ -2030,9 +2036,13 @@ private:
          if (mkw_dynamic) {
              swap_interval = 1;
          }
@@ -2018,7 +2292,7 @@ index 3a71db3a7f..5a03942f16 100644
          const u32 refresh_rate = (timing & 0xffff) >= 30 && (timing & 0xffff) <= 240 ? timing & 0xffff : 60;
          if (trace) {
              m_frame_trace.interval = swap_interval;
-@@ -2156,7 +2178,7 @@ private:
+@@ -2156,7 +2166,7 @@ private:
  
      // Shows a presented native image: word 5 is the image id, ~word 22 / word 24 the GPU fence
      // (syncpoint, value) to wait for (layout from changes.patch). The image is a block-linear
@@ -2027,7 +2301,7 @@ index 3a71db3a7f..5a03942f16 100644
      // shown_size: the present's word 7, ((height - 1) << 16) | (width - 1) of the area the game drew
      // into from the image's top-left corner (0 when it gives none).
      void Composite(u32 image_id, u32 fence_id, u32 fence_value, u32 shown_size) {
-@@ -2165,7 +2187,9 @@ private:
+@@ -2165,7 +2175,9 @@ private:
          u64 parent_offset{};
          std::optional<Nx2NativeObjects::VideoTrace> video_trace;
          Nx2ImageLayout layout{};
@@ -2038,7 +2312,7 @@ index 3a71db3a7f..5a03942f16 100644
          {
              std::scoped_lock lk{m_objects->mutex};
              const auto image = m_objects->images.find(image_id);
-@@ -2180,7 +2204,9 @@ private:
+@@ -2180,7 +2192,9 @@ private:
              parent = memory->second.parent;
              parent_offset = memory->second.parent_offset + image->second.offset;
              layout = Nx2CalculateImageLayout(image->second.preference.data());
@@ -2049,7 +2323,7 @@ index 3a71db3a7f..5a03942f16 100644
              if (Nx2VideoTraceEnabled()) {
                  video_trace = m_objects->last_video_write;
              }
-@@ -2264,14 +2290,19 @@ private:
+@@ -2264,14 +2278,19 @@ private:
              .offset = 0,
              .width = layout.width,
              .height = layout.height,
@@ -2073,7 +2347,7 @@ index 3a71db3a7f..5a03942f16 100644
          }};
          std::vector<Nvidia::NvFence> fences;
          if (fence_id < 192) {
-@@ -2378,22 +2409,29 @@ private:
+@@ -2378,22 +2397,29 @@ private:
          TipcReplyWords(ctx, {60, 0});
      }
  
@@ -2115,7 +2389,7 @@ index 3a71db3a7f..5a03942f16 100644
      }
  
      // 212(u64 layer): u64 bits of the layer's buffer slots that are ready. The client polls it once
-@@ -3217,6 +3255,7 @@ private:
+@@ -3217,6 +3243,7 @@ private:
              pictures.clear();
              const auto decode_start = std::chrono::steady_clock::now();
              decoder->Decode(input.data, input.pts, pictures);
@@ -2123,7 +2397,15 @@ index 3a71db3a7f..5a03942f16 100644
              if (input.end) {
                  decoder->Drain(pictures);
              }
-@@ -3970,6 +4009,22 @@ private:
+@@ -3550,7 +3577,6 @@ public:
+             {403, &INx2GraphicsSystemSession::CheckPermission, "CheckPermission403"},
+             {424, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown424"},
+             {425, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown425"},
+-            {427, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown427"},
+             {434, &INx2GraphicsSystemSession::AttachGpuAddressSpace, "AttachGpuAddressSpace"},
+             {436, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown436"},
+             {461, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown461"},
+@@ -3970,6 +3996,22 @@ private:
          image.memory = w[19];
          std::copy_n(w + 2, image.preference.size(), image.preference.begin());
          image.size = Nx2CalculateImageLayout(w + 2).size;
@@ -2239,6 +2521,20 @@ index 1ea3e70180..7aca1b89a7 100644
      INSERT(Settings, renderer_backend, tr("API:"),
             tr("Changes the output graphics API.\nVulkan is recommended."));
      INSERT(Settings, vulkan_device, tr("Device:"),
+diff --git a/src/qt_common/game_list/worker.cpp b/src/qt_common/game_list/worker.cpp
+index 0b5e33cff8..b9f7ebd392 100644
+--- a/src/qt_common/game_list/worker.cpp
++++ b/src/qt_common/game_list/worker.cpp
+@@ -457,7 +457,8 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::vector<std::fi
+                        (file_type == Loader::FileType::XCI ||
+                         file_type == Loader::FileType::XCZ ||
+                         file_type == Loader::FileType::NSP ||
+-                        file_type == Loader::FileType::NSZ)) {
++                        file_type == Loader::FileType::NSZ ||
++                        file_type == Loader::FileType::NUP)) {
+                 void(provider->AddEntriesFromContainer(file));
+             }
+         } else {
 diff --git a/src/shader_recompiler/frontend/maxwell/translate_program.cpp b/src/shader_recompiler/frontend/maxwell/translate_program.cpp
 index ba6310de4c..09440fd0e0 100644
 --- a/src/shader_recompiler/frontend/maxwell/translate_program.cpp
@@ -2364,7 +2660,7 @@ index 481f5c5e1d..b0ecda3b25 100644
 +    CHECK(settings->precache_shaders.GetValue() == Settings::PrecacheShaders::Always);
 +}
 diff --git a/src/tests/core/builtin_patches.cpp b/src/tests/core/builtin_patches.cpp
-index 7aec352c6b..f1e35bf410 100644
+index 7aec352c6b..8087d6d8fc 100644
 --- a/src/tests/core/builtin_patches.cpp
 +++ b/src/tests/core/builtin_patches.cpp
 @@ -45,6 +45,18 @@ constexpr size_t DynamicRoutineOffset = sizeof(Loader::NSOHeader) + 0x3C46200;
@@ -2475,6 +2771,137 @@ index 7aec352c6b..f1e35bf410 100644
      }
      SECTION("Code cave outside executable padding") {
          Loader::NSOHeader header;
+@@ -393,3 +432,33 @@ TEST_CASE("Built-in Dynamic FPS leaves both records alone when a user mod change
+     std::memcpy(expected.data() + offset, &mod_word, sizeof(mod_word));
+     REQUIRE(context.Manager().PatchNSO(nso, "main") == expected);
+ }
++
++TEST_CASE("Built-in Texture Pool x2 doubles the allocator's initial pool size",
++          "[patch_manager]") {
++    constexpr std::string_view TexturePool = "Texture Pool x2 (built-in)";
++    constexpr size_t CallOffset = sizeof(Loader::NSOHeader) + 0xC2A36C;
++    constexpr size_t RoutineOffset = sizeof(Loader::NSOHeader) + 0x3C462C0;
++    constexpr u32 StpInstruction = 0xA90127E8;
++    constexpr u32 CallInstruction = 0x94C06FD5;
++    PatchManagerTestContext context;
++    const auto manager = context.Manager();
++    auto nso = MakeDynamicMain();
++    std::memcpy(nso.data() + CallOffset, &StpInstruction, sizeof(StpInstruction));
++
++    auto patched = manager.PatchNSO(nso, "main");
++    REQUIRE(WordAt(patched, CallOffset) == CallInstruction);
++    REQUIRE(Common::HexToString(std::span{patched}.subspan(RoutineOffset, 12)) ==
++            "08F97FD3E82701A9C0035FD6");
++    REQUIRE(WordAt(patched, RoutineOffset + 12) == 0);
++
++    Settings::values.disabled_addons[OcarinaTitleId] = {std::string{TexturePool}};
++    patched = manager.PatchNSO(nso, "main");
++    REQUIRE(WordAt(patched, CallOffset) == StpInstruction);
++    REQUIRE(WordAt(patched, RoutineOffset) == 0);
++
++    Settings::values.disabled_addons.erase(OcarinaTitleId);
++    std::memcpy(nso.data() + CallOffset, &NopInstruction, sizeof(NopInstruction));
++    patched = manager.PatchNSO(nso, "main");
++    REQUIRE(WordAt(patched, CallOffset) == NopInstruction);
++    REQUIRE(WordAt(patched, RoutineOffset) == 0);
++}
+diff --git a/src/tests/core/nup_writer.cpp b/src/tests/core/nup_writer.cpp
+index c031ea14f7..0c1ff55b28 100644
+--- a/src/tests/core/nup_writer.cpp
++++ b/src/tests/core/nup_writer.cpp
+@@ -11,14 +11,18 @@
+ #include <iterator>
+ #include <map>
+ #include <string>
++#include <tuple>
+ #include <vector>
+ 
+ #include <fmt/format.h>
+ #include <openssl/evp.h>
+ 
++#include "core/file_sys/content_archive.h"
++#include "core/file_sys/control_metadata.h"
+ #include "core/file_sys/nup_container.h"
+ #include "core/file_sys/nup_writer.h"
+-#include "core/file_sys/control_metadata.h"
++#include "core/file_sys/registered_cache.h"
++#include "core/file_sys/romfs.h"
+ #include "core/file_sys/vfs/vfs_real.h"
+ #include "core/file_sys/vfs/vfs_vector.h"
+ #include "core/loader/nup.h"
+@@ -146,6 +150,72 @@ std::map<std::string, std::string> PackedTree(const FileSys::VirtualDir& dir) {
+ 
+ constexpr u64 TitleId = 0x0400ABCD00010000ULL;
+ 
++TEST_CASE("NUP add-ons are readable through the manual content provider", "[nup][nup-content]") {
++    TempDir tmp;
++    const auto root = tmp.path / "dump";
++    Put(root / "base/exefs/main", "main");
++    Put(root / "base/exefs/main.npdm", Npdm(TitleId));
++    Put(root / "base/romfs/base.bin", "base");
++    Put(root / "dlc/0400ABCD00011001/0/romfs/addon.bin", "old addon");
++    Put(root / "dlc/0400ABCD00011001/1/romfs/addon.bin", "new addon");
++    Put(root / "dlc/0400ABCD00011002/0/romfs/second.bin", "second addon");
++    Put(root / "dlc/0400ABCD00021001/0/romfs/foreign.bin", "foreign addon");
++    const auto archive = tmp.path / "game.nup";
++    REQUIRE(FileSys::Nup::PackDump(root, archive) == FileSys::Nup::PackResult::Success);
++    auto bytes = ReadAll(archive);
++    const auto toc = Le(bytes, 8, 8);
++    bytes.at(toc + 0x30 + 2 * 0x40 + 0x14) = 1;
++    const auto hash = Sha256(std::string_view{bytes}.substr(toc, Le(bytes, 0x10, 8)));
++    std::copy(hash.begin(), hash.end(), bytes.begin() + 0x18);
++    Put(archive, bytes);
++
++    FileSys::RealVfsFilesystem vfs;
++    FileSys::VirtualFile file;
++    SECTION("memory-backed archive") {
++        file = std::make_shared<FileSys::VectorVfsFile>(std::vector<u8>(bytes.begin(), bytes.end()),
++                                                        "game.nup");
++    }
++    SECTION("disk-backed archive") {
++        file = vfs.OpenFile(archive.string(), FileSys::OpenMode::Read);
++    }
++    REQUIRE(file != nullptr);
++
++    FileSys::ManualContentProvider provider;
++    REQUIRE(provider.AddEntriesFromContainer(file, true, TitleId));
++    file.reset();
++    const auto entries =
++        provider.ListEntriesFilter(FileSys::TitleType::AOC, FileSys::ContentRecordType::Data, {});
++    REQUIRE(entries.size() == 2);
++    CHECK_FALSE(provider.HasEntry(TitleId, FileSys::ContentRecordType::Program));
++    CHECK_FALSE(provider.HasEntry(0x0400ABCD00021001ULL, FileSys::ContentRecordType::Data));
++    for (const auto& [id, name, expected] :
++         std::array{std::tuple{TitleId + 0x1001, "addon.bin", "new addon"},
++                    std::tuple{TitleId + 0x1002, "second.bin", "second addon"}}) {
++        const auto nca = provider.GetEntry(id, FileSys::ContentRecordType::Data);
++        REQUIRE(nca != nullptr);
++        REQUIRE(nca->GetStatus() == Loader::ResultStatus::Success);
++        CHECK(nca->GetTitleId() == id);
++        const auto romfs = FileSys::ExtractRomFS(nca->GetRomFS());
++        REQUIRE(romfs != nullptr);
++        const auto member = romfs->GetFile(name);
++        REQUIRE(member != nullptr);
++        CHECK(Read(member) == expected);
++    }
++
++    provider.ClearAllEntries();
++    CHECK(provider.ListEntriesFilter({}, {}, {}).empty());
++    REQUIRE(provider.AddEntriesFromContainer(std::make_shared<FileSys::VectorVfsFile>(
++        std::vector<u8>(bytes.begin(), bytes.end()), "game.nup")));
++    CHECK(provider.ListEntriesFilter(FileSys::TitleType::AOC, FileSys::ContentRecordType::Data, {})
++              .size() == 3);
++    provider.ClearAllEntries();
++    CHECK_FALSE(provider.AddEntriesFromContainer(
++        std::make_shared<FileSys::VectorVfsFile>(std::vector<u8>(bytes.begin(), bytes.end()),
++                                                 "game.nup"),
++        true, TitleId + 0x20000));
++    CHECK(provider.ListEntriesFilter({}, {}, {}).empty());
++}
++
+ void MakeDump(const fs::path& root) {
+     Put(root / "Base/ExeFS/main", "base main");
+     Put(root / "Base/ExeFS/main.npdm", Npdm(TitleId));
 diff --git a/src/tests/core/nx2_image_layout.cpp b/src/tests/core/nx2_image_layout.cpp
 index 66528c1ebe..9e81a4cc4c 100644
 --- a/src/tests/core/nx2_image_layout.cpp
@@ -2521,7 +2948,7 @@ index 66528c1ebe..9e81a4cc4c 100644
      auto preference = ColorPreference;
      preference[4] = 8;
 diff --git a/src/tests/video_core/buffer_cache_ports.cpp b/src/tests/video_core/buffer_cache_ports.cpp
-index 8d16a878f2..ba9037f79e 100644
+index 8d16a878f2..de471b9571 100644
 --- a/src/tests/video_core/buffer_cache_ports.cpp
 +++ b/src/tests/video_core/buffer_cache_ports.cpp
 @@ -356,6 +356,13 @@ struct BufferCacheTestAccess {
@@ -2538,7 +2965,25 @@ index 8d16a878f2..ba9037f79e 100644
      static size_t ReadDownloads(Cache& cache) {
          return cache.read_downloads.size();
      }
-@@ -817,6 +824,147 @@ TEST_CASE("Command page readers remain ordered during batch completion", "[buffe
+@@ -618,9 +625,16 @@ TEST_CASE("Storage binding cache preserves native and table size policies", "[bu
+     f.Descriptor(base, 256);
+     REQUIRE(f.Bind().size == 4096);
+     REQUIRE(f.Bind(false, true).size == 8 << 20);
+-    REQUIRE(f.Bind(false, true, false, true).size == 80 << 20);
++    REQUIRE(f.Bind(false, true, false, true).size == 8 << 20);
+     REQUIRE(f.Bind(true, true, false, true).size == 8 << 20);
+     REQUIRE(f.Bind(false, false, true).size == 80 << 20);
++    f.Descriptor(base, 40 << 20);
++    REQUIRE(f.Bind(false, true, false, true).size == 40 << 20);
++    REQUIRE(f.Bind(true, true, false, true).size == 8 << 20);
++    REQUIRE(f.Bind(false, true).size == 8 << 20);
++    f.Descriptor(base, 100 << 20);
++    REQUIRE(f.Bind(false, true, false, true).size == 8 << 20);
++    f.Descriptor(base, 256);
+     REQUIRE(f.Bind(true, false, true).size == 256);
+     f.Descriptor(base, (1ULL << 32) | 256);
+     REQUIRE(f.Bind().size == 8 << 20);
+@@ -817,6 +831,147 @@ TEST_CASE("Command page readers remain ordered during batch completion", "[buffe
      REQUIRE(f.runtime.downloads == 1);
  }
  
@@ -2734,10 +3179,18 @@ index 39bc1d379b..1c3cbda578 100644
 +    CHECK_FALSE(CanFlushTexturePool(0xFFFFFFFF));
 +}
 diff --git a/src/video_core/CMakeLists.txt b/src/video_core/CMakeLists.txt
-index 371992d963..9a8f07da59 100644
+index 371992d963..319b217172 100644
 --- a/src/video_core/CMakeLists.txt
 +++ b/src/video_core/CMakeLists.txt
-@@ -621,7 +621,7 @@ endif()
+@@ -142,6 +142,7 @@ add_library(video_core STATIC
+     rasterizer_interface.h
+     renderer_base.cpp
+     renderer_base.h
++    upscaler_status.h
+ 
+     # Null
+     renderer_null/null_rasterizer.cpp
+@@ -621,7 +622,7 @@ endif()
  # setting is on. Only Streamline's MIT-licensed headers are compiled in and nothing of NVIDIA's is
  # linked or copied: sl.interposer.dll and the DLSS plugins are loaded at run time from the user's PC.
  cmake_dependent_option(ENABLE_NVIDIA_DLSS "Enable NVIDIA DLSS through NVIDIA Streamline" ON
@@ -2747,7 +3200,7 @@ index 371992d963..9a8f07da59 100644
      "NVIDIA Streamline SDK directory for its headers (empty: download them)")
  if (ENABLE_NVIDIA_DLSS)
 diff --git a/src/video_core/buffer_cache/buffer_cache.h b/src/video_core/buffer_cache/buffer_cache.h
-index 0fad666952..6a7923b226 100644
+index 0fad666952..fcd729cf35 100644
 --- a/src/video_core/buffer_cache/buffer_cache.h
 +++ b/src/video_core/buffer_cache/buffer_cache.h
 @@ -1440,6 +1440,11 @@ bool BufferCache<P>::DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 am
@@ -2928,7 +3381,97 @@ index 0fad666952..6a7923b226 100644
          }
      }
  }
-@@ -4342,4 +4420,4 @@ std::pair<typename BufferCache<P>::Buffer*, u32> BufferCache<P>::GetDrawIndirect
+@@ -4158,7 +4236,8 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
+         return NULL_BINDING;
+     }
+ 
+-    const bool reads_size_word = !(table_pointer && !is_written) && !native_pointer;
++    const bool reads_size_word =
++        !(table_pointer && !is_written) && (!native_pointer || (compute && !is_written));
+     const u64 next_qword = reads_size_word ? gpu_memory->Read<u64>(ssbo_addr + 8) : 0;
+     const u32 alignment = runtime.GetStorageBufferAlignment();
+     struct CachedBinding {
+@@ -4192,30 +4271,36 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
+         u32 size = [&]() {
+             const u32 memory_layout_size = static_cast<u32>((std::min)(
+                 u64{gpu_memory->GetMemoryLayoutSize(gpu_addr)}, u64{(std::numeric_limits<u32>::max)()}));
++            const u32 packed_size = static_cast<u32>(next_qword);
++            const bool next_qword_is_size = static_cast<u32>(next_qword >> 32) == 0 &&
++                                            packed_size != 0 && packed_size <= memory_layout_size;
++            const u64 reach = (std::min)(runtime.GetMaxStorageBufferRange(), u64{1_GiB});
++            const u32 limit = static_cast<u32>(reach - (std::min)(reach, u64{64_KiB}));
+             // A pointer read from a table in memory is the base of an object pool, read anywhere in
+             // it: bound to the end of its mapping, as far as a storage buffer may reach (at most
+             // 1 GiB). Ocarina of Time's grass instances lie 12-18 MiB past theirs (an 8 MiB cap
+             // culled every blade), and its light probe records reach about 130 MiB past theirs: a
+             // 64 MiB cap left the far probes outside the binding, and the fog took one overbright
+-            // constant from them. A native (Switch 2) compute pointer has no size either, and
+-            // Mario Kart World's lighting passes read past 8 MiB from theirs: capped there, the
+-            // reads came back zero and lit land and characters too dark. Written bindings keep
+-            // a cap: a write marks the whole binding GPU-modified.
+-            const bool native_compute = native_pointer && compute;
+-            if ((table_pointer || native_compute) && !is_written) {
+-                const u64 reach = (std::min)(runtime.GetMaxStorageBufferRange(), u64{1_GiB});
+-                const u32 limit = static_cast<u32>(reach - (std::min)(reach, u64{64_KiB}));
++            // constant from them. Written pools keep a cap: a write marks the whole binding
++            // GPU-modified.
++            if (table_pointer && !is_written) {
+                 return (std::min)(memory_layout_size, limit);
+             }
+             // A native compute program's pointer is bare: the word after it is another parameter
+             // (a dimension, stride or texture handle), not an NVN buffer size. Taking it as one
+             // bound Fortune's Weave's DLSS input features to 266 bytes and dropped the rest.
+             if (native_pointer) {
+-                return (std::min)(memory_layout_size, static_cast<u32>(8_MiB));
++                const u32 bare = (std::min)(memory_layout_size, static_cast<u32>(8_MiB));
++                // Mario Kart World's lighting passes read past 8 MiB from theirs, inside the size
++                // word after the pointer (Eglantine #609 reads it): capped at 8 MiB those reads
++                // came back zero and lit land and characters too dark. A read-only compute binding
++                // takes a larger size word. Binding to the end of the mapping instead spanned
++                // Ocarina of Time's ~1 GiB heap and backed it with a 1 GiB buffer.
++                if (compute && !is_written && next_qword_is_size && packed_size > bare) {
++                    return (std::min)(packed_size, limit);
++                }
++                return bare;
+             }
+-            const u32 packed_size = static_cast<u32>(next_qword);
+-            const bool next_qword_is_size = static_cast<u32>(next_qword >> 32) == 0 &&
+-                                            packed_size != 0 && packed_size <= memory_layout_size;
+             if (next_qword_is_size) {
+                 return packed_size;
+             }
+@@ -4228,10 +4313,15 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
+             size = static_cast<u32>(gpu_memory->MaxContinuousRange(gpu_addr, size));
+             if (native_pointer && compute) {
+                 static std::atomic<u64> computed{}, past_cap{}, at_gap{}, logged{};
++                static std::atomic<u32> largest{};
+                 static std::atomic<s64> next_log{};
+                 const u64 total = computed.fetch_add(1, std::memory_order_relaxed) + 1;
+                 if (size > 8_MiB) {
+                     past_cap.fetch_add(1, std::memory_order_relaxed);
++                    u32 seen = largest.load(std::memory_order_relaxed);
++                    while (size > seen &&
++                           !largest.compare_exchange_weak(seen, size, std::memory_order_relaxed)) {
++                    }
+                 }
+                 if (size < wanted) {
+                     at_gap.fetch_add(1, std::memory_order_relaxed);
+@@ -4247,9 +4337,11 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
+                     next_log.compare_exchange_strong(due, now + 10)) {
+                     logged.store(long_bindings + gap_bindings, std::memory_order_relaxed);
+                     LOG_INFO(HW_GPU,
+-                             "Native compute storage bindings: {} reach past the old 8 MiB cap, "
+-                             "{} stop at a mapping gap, of {} bound",
+-                             long_bindings, gap_bindings, total);
++                             "Native compute storage bindings: {} reach past 8 MiB through their "
++                             "size word (largest {:#x} bytes), {} stop at a mapping gap, of {} "
++                             "bound",
++                             long_bindings, largest.load(std::memory_order_relaxed), gap_bindings,
++                             total);
+                 }
+             }
+         }
+@@ -4342,4 +4434,4 @@ std::pair<typename BufferCache<P>::Buffer*, u32> BufferCache<P>::GetDrawIndirect
                            buffer.Offset(channel_state->indirect_buffer_binding.device_addr));
  }
  
@@ -3874,6 +4417,76 @@ index 78cce90766..4780afa60c 100644
      std::mutex cache_mutex;
  
      struct QueryCacheBaseImpl;
+diff --git a/src/video_core/renderer_base.cpp b/src/video_core/renderer_base.cpp
+index e19a70ea01..7ed1ce4ea3 100644
+--- a/src/video_core/renderer_base.cpp
++++ b/src/video_core/renderer_base.cpp
+@@ -4,6 +4,7 @@
+ // SPDX-FileCopyrightText: 2015 Citra Emulator Project
+ // SPDX-License-Identifier: GPL-2.0-or-later
+ 
++#include <atomic>
+ #include <thread>
+ 
+ #include "common/logging.h"
+@@ -13,6 +14,33 @@
+ 
+ namespace VideoCore {
+ 
++namespace {
++std::atomic<u64> upscale_evaluations{};
++std::atomic<u64> upscale_sizes{}; ///< 16 bits each: render width, height, output width, height
++std::atomic<UpscalerKind> upscale_kind{};
++} // Anonymous namespace
++
++void NoteUpscale(UpscalerKind kind, u32 render_width, u32 render_height, u32 output_width,
++                 u32 output_height) noexcept {
++    const u64 sizes = u64{render_width & 0xFFFF} << 48 | u64{render_height & 0xFFFF} << 32 |
++                      u64{output_width & 0xFFFF} << 16 | u64{output_height & 0xFFFF};
++    upscale_sizes.store(sizes, std::memory_order_relaxed);
++    upscale_kind.store(kind, std::memory_order_relaxed);
++    upscale_evaluations.fetch_add(1, std::memory_order_relaxed);
++}
++
++UpscalerStatus LastUpscale() noexcept {
++    const u64 sizes = upscale_sizes.load(std::memory_order_relaxed);
++    return {
++        .kind = upscale_kind.load(std::memory_order_relaxed),
++        .evaluations = upscale_evaluations.load(std::memory_order_relaxed),
++        .render_width = static_cast<u32>(sizes >> 48 & 0xFFFF),
++        .render_height = static_cast<u32>(sizes >> 32 & 0xFFFF),
++        .output_width = static_cast<u32>(sizes >> 16 & 0xFFFF),
++        .output_height = static_cast<u32>(sizes & 0xFFFF),
++    };
++}
++
+ RendererBase::RendererBase(Core::Frontend::EmuWindow& window_,
+                            std::unique_ptr<Core::Frontend::GraphicsContext> context_)
+     : render_window{window_}, context{std::move(context_)} {
+diff --git a/src/video_core/renderer_base.h b/src/video_core/renderer_base.h
+index cecb3a1a82..ecc5c625b7 100644
+--- a/src/video_core/renderer_base.h
++++ b/src/video_core/renderer_base.h
+@@ -16,6 +16,7 @@
+ #include "core/frontend/framebuffer_layout.h"
+ #include "video_core/gpu.h"
+ #include "video_core/rasterizer_interface.h"
++#include "video_core/upscaler_status.h"
+ 
+ namespace Core::Frontend {
+ class EmuWindow;
+@@ -78,6 +79,11 @@ public:
+         return {};
+     }
+ 
++    /// The upscaler that replaces the game's own, what it last drew and how often so far
++    [[nodiscard]] virtual UpscalerStatus GetUpscalerStatus() const {
++        return LastUpscale();
++    }
++
+     [[nodiscard]] const RendererDeviceInfo& GetDeviceInfo() const {
+         return device_info;
+     }
 diff --git a/src/video_core/renderer_opengl/present/layer.cpp b/src/video_core/renderer_opengl/present/layer.cpp
 index 2656892f4a..d8dc052fac 100644
 --- a/src/video_core/renderer_opengl/present/layer.cpp
@@ -4051,10 +4664,26 @@ index 58d6fc01c0..d3ae32e2e8 100644
      VkDescriptorSetLayout GetDescriptorSetLayout();
      VkRenderPass GetRenderPass();
 diff --git a/src/video_core/renderer_vulkan/renderer_vulkan.cpp b/src/video_core/renderer_vulkan/renderer_vulkan.cpp
-index 48757b88ad..cd8bab799c 100644
+index 48757b88ad..dc13ee3199 100644
 --- a/src/video_core/renderer_vulkan/renderer_vulkan.cpp
 +++ b/src/video_core/renderer_vulkan/renderer_vulkan.cpp
-@@ -243,25 +243,58 @@ void RendererVulkan::Composite(std::span<const Tegra::FramebufferConfig> framebu
+@@ -216,6 +216,15 @@ RendererVulkan::~RendererVulkan() {
+     void(device.GetLogical().WaitIdle());
+ }
+ 
++VideoCore::UpscalerStatus RendererVulkan::GetUpscalerStatus() const {
++    auto status = VideoCore::LastUpscale();
++#ifdef EGLANTINE_STREAMLINE
++    status.dlss_available = Streamline::IsDlssAvailable();
++#endif
++    status.fallback_reason = rasterizer.OcarinaFallbackReason();
++    return status;
++}
++
+ void RendererVulkan::Composite(std::span<const Tegra::FramebufferConfig> framebuffers) {
+     const bool trace = Common::DkbFrameTrace::Enabled();
+     const auto entered = trace ? std::chrono::steady_clock::now()
+@@ -243,25 +252,58 @@ void RendererVulkan::Composite(std::span<const Tegra::FramebufferConfig> framebu
      const auto acquired = trace ? std::chrono::steady_clock::now()
                                  : std::chrono::steady_clock::time_point{};
  
@@ -4128,7 +4757,7 @@ index 48757b88ad..cd8bab799c 100644
      }
  #endif
  
-@@ -344,7 +377,7 @@ vk::Buffer RendererVulkan::RenderToBuffer(std::span<const Tegra::FramebufferConf
+@@ -344,7 +386,7 @@ vk::Buffer RendererVulkan::RenderToBuffer(std::span<const Tegra::FramebufferConf
      }();
  
      auto dst_buffer = CreateWrappedBuffer(memory_allocator, buffer_size, MemoryUsage::Download);
@@ -4137,7 +4766,7 @@ index 48757b88ad..cd8bab799c 100644
  
      scheduler.RequestOutsideRenderPassOperationContext();
      scheduler.Record([&](vk::CommandBuffer cmdbuf) {
-@@ -423,7 +456,7 @@ void RendererVulkan::RenderAppletCaptureLayer(
+@@ -423,7 +465,7 @@ void RendererVulkan::RenderAppletCaptureLayer(
  
      scheduler.RequestOutsideRenderPassOperationContext();
      blit_applet.DrawToFrame(device, rasterizer, &applet_frame, capture_layers, VideoCore::Capture::Layout, 1,
@@ -4146,6 +4775,19 @@ index 48757b88ad..cd8bab799c 100644
  }
  
  } // namespace Vulkan
+diff --git a/src/video_core/renderer_vulkan/renderer_vulkan.h b/src/video_core/renderer_vulkan/renderer_vulkan.h
+index 5ba748a4e2..56ecc6d562 100644
+--- a/src/video_core/renderer_vulkan/renderer_vulkan.h
++++ b/src/video_core/renderer_vulkan/renderer_vulkan.h
+@@ -59,6 +59,8 @@ public:
+         return device.GetDriverName();
+     }
+ 
++    [[nodiscard]] VideoCore::UpscalerStatus GetUpscalerStatus() const override;
++
+     [[nodiscard]] VideoCore::FrameGenStatus GetFrameGenStatus() const override {
+ #ifdef HAS_LSFG
+         return frame_gen.CurrentStatus();
 diff --git a/src/video_core/renderer_vulkan/vk_blit_screen.cpp b/src/video_core/renderer_vulkan/vk_blit_screen.cpp
 index d4a3c8972b..2c3e9af8ba 100644
 --- a/src/video_core/renderer_vulkan/vk_blit_screen.cpp
@@ -4243,6 +4885,50 @@ index 23afe8afff..1f2a820b51 100644
          VideoCommon::Nx2Profile::Scope scope{VideoCommon::Nx2Profile::Zone::ListSubmitWait};
          if (!scheduler.WaitSubmitted(tick)) {
              scheduler.Wait(tick);
+diff --git a/src/video_core/renderer_vulkan/vk_fsr3_upscaler.cpp b/src/video_core/renderer_vulkan/vk_fsr3_upscaler.cpp
+index 88c58e1297..4129a34f68 100644
+--- a/src/video_core/renderer_vulkan/vk_fsr3_upscaler.cpp
++++ b/src/video_core/renderer_vulkan/vk_fsr3_upscaler.cpp
+@@ -40,6 +40,7 @@
+ #include "video_core/renderer_vulkan/vk_fsr3_upscaler.h"
+ #include "video_core/renderer_vulkan/vk_scheduler.h"
+ #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
++#include "video_core/upscaler_status.h"
+ #include "video_core/vulkan_common/vulkan_device.h"
+ #include "video_core/vulkan_common/vulkan_memory_allocator.h"
+ 
+@@ -451,6 +452,9 @@ void Fsr3Upscaler::CreateResources(VkExtent2D render_size, VkExtent2D upscale_si
+ }
+ 
+ void Fsr3Upscaler::Upscale(const Inputs& in) {
++    VideoCore::NoteUpscale(VideoCore::UpscalerKind::Fsr3, in.render_size.width,
++                           in.render_size.height, in.upscale_size.width,
++                           in.upscale_size.height);
+     if (!output.image || in.render_size.width != render_extent.width ||
+         in.render_size.height != render_extent.height ||
+         in.upscale_size.width != upscale_extent.width ||
+diff --git a/src/video_core/renderer_vulkan/vk_fsr4_upscaler.cpp b/src/video_core/renderer_vulkan/vk_fsr4_upscaler.cpp
+index 1a5b849db4..0cf5968268 100644
+--- a/src/video_core/renderer_vulkan/vk_fsr4_upscaler.cpp
++++ b/src/video_core/renderer_vulkan/vk_fsr4_upscaler.cpp
+@@ -16,6 +16,7 @@
+ #include "common/settings.h"
+ #include "video_core/renderer_vulkan/vk_fsr4_upscaler.h"
+ #include "video_core/renderer_vulkan/vk_scheduler.h"
++#include "video_core/upscaler_status.h"
+ #include "video_core/vulkan_common/ffx_runtime.h"
+ #include "video_core/vulkan_common/vulkan_device.h"
+ #include "video_core/vulkan_common/vulkan_memory_allocator.h"
+@@ -397,6 +398,9 @@ bool Fsr4Upscaler::Upscale(const Inputs& in) {
+         cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, {}, {}, back);
+     });
++    VideoCore::NoteUpscale(VideoCore::UpscalerKind::Fsr4, in.render_size.width,
++                           in.render_size.height, in.upscale_size.width,
++                           in.upscale_size.height);
+     return true;
+ }
+ 
 diff --git a/src/video_core/renderer_vulkan/vk_ocarina_camera_motion.cpp b/src/video_core/renderer_vulkan/vk_ocarina_camera_motion.cpp
 index 1512865e68..791d0fe274 100644
 --- a/src/video_core/renderer_vulkan/vk_ocarina_camera_motion.cpp
@@ -4658,7 +5344,7 @@ index ab2b76f10f..67d31cc3a0 100644
      bool use_present_thread;
      std::atomic<std::size_t> image_count{};
 diff --git a/src/video_core/renderer_vulkan/vk_rasterizer.cpp b/src/video_core/renderer_vulkan/vk_rasterizer.cpp
-index 76998a351b..9ba637c713 100644
+index 76998a351b..a8fe04f3e8 100644
 --- a/src/video_core/renderer_vulkan/vk_rasterizer.cpp
 +++ b/src/video_core/renderer_vulkan/vk_rasterizer.cpp
 @@ -435,6 +435,10 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
@@ -4712,7 +5398,21 @@ index 76998a351b..9ba637c713 100644
  }
  
  void RasterizerVulkan::FlushQueryResults(DAddr addr, u64 size) {
-@@ -2893,13 +2912,14 @@ f32 Halton(u32 index, u32 base) {
+@@ -2705,6 +2724,13 @@ void RasterizerVulkan::FlushCommands() {
+     }
+     draw_counter = 0;
+     pending_native_work = false;
++    // A fence with a download is submitted by InnerFence::Queue, and SignalFence then comes here
++    // with nothing recorded since: ~4,600 empty submits a second in Ocarina of Time's Castle
++    // Town, each followed by a full rebind (from Fritchii c338269b92).
++    if (!scheduler.RecordedSinceSubmit()) {
++        Scheduler::CountSkippedFlush();
++        return;
++    }
+     // Fences with downloads or queries come here right after queueing: ~9,400 a second in
+     // Hyrule Warriors: Age of Imprisonment fights. Batched like the fences themselves.
+     if (!scheduler.DeferFlush()) {
+@@ -2893,13 +2919,14 @@ f32 Halton(u32 index, u32 base) {
  
  void RasterizerVulkan::UpdateOcarinaJitter() {
      std::array<f32, 2> want{};
@@ -4730,7 +5430,7 @@ index 76998a351b..9ba637c713 100644
          oot_dlss_frame && *oot_dlss_frame + 1 >= render_trace_frame && regs.depth_test_enable) {
          const auto& targets = texture_cache.GetRenderTargets();
          if (targets.depth_buffer_id) {
-@@ -3468,7 +3488,11 @@ std::optional<FramebufferTextureInfo> RasterizerVulkan::AccelerateDisplay(
+@@ -3468,7 +3495,11 @@ std::optional<FramebufferTextureInfo> RasterizerVulkan::AccelerateDisplay(
      if (oot_4k_scene_frame == render_trace_frame && info.image &&
          info.image == oot_4k_guest_present && info.image_view &&
          info.width == 2560 && info.height == 1440 && !scaled &&
@@ -4743,11 +5443,85 @@ index 76998a351b..9ba637c713 100644
          !oot_live_dlss->EvaluationFailed() && !frame_dump.Capturing()) {
          try {
              oot_live_dlss->Composite4k(info.image_view, render_trace_frame);
+diff --git a/src/video_core/renderer_vulkan/vk_rasterizer.h b/src/video_core/renderer_vulkan/vk_rasterizer.h
+index 79d296d51b..4de6212eaa 100644
+--- a/src/video_core/renderer_vulkan/vk_rasterizer.h
++++ b/src/video_core/renderer_vulkan/vk_rasterizer.h
+@@ -7,6 +7,7 @@
+ #pragma once
+ 
+ #include <array>
++#include <atomic>
+ #include <optional>
+ #include <string_view>
+ 
+@@ -87,6 +88,12 @@ private:
+ class RasterizerVulkan final : public VideoCore::RasterizerInterface,
+                                protected VideoCommon::ChannelSetupCaches<VideoCommon::ChannelInfo> {
+ public:
++    /// Why Ocarina of Time's own upscale drew the last frame instead of the temporal upscaler
++    /// (a literal), or null while the upscaler replaces it or for other games.
++    [[nodiscard]] const char* OcarinaFallbackReason() const noexcept {
++        return oot_fallback_reason.load(std::memory_order_relaxed);
++    }
++
+     explicit RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra::GPU& gpu_,
+                               Tegra::MaxwellDeviceMemoryManager& device_memory_,
+                               const Device& device_, MemoryAllocator& memory_allocator_,
+@@ -310,7 +317,7 @@ private:
+     } oot_motion;
+     std::unique_ptr<class OcarinaUpscaler> oot_live_dlss;
+     bool oot_live_failed{};
+-    const char* oot_fallback_reason{};
++    std::atomic<const char*> oot_fallback_reason{}; ///< also read by the status bar
+     u32 oot_fallback_repeats{};
+     std::optional<u64> oot_dlss_frame;
+     std::array<f32, 2> oot_jitter_applied{}; ///< in the viewport state now (render pixels)
 diff --git a/src/video_core/renderer_vulkan/vk_scheduler.cpp b/src/video_core/renderer_vulkan/vk_scheduler.cpp
-index c056779f28..6d4a33f6a5 100644
+index c056779f28..39fea6ebf9 100644
 --- a/src/video_core/renderer_vulkan/vk_scheduler.cpp
 +++ b/src/video_core/renderer_vulkan/vk_scheduler.cpp
-@@ -194,7 +194,7 @@ bool Scheduler::DeferFlush() {
+@@ -42,6 +42,7 @@ namespace {
+ std::atomic<u64> g_profile_submits{};
+ std::atomic<u64> g_profile_renderpasses{};
+ std::atomic<u64> g_profile_finishes{};
++std::atomic<u64> g_profile_skipped_flushes{};
+ std::atomic<u64> g_profile_finish_ns{};
+ std::atomic<u64> g_profile_window_start{};
+ std::mutex g_profile_end_mutex;
+@@ -72,9 +73,10 @@ void ReportSubmitCounts() {
+     }
+     const double seconds = static_cast<double>(now - start) / 1e9;
+     LOG_INFO(Render_Vulkan,
+-             "Scheduler per second: {:.0f} submits, {:.0f} render passes, {:.0f} finishes "
+-             "waiting {:.1f} ms",
++             "Scheduler per second: {:.0f} submits, {:.0f} empty flushes skipped, {:.0f} render "
++             "passes, {:.0f} finishes waiting {:.1f} ms",
+              static_cast<double>(g_profile_submits.exchange(0)) / seconds,
++             static_cast<double>(g_profile_skipped_flushes.exchange(0)) / seconds,
+              static_cast<double>(g_profile_renderpasses.exchange(0)) / seconds,
+              static_cast<double>(g_profile_finishes.exchange(0)) / seconds,
+              static_cast<double>(g_profile_finish_ns.exchange(0)) / 1e6 / seconds);
+@@ -176,11 +178,18 @@ u64 Scheduler::Flush(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore,
+     // When flushing, we only send data to the worker thread; no waiting is necessary.
+     const u64 signal_value = SubmitExecution(signal_semaphore, wait_semaphore);
+     AllocateNewContext();
++    submitted_serial = record_serial;
+     last_flush = std::chrono::steady_clock::now();
+     flush_pending = false;
+     return signal_value;
+ }
+ 
++void Scheduler::CountSkippedFlush() {
++    if (VideoCommon::Nx2Profile::Enabled()) {
++        g_profile_skipped_flushes.fetch_add(1, std::memory_order_relaxed);
++    }
++}
++
+ bool Scheduler::DeferFlush() {
+     // Fences come one per compute release: ~11,500 a second in Hyrule Warriors: Age of
+     // Imprisonment fights, each a queue submission (~22,000 a second with the others), which
+@@ -194,7 +203,7 @@ bool Scheduler::DeferFlush() {
          }
          return s64{500};
      }();
@@ -4756,8 +5530,16 @@ index c056779f28..6d4a33f6a5 100644
          std::chrono::steady_clock::now() - last_flush >= std::chrono::microseconds{interval_us}) {
          return false;
      }
+@@ -254,6 +263,7 @@ void Scheduler::Finish(VkSemaphore signal_semaphore, VkSemaphore wait_semaphore,
+     SubmitExecution(signal_semaphore, wait_semaphore);
+     Wait(presubmit_tick);
+     AllocateNewContext();
++    submitted_serial = record_serial;
+     last_flush = std::chrono::steady_clock::now();
+     flush_pending = false;
+     if (profile) {
 diff --git a/src/video_core/renderer_vulkan/vk_scheduler.h b/src/video_core/renderer_vulkan/vk_scheduler.h
-index 3ee05c3f06..020f9cc575 100644
+index 3ee05c3f06..eafbe59160 100644
 --- a/src/video_core/renderer_vulkan/vk_scheduler.h
 +++ b/src/video_core/renderer_vulkan/vk_scheduler.h
 @@ -72,6 +72,10 @@ public:
@@ -4771,7 +5553,40 @@ index 3ee05c3f06..020f9cc575 100644
      /// Whether everything up to tick has been handed to the worker for submission.
      [[nodiscard]] bool IsSubmitted(u64 tick) const noexcept {
          return tick < master_semaphore->CurrentTick();
-@@ -541,6 +545,7 @@ private:
+@@ -203,6 +207,7 @@ public:
+             // Pending uploads precede every other recorded command, including upload-buffer work.
+             FlushUploads();
+         }
++        ++record_serial;
+         if (chunk->Record(command)) {
+             return;
+         }
+@@ -219,6 +224,15 @@ public:
+             });
+     }
+ 
++    /// Whether anything was recorded since the last Flush or Finish, or waits to be: batched
++    /// uploads and a deferred clear reach the command buffer only at the next record or submit.
++    [[nodiscard]] bool RecordedSinceSubmit() const noexcept {
++        return record_serial != submitted_serial || uploads_pending ||
++               deferred_clear.framebuffer != nullptr;
++    }
++    /// Counts a flush skipped because nothing was recorded (GPU profile).
++    static void CountSkippedFlush();
++
+     /// Whether the recording thread submitted `tick` within 20 ms.
+     [[nodiscard]] bool WaitForSubmission(u64 tick) const {
+         const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds{20};
+@@ -333,6 +347,8 @@ public:
+ private:
+     std::chrono::steady_clock::time_point last_flush{};
+     bool flush_pending{};
++    u64 record_serial{};    ///< Commands recorded
++    u64 submitted_serial{}; ///< record_serial at the last Flush or Finish
+ 
+     class Command {
+     public:
+@@ -541,6 +557,7 @@ private:
      std::mutex queue_mutex;
      std::condition_variable_any event_cv;
      bool worker_waiting{}; ///< The worker is waiting for work (guarded by queue_mutex)
@@ -4821,10 +5636,18 @@ index 1000aed081..c41d074460 100644
          ++buffer_index;
          buffer.SetObjectNameEXT(fmt::format("Staging Buffer {}", buffer_index).c_str());
 diff --git a/src/video_core/renderer_vulkan/vk_streamline_dlss.cpp b/src/video_core/renderer_vulkan/vk_streamline_dlss.cpp
-index a9f576a809..6d56569513 100644
+index a9f576a809..2d076898c2 100644
 --- a/src/video_core/renderer_vulkan/vk_streamline_dlss.cpp
 +++ b/src/video_core/renderer_vulkan/vk_streamline_dlss.cpp
-@@ -238,7 +238,7 @@ bool StreamlineDlssUpscaler::Upscale(const Inputs& in) {
+@@ -11,6 +11,7 @@
+ #include "video_core/dlss_evaluation.h"
+ #include "video_core/renderer_vulkan/vk_scheduler.h"
+ #include "video_core/renderer_vulkan/vk_streamline_dlss.h"
++#include "video_core/upscaler_status.h"
+ #include "video_core/vulkan_common/streamline.h"
+ #include "video_core/vulkan_common/streamline_api.h"
+ #include "video_core/vulkan_common/vulkan_device.h"
+@@ -238,7 +239,7 @@ bool StreamlineDlssUpscaler::Upscale(const Inputs& in) {
      hdr_input = in.hdr;
  
      // Keep the existing HDR controls for linear input such as Fortune's Weave. Tonemapped
@@ -4833,6 +5656,16 @@ index a9f576a809..6d56569513 100644
      sl::DLSSOptions options{};
      options.mode = ModeFor(in.render_size, in.upscale_size);
      options.outputWidth = in.upscale_size.width;
+@@ -441,6 +442,9 @@ bool StreamlineDlssUpscaler::Upscale(const Inputs& in) {
+     });
+     // DLSS binds its own pipelines and descriptors on the command buffer.
+     scheduler.InvalidateState();
++    VideoCore::NoteUpscale(VideoCore::UpscalerKind::Dlss, in.render_size.width,
++                           in.render_size.height, in.upscale_size.width,
++                           in.upscale_size.height);
+     return true;
+ }
+ 
 diff --git a/src/video_core/renderer_vulkan/vk_swapchain.cpp b/src/video_core/renderer_vulkan/vk_swapchain.cpp
 index 2cbdcbef49..ca530118f6 100644
 --- a/src/video_core/renderer_vulkan/vk_swapchain.cpp
@@ -5167,6 +6000,50 @@ index b497d4f1b0..d796d67965 100644
          default:
              return PixelFormat::A8B8G8R8_UNORM;
          }
+diff --git a/src/video_core/upscaler_status.h b/src/video_core/upscaler_status.h
+new file mode 100644
+index 0000000000..9527068837
+--- /dev/null
++++ b/src/video_core/upscaler_status.h
+@@ -0,0 +1,38 @@
++// SPDX-FileCopyrightText: Copyright 2026 Eden Emulator Project
++// SPDX-License-Identifier: GPL-3.0-or-later
++
++#pragma once
++
++#include "common/common_types.h"
++
++namespace VideoCore {
++
++/// A temporal upscaler that draws in place of a game's own upscaler
++enum class UpscalerKind : u8 {
++    None,
++    Dlss,
++    Fsr3,
++    Fsr4,
++};
++
++/// What replaces a game's upscaler, for the status bar
++struct UpscalerStatus {
++    bool dlss_available{}; ///< Streamline started and NVIDIA DLSS runs on this device
++    UpscalerKind kind{}; ///< the upscaler that evaluated last
++    u64 evaluations{}; ///< evaluations recorded so far, all upscalers together
++    u32 render_width{};
++    u32 render_height{};
++    u32 output_width{};
++    u32 output_height{};
++    /// Why the game's own upscale drew the last frame, when the renderer knows (a literal)
++    const char* fallback_reason{};
++};
++
++/// Records one evaluation (from the thread that records the frame's commands).
++void NoteUpscale(UpscalerKind kind, u32 render_width, u32 render_height, u32 output_width,
++                 u32 output_height) noexcept;
++
++/// The evaluations so far and the last one's upscaler and sizes (from any thread).
++[[nodiscard]] UpscalerStatus LastUpscale() noexcept;
++
++} // namespace VideoCore
 diff --git a/src/video_core/video_core.cpp b/src/video_core/video_core.cpp
 index 4dc43c1f91..715f4ca632 100644
 --- a/src/video_core/video_core.cpp
@@ -5187,6 +6064,33 @@ index 4dc43c1f91..715f4ca632 100644
  
      const auto nvdec_value = Settings::values.nvdec_emulation.GetValue();
      const bool use_nvdec = nvdec_value != Settings::NvdecEmulation::Off;
+diff --git a/src/video_core/vulkan_common/vulkan_device.cpp b/src/video_core/vulkan_common/vulkan_device.cpp
+index 12e6a0c5ba..ec6019b403 100644
+--- a/src/video_core/vulkan_common/vulkan_device.cpp
++++ b/src/video_core/vulkan_common/vulkan_device.cpp
+@@ -551,6 +551,22 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR
+         first_next = &diagnostics_nv;
+     }
+ 
++    // AMD's driver fails device-local allocations once the heap is full unless overallocation is
++    // allowed, which lets them fall back to system memory.
++    VkDeviceMemoryOverallocationCreateInfoAMD overallocation_amd{
++        .sType = VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD,
++        .pNext = first_next,
++        .overallocationBehavior = VK_MEMORY_OVERALLOCATION_BEHAVIOR_ALLOWED_AMD,
++    };
++    if (is_amd_driver &&
++        supported_extensions.contains(VK_AMD_MEMORY_OVERALLOCATION_BEHAVIOR_EXTENSION_NAME)) {
++        loaded_extensions.insert(VK_AMD_MEMORY_OVERALLOCATION_BEHAVIOR_EXTENSION_NAME);
++        first_next = &overallocation_amd;
++        LOG_INFO(Render_Vulkan,
++                 "VK_AMD_memory_overallocation_behavior enabled: device memory may overflow into "
++                 "system memory");
++    }
++
+     is_blit_depth24_stencil8_supported = TestDepthStencilBlits(VK_FORMAT_D24_UNORM_S8_UINT);
+     is_blit_depth32_stencil8_supported = TestDepthStencilBlits(VK_FORMAT_D32_SFLOAT_S8_UINT);
+     is_optimal_astc_supported = ComputeIsOptimalAstcSupported();
 diff --git a/src/video_core/vulkan_common/vulkan_instance.cpp b/src/video_core/vulkan_common/vulkan_instance.cpp
 index 3ab924e37f..4321f9b83f 100644
 --- a/src/video_core/vulkan_common/vulkan_instance.cpp
@@ -5204,6 +6108,34 @@ index 3ab924e37f..4321f9b83f 100644
      }
      // Probe optional extensions against the same snapshot the caller verifies against, so the
      // check here and the verification in CreateInstance can never disagree (see TOCTOU note below).
+diff --git a/src/video_core/vulkan_common/vulkan_memory_allocator.cpp b/src/video_core/vulkan_common/vulkan_memory_allocator.cpp
+index edd319a25e..d0b0385745 100644
+--- a/src/video_core/vulkan_common/vulkan_memory_allocator.cpp
++++ b/src/video_core/vulkan_common/vulkan_memory_allocator.cpp
+@@ -276,23 +276,6 @@ VkResult MemoryAllocator::AllocateImage(const VkImageCreateInfo &ci, bool dedica
+         relaxed.flags &= ~VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT;
+         result = vmaCreateImage(allocator, &ci, &relaxed, &handle, &allocation, &alloc_info);
+     }
+-    if (result == VK_ERROR_OUT_OF_DEVICE_MEMORY && !huge) {
+-        // Still out of device memory: a real image in host memory (slow, but valid) beats one
+-        // with nothing bound, which AMD's drivers do not survive being sampled.
+-        VmaAllocationCreateInfo host = alloc_ci;
+-        host.flags &= ~VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT;
+-        host.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+-        host.preferredFlags = 0;
+-        result = vmaCreateImage(allocator, &ci, &host, &handle, &allocation, &alloc_info);
+-        static u32 host_logged{};
+-        if (result == VK_SUCCESS && host_logged++ < 16) {
+-            LOG_WARNING(Render_Vulkan,
+-                        "Image {}x{}x{} ({} levels, {} layers, format {}) is out of device memory; "
+-                        "placed in host memory",
+-                        ci.extent.width, ci.extent.height, ci.extent.depth, ci.mipLevels,
+-                        ci.arrayLayers, static_cast<u32>(ci.format));
+-        }
+-    }
+     if (result == VK_ERROR_OUT_OF_DEVICE_MEMORY && !huge) {
+         pressure_events.fetch_add(1, std::memory_order_relaxed);
+     }
 diff --git a/src/yuzu/configuration/configure_graphics.cpp b/src/yuzu/configuration/configure_graphics.cpp
 index e0be4c0af1..32c0b8f2b8 100644
 --- a/src/yuzu/configuration/configure_graphics.cpp
@@ -5257,6 +6189,40 @@ index e78b069590..6e4bf72776 100644
      QWidget* api_widget;
      QComboBox* aspect_ratio_combobox;
      QComboBox* resolution_combobox;
+diff --git a/src/yuzu/game/game_list.cpp b/src/yuzu/game/game_list.cpp
+index 76b4694b8a..4b667daa4f 100644
+--- a/src/yuzu/game/game_list.cpp
++++ b/src/yuzu/game/game_list.cpp
+@@ -23,6 +23,7 @@
+ #include <qlayoutitem.h>
+ 
+ #include "common/common_types.h"
++#include "common/fs/fs_util.h"
+ #include "core/core.h"
+ #include "core/file_sys/nup_writer.h"
+ #ifdef LICHII_NX_TOOLS
+@@ -510,8 +511,11 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
+     QMenu* play_time_menu = context_menu.addMenu(tr("Manage Play Time"));
+     QAction* set_play_time = play_time_menu->addAction(tr("Edit Play Time Data"));
+     QAction* remove_play_time_data = play_time_menu->addAction(tr("Remove Play Time Data"));
++    const bool is_loose_dump =
++        FileSys::Nup::DumpRootFromMain(std::filesystem::path{Common::FS::ToU8String(path)})
++            .has_value();
+     const bool is_nup_archive =
+-        !FileSys::Nup::DumpRootFromMain(path) &&
++        !is_loose_dump &&
+         QString::fromStdString(path).endsWith(QStringLiteral(".nup"), Qt::CaseInsensitive);
+     QAction* extract_nup = nullptr;
+     if (is_nup_archive) {
+@@ -524,7 +528,7 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
+     QAction* verify_integrity = context_menu.addAction(tr("Verify Integrity"));
+     QAction* copy_tid = context_menu.addAction(tr("Copy Title ID to Clipboard"));
+     QAction* convert_nup = nullptr;
+-    if (FileSys::Nup::DumpRootFromMain(path)) {
++    if (is_loose_dump) {
+         convert_nup = context_menu.addAction(tr("Convert to NUP..."));
+         convert_nup->setEnabled(!nup_conversion_running);
+     }
 diff --git a/src/yuzu/main.ui b/src/yuzu/main.ui
 index 42d0b7b3d4..c528b11b56 100644
 --- a/src/yuzu/main.ui
@@ -5288,7 +6254,7 @@ index 42d0b7b3d4..c528b11b56 100644
     <property name="checkable">
      <bool>true</bool>
 diff --git a/src/yuzu/main_window.cpp b/src/yuzu/main_window.cpp
-index 7b5a021b98..860c4df806 100644
+index 7b5a021b98..047398d13d 100644
 --- a/src/yuzu/main_window.cpp
 +++ b/src/yuzu/main_window.cpp
 @@ -452,11 +452,10 @@ MainWindow::MainWindow(bool has_broken_vulkan)
@@ -5307,7 +6273,25 @@ index 7b5a021b98..860c4df806 100644
      }
  #endif
  
-@@ -1716,6 +1715,13 @@ void MainWindow::ConnectMenuEvents() {
+@@ -1097,6 +1096,17 @@ void MainWindow::InitializeWidgets() {
+             });
+     statusBar()->insertPermanentWidget(0, frame_gen_status_button);
+ 
++    // Shows which upscaler draws in place of the game's own; the settings themselves only take
++    // effect when a game starts.
++    upscaler_status_button = new QPushButton();
++    upscaler_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
++    upscaler_status_button->setFocusPolicy(Qt::NoFocus);
++    upscaler_status_button->setCheckable(true);
++    connect(upscaler_status_button, &QPushButton::clicked, this,
++            [this] { UpdateUpscalerButton(); });
++    UpdateUpscalerButton();
++    statusBar()->insertPermanentWidget(0, upscaler_status_button);
++
+ #ifdef HAS_RESHADE
+     post_shader_status_button = new QPushButton();
+     post_shader_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
+@@ -1716,6 +1726,13 @@ void MainWindow::ConnectMenuEvents() {
      connect_menu(ui->action_Eden_Dependencies, &MainWindow::OnEdenDependencies);
      connect_menu(ui->action_Apply_Recommended_Settings, &MainWindow::OnApplyRecommendedSettings);
      connect_menu(ui->action_Restore_Previous_Settings, &MainWindow::OnRestorePreviousSettings);
@@ -5321,7 +6305,7 @@ index 7b5a021b98..860c4df806 100644
      connect(ui->menu_Help, &QMenu::aboutToShow, this, [this] {
          ui->action_Apply_Recommended_Settings->setEnabled(!emulation_running);
          ui->action_Restore_Previous_Settings->setEnabled(!emulation_running);
-@@ -2102,6 +2108,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+@@ -2102,6 +2119,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
      config->SaveAllValues();
  
      u64 title_id{0};
@@ -5329,7 +6313,7 @@ index 7b5a021b98..860c4df806 100644
  
      last_filename_booted = filename;
  
-@@ -2118,7 +2125,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+@@ -2118,7 +2136,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
          const auto config_file_name = title_id == 0
                                            ? Common::FS::PathToUTF8String(file_path.filename())
                                            : fmt::format("{:016X}", title_id);
@@ -5338,7 +6322,7 @@ index 7b5a021b98..860c4df806 100644
          QtCommon::system->HIDCore().ReloadInputDevices();
          QtCommon::system->ApplySettings();
      }
-@@ -2144,6 +2151,33 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+@@ -2144,6 +2162,33 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
          LOG_INFO(Config, "Applied recommended MKW settings after per-game configuration");
      }
      PrepareShaderPrecache(title_id, std::filesystem::path{filename.toStdU16String()});
@@ -5372,7 +6356,17 @@ index 7b5a021b98..860c4df806 100644
      Settings::LogSettings();
  
      if (UISettings::values.select_user_on_boot && !user_flag_cmd_line) {
-@@ -2485,6 +2519,11 @@ void MainWindow::OnEmulationStopTimeout() {
+@@ -2335,6 +2380,9 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+     frame_gen_state = VideoCore::FrameGenState::Pending;
+     frame_gen_frames = 0;
+     frame_gen_generating = false;
++    upscaler_evaluations = VideoCore::LastUpscale().evaluations;
++    upscaler_running = false;
++    upscaler_fallback_reason = nullptr;
+     frame_gen_fps = 0.0;
+     frame_gen_fps_timer.invalidate();
+     refresh_button->setDisabled(true);
+@@ -2485,6 +2533,11 @@ void MainWindow::OnEmulationStopTimeout() {
  void MainWindow::TerminateEmulationThread() {
      if (QtCommon::emu_thread && QtCommon::emu_thread->isRunning()) {
          LOG_ERROR(Frontend, "Emulation thread failed to stop, terminating it");
@@ -5384,7 +6378,17 @@ index 7b5a021b98..860c4df806 100644
          QtCommon::emu_thread->terminate();
          QtCommon::emu_thread->wait();
      }
-@@ -4969,29 +5008,83 @@ void MainWindow::OnCaptureScreenshot() {
+@@ -4399,7 +4452,8 @@ void MainWindow::OnGameListConvertToNup(const std::string& game_path) {
+     if (nup_running)
+         return;
+ 
+-    const auto root = FileSys::Nup::DumpRootFromMain(game_path);
++    const auto root =
++        FileSys::Nup::DumpRootFromMain(std::filesystem::path{Common::FS::ToU8String(game_path)});
+     if (!root)
+         return;
+     const QString convert_title = tr("Convert to NUP");
+@@ -4969,29 +5023,83 @@ void MainWindow::OnCaptureScreenshot() {
  }
  
  #ifdef ENABLE_UPDATE_CHECKER
@@ -5397,12 +6401,8 @@ index 7b5a021b98..860c4df806 100644
 -            15000);
 +void MainWindow::StartUpdateCheck(bool manual) {
 +    if (update_future.isRunning()) {
-         return;
-     }
--    if (result.failure == UpdateChecker::Failure::Http) {
--        statusBar()->showMessage(
--            tr("Could not check for updates: GitHub answered with HTTP %1.").arg(result.status),
--            15000);
++        return;
++    }
 +    manual_update_check = manual;
 +    ui->action_Check_For_Updates->setEnabled(false);
 +    update_future = QtConcurrent::run([]() { return UpdateChecker::Check(); });
@@ -5415,6 +6415,10 @@ index 7b5a021b98..860c4df806 100644
 +                                 tr("An update check is already running."));
          return;
      }
+-    if (result.failure == UpdateChecker::Failure::Http) {
+-        statusBar()->showMessage(
+-            tr("Could not check for updates: GitHub answered with HTTP %1.").arg(result.status),
+-            15000);
 +    statusBar()->showMessage(tr("Checking for updates..."), 15000);
 +    StartUpdateCheck(true);
 +}
@@ -5457,8 +6461,8 @@ index 7b5a021b98..860c4df806 100644
 +                QTimer::singleShot(120 * 1000, this, [this] { StartUpdateCheck(false); });
 +            }
 +        }
-+        return;
-+    }
+         return;
+     }
 +    update_check_retried = false;
      if (!result.update) {
 +        if (manual) {
@@ -5481,11 +6485,126 @@ index 7b5a021b98..860c4df806 100644
          return;
      }
  
+@@ -5157,6 +5265,17 @@ void MainWindow::UpdateStatusBar() {
+     frame_gen_frames = frame_gen.generated_frames;
+     frame_gen_state = frame_gen.state;
+ 
++    const auto upscaler = QtCommon::system->GPU().Renderer().GetUpscalerStatus();
++    upscaler_running = upscaler.evaluations > upscaler_evaluations;
++    upscaler_evaluations = upscaler.evaluations;
++    upscaler_kind = upscaler.kind;
++    dlss_available = upscaler.dlss_available;
++    upscaler_render_width = upscaler.render_width;
++    upscaler_render_height = upscaler.render_height;
++    upscaler_output_width = upscaler.output_width;
++    upscaler_output_height = upscaler.output_height;
++    upscaler_fallback_reason = upscaler.fallback_reason;
++
+     emit statsUpdated(results, shader_notify);
+ 
+     if (shaders_building > 0) {
+@@ -5191,6 +5310,7 @@ void MainWindow::UpdateStatusBar() {
+     emu_frametime_label->setText(tr("Frame: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
+ 
+     UpdateFrameGenButton();
++    UpdateUpscalerButton();
+ 
+     res_scale_label->setVisible(true);
+     emu_speed_label->setVisible(!Settings::values.use_multi_core.GetValue());
+@@ -5339,6 +5459,72 @@ void MainWindow::UpdateFrameGenButton() {
+             .arg(target_met));
+ }
+ 
++void MainWindow::UpdateUpscalerButton() {
++    const bool dlss = Settings::values.nvidia_dlss.GetValue();
++    const bool fsr = Settings::values.ocarina_fsr.GetValue();
++    const QString sizes = tr("%1x%2 to %3x%4")
++                              .arg(upscaler_render_width)
++                              .arg(upscaler_render_height)
++                              .arg(upscaler_output_width)
++                              .arg(upscaler_output_height);
++    if (emulation_running && upscaler_running && upscaler_output_width != 0) {
++        upscaler_status_button->setChecked(true);
++        if (upscaler_kind == VideoCore::UpscalerKind::Dlss) {
++            upscaler_status_button->setText(tr("DLSS"));
++            upscaler_status_button->setToolTip(
++                tr("NVIDIA DLSS draws in place of the game's upscaler: %1.").arg(sizes));
++            return;
++        }
++        const bool fsr4 = upscaler_kind == VideoCore::UpscalerKind::Fsr4;
++        upscaler_status_button->setText(fsr4 ? tr("FSR 4") : tr("FSR 3.1"));
++        upscaler_status_button->setToolTip(
++            (fsr4 ? tr("AMD FSR 4 draws in place of the game's upscaler: %1.")
++                  : tr("AMD FSR 3.1 draws in place of the game's upscaler: %1."))
++                .arg(sizes));
++        return;
++    }
++    if (!dlss && !fsr) {
++        upscaler_status_button->setChecked(false);
++        upscaler_status_button->setText(tr("GAME UPSCALER"));
++        upscaler_status_button->setToolTip(
++            tr("The game's own upscaler draws. NVIDIA DLSS and AMD FSR 3.1 (Ocarina of Time) "
++               "can replace it: they are turned on in the graphics settings and take effect "
++               "when a game starts."));
++        return;
++    }
++    // NVIDIA DLSS comes first; AMD FSR 3.1 takes over when it can't run.
++    const bool wants_dlss = dlss && (dlss_available || !emulation_running || !fsr);
++    if (!emulation_running) {
++        upscaler_status_button->setChecked(true);
++        upscaler_status_button->setText(wants_dlss ? tr("DLSS") : tr("FSR 3.1"));
++        upscaler_status_button->setToolTip(
++            wants_dlss ? tr("NVIDIA DLSS is on. Whether it runs shows here once a game starts.")
++                       : tr("AMD FSR 3.1 is on for Ocarina of Time. Whether it runs shows here "
++                            "once the game starts."));
++        return;
++    }
++    upscaler_status_button->setChecked(false);
++    if (wants_dlss && !dlss_available) {
++        upscaler_status_button->setText(tr("DLSS UNAVAILABLE"));
++        upscaler_status_button->setToolTip(
++            tr("NVIDIA DLSS is on but can't run. It needs the Vulkan renderer, a GeForce RTX "
++               "card and NVIDIA's files: see the graphics settings."));
++        return;
++    }
++    const QString name = wants_dlss ? tr("NVIDIA DLSS") : tr("AMD FSR 3.1");
++    upscaler_status_button->setText(wants_dlss ? tr("DLSS (IDLE)") : tr("FSR 3.1 (IDLE)"));
++    if (upscaler_fallback_reason != nullptr) {
++        upscaler_status_button->setToolTip(
++            tr("%1 is on but the game's own upscaler is drawing: %2.")
++                .arg(name, QString::fromLatin1(upscaler_fallback_reason)));
++        return;
++    }
++    upscaler_status_button->setToolTip(
++        tr("%1 is on but replaced no upscaler in the last half second: this game or this scene "
++           "has none it can replace.")
++            .arg(name));
++}
++
+ void MainWindow::UpdateVolumeUI() {
+     const auto volume_value = static_cast<int>(Settings::values.volume.GetValue());
+     volume_slider->setValue(volume_value);
+@@ -5360,6 +5546,7 @@ void MainWindow::UpdateStatusButtons() {
+     UpdateFilterText();
+     UpdateAAText();
+     UpdateFrameGenButton();
++    UpdateUpscalerButton();
+     UpdateVolumeUI();
+ }
+ 
 diff --git a/src/yuzu/main_window.h b/src/yuzu/main_window.h
-index c8b75df583..b22e3096c8 100644
+index c8b75df583..246555e407 100644
 --- a/src/yuzu/main_window.h
 +++ b/src/yuzu/main_window.h
-@@ -460,6 +460,9 @@ private slots:
+@@ -79,6 +79,7 @@ class QtNXWebEngineView;
+ 
+ namespace VideoCore {
+ enum class FrameGenState : u8;
++enum class UpscalerKind : u8;
+ class ShaderNotify;
+ }
+ namespace Core {
+@@ -460,6 +461,9 @@ private slots:
  
  #ifdef ENABLE_UPDATE_CHECKER
      void OnEmulatorUpdateAvailable();
@@ -5495,7 +6614,15 @@ index c8b75df583..b22e3096c8 100644
  #endif
  
  private:
-@@ -520,6 +523,8 @@ private:
+@@ -477,6 +481,7 @@ private:
+     void UpdateAAText();
+     void UpdatePostShaderText();
+     void UpdateFrameGenButton();
++    void UpdateUpscalerButton();
+     void UpdateVolumeUI();
+     void UpdateStatusBar();
+     void UpdateGPUAccuracyButton();
+@@ -520,6 +525,8 @@ private:
  #ifdef ENABLE_UPDATE_CHECKER
      QFuture<UpdateChecker::CheckResult> update_future;
      QFutureWatcher<UpdateChecker::CheckResult> update_watcher;
@@ -5504,6 +6631,23 @@ index c8b75df583..b22e3096c8 100644
  #endif
  
      MultiplayerState* multiplayer_state = nullptr;
+@@ -558,6 +565,16 @@ private:
+     QPushButton* aa_status_button = nullptr;
+     QPushButton* post_shader_status_button = nullptr;
+     QPushButton* frame_gen_status_button = nullptr;
++    QPushButton* upscaler_status_button = nullptr;
++    VideoCore::UpscalerKind upscaler_kind{};
++    bool upscaler_running = false;
++    bool dlss_available = false;
++    u64 upscaler_evaluations = 0;
++    u32 upscaler_render_width = 0;
++    u32 upscaler_render_height = 0;
++    u32 upscaler_output_width = 0;
++    u32 upscaler_output_height = 0;
++    const char* upscaler_fallback_reason = nullptr;
+     VideoCore::FrameGenState frame_gen_state{};
+     u64 frame_gen_frames = 0;
+     bool frame_gen_generating = false;
 diff --git a/tools/superbuild/README.md b/tools/superbuild/README.md
 new file mode 100644
 index 0000000000..6e485ee7a0
