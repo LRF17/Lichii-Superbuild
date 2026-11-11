@@ -16,6 +16,7 @@
 #include "core/frontend/framebuffer_layout.h"
 #include "video_core/gpu.h"
 #include "video_core/rasterizer_interface.h"
+#include "video_core/upscaler_status.h"
 
 namespace Core::Frontend {
 class EmuWindow;
@@ -76,6 +77,11 @@ public:
     /// Whether frame generation can run and how many frames it has generated so far
     [[nodiscard]] virtual FrameGenStatus GetFrameGenStatus() const {
         return {};
+    }
+
+    /// The upscaler that replaces the game's own, what it last drew and how often so far
+    [[nodiscard]] virtual UpscalerStatus GetUpscalerStatus() const {
+        return LastUpscale();
     }
 
     [[nodiscard]] const RendererDeviceInfo& GetDeviceInfo() const {
