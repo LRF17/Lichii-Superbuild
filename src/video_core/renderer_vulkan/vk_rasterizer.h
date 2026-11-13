@@ -169,7 +169,8 @@ public:
                                    const Tegra::Engines::Fermi2D::Surface& motion_vectors,
                                    const Tegra::Texture::TICEntry* depth,
                                    std::array<f32, 2> jitter,
-                                   std::array<f32, 2> motion_scale, bool use_history = true) override;
+                                   std::array<f32, 2> motion_scale, bool use_history,
+                                   std::optional<std::array<u32, 2>> render_region) override;
     VideoCommon::OotNetwork::BypassState* OotNetworkBypass() override;
     Tegra::Engines::AccelerateDMAInterface& AccessAccelerateDMA() override;
     void AccelerateInlineToMemory(GPUVAddr address, size_t copy_size,
@@ -255,6 +256,8 @@ private:
 
     void UpdateVertexInput(Tegra::Engines::Maxwell3D::Regs& regs);
 
+    /// Clears a 3D color target whose slices the framebuffer can't reach. Returns true when handled.
+    bool ClearVolumeSlices(const Framebuffer* framebuffer, u32 first_slice, u32 slice_count);
     void FrameDumpPass(const Framebuffer* framebuffer);
     /// EDEN_NX2_PENDING_WRITE_TRACE: logs bound buffer ranges with collected, unapplied CPU writes.
     void TracePendingCpuWrites(bool compute, std::span<const u64> shader_hashes);
@@ -327,6 +330,8 @@ private:
     std::optional<u64> oot_4k_scene_frame;
     VkImage oot_4k_guest_present{};
     std::optional<u64> oot_effects_frame;
+    VideoCommon::ImageViewId oot_tonemapped_scene{}; ///< what the tonemap draw wrote
+    std::optional<u64> oot_tonemapped_frame;
     GPUVAddr oot_effects_address{};
     VkImageView oot_effects_scene{};
     struct OcarinaActorPose {
@@ -389,6 +394,12 @@ private:
     u64 mesh_arena_size{64ULL << 20};
     /// The current submission's arena, after its counter is reset.
     const MeshArena& AcquireMeshArena();
+    /// Mesh emulation: the draw's staging buffers, held until its commands are recorded.
+    /// Configure can submit (an ASTC decode, a full descriptor buffer ring), so the tick when
+    /// they were requested may be older than the submission that writes them.
+    boost::container::static_vector<StagingBufferRef, 4> mesh_draw_buffers;
+    bool mesh_arena_used{};
+    void ReleaseMeshEmulationBuffers();
 
     /// Fast draw (nx2_fast_draw.h): what the last recorded draw left bound.
     struct ReusableDraw {

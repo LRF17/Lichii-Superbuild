@@ -17,9 +17,9 @@
 
 # Lichii
 
-> ## ✅ v53 recommended
+> ## ✅ v57 recommended
 >
-> v53 adds LRF17's status-bar upscaler button (PR #12) showing whether NVIDIA DLSS, AMD FSR 3.1/4 or the game's own upscaler is drawing, with sizes and the OoT fallback reason. It also fixes the v51/v52 OoT video-memory over-allocation from #1231 (upstream #1333), the Windows right-click abort on non-ASCII game paths (#1258), and brings #1257, #1252, #1329, #1335 and the OoT guard-house Texture Pool x2 patch (#1313). Same `nx2` `7dddff2d0e` base as v51/v52; upstream's data-folder migration (#1253, open save-loss report) and DLSS-preset/HDR reworks are deliberately held back. v32 and v42 were removed; v52, v51, v50, v49, v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
+> v57 brings 13 clean, narrowly-scoped upstream correctness fixes: no more Userspace PANIC when stopping a game (#1450), an AMD driver crash at Mario Tennis Fever's match start (#1466), deleted-buffer/device-range/page-tracking/mesh-buffer fixes (#1459/#1458/#1436/#1452), Custom RTC Date (#1465), Switch 1 .nx detection (#1456), interpreter SIGILL/zero-register (#1464), shader-precache fixes (#1463), module names (#1469), and clearer missing-key / socket errors (#1457/#1352). Same `nx2` `7dddff2d0e` base; everything from v56 stays: the motion filter fix, PR #15 (half-float compositor for DLSS/FSR with the RenoDX patch), PR #1353 (OoT low-RAM crash), 13 upstream game fixes (Yoshi, Pokopia, The Duskbloods, Metroid Prime 4, MKW dynamic FPS), LRF17's status-bar upscaler button (PR #12), DLSS scene jitter and LOD bias (PR #10), Help -> Check for Updates... and Open Releases Page..., the one-shot saved OoT preset and the HDR/DLSS work. Build-160's native HDR rework (#1326, OoT FPS-drop/stutter reports), the dark theme, LAN play and other perf/feature changes are deliberately held back. v32 and v42 were removed; v56, v55, v54, v53, v52, v51, v50, v49, v48, v47, v46, v45, v43, v41, v40, v39, v38, v37, v36, v35, v34, v31, v30, v29, v28 and v24 remain available as fallbacks.
 
 > **Unofficial superbuild fork.** This repository is not official Lichii and is
 > not affiliated with zortos293. It carries a curated set of performance and

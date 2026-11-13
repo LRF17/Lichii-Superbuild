@@ -2027,11 +2027,21 @@ bool MainWindow::LoadROM(const QString& filename, Service::AM::FrontendAppletPar
                 const auto title =
                     tr("Error while loading ROM! %1", "%1 signifies a numeric error code.")
                         .arg(QString::fromStdString(error_code));
+                const auto status = static_cast<Loader::ResultStatus>(error_id);
+                const bool missing_keys =
+                    status == Loader::ResultStatus::ErrorMissingProductionKeyFile ||
+                    status == Loader::ResultStatus::ErrorMissingHeaderKey ||
+                    status == Loader::ResultStatus::ErrorMissingTitlekey ||
+                    status == Loader::ResultStatus::ErrorMissingTitlekek ||
+                    status == Loader::ResultStatus::ErrorMissingKeyAreaKey;
                 const auto description =
-                    tr("%1<br>Please redump your files or ask on Discord/Stoat for help.",
-                       "%1 signifies an error string.")
-                        .arg(QString::fromStdString(
-                            GetResultStatusString(static_cast<Loader::ResultStatus>(error_id))));
+                    (missing_keys
+                         ? tr("%1<br>Install your decryption keys with Tools > Install Decryption "
+                              "Keys, then start the game again.",
+                              "%1 signifies an error string.")
+                         : tr("%1<br>Please redump your files or ask on Discord/Stoat for help.",
+                              "%1 signifies an error string."))
+                        .arg(QString::fromStdString(GetResultStatusString(status)));
 
                 QMessageBox::critical(this, title, description);
             } else {
@@ -4608,7 +4618,11 @@ void MainWindow::OnGameListPrepareShaderWarm(u64 program_id, const std::string& 
         return;
     }
 
-    const auto path = std::filesystem::path{std::u8string{game_path.begin(), game_path.end()}};
+    auto path = std::filesystem::path{std::u8string{game_path.begin(), game_path.end()}};
+    // Loose dumps are listed by their exefs folder (FormatGameName); the loader opens its main.
+    if (std::error_code ec; std::filesystem::is_directory(path, ec)) {
+        path /= "main";
+    }
     shader_warm_dialog =
         new ShaderWarmDialog(*QtCommon::system, path, program_id, GameTitleName(game_path), this);
     connect(shader_warm_dialog, &QDialog::finished, shader_warm_dialog, &QObject::deleteLater);

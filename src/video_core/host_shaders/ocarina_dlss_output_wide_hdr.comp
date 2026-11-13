@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+layout(binding = 0) uniform sampler2D dlss_color;
+layout(binding = 1, rgba16f) uniform writeonly image2D guest_color;
+
+// BT.2020 back to BT.709, as the guest's half-float target holds the scene.
+const mat3 BT2020_TO_BT709 = mat3(1.660491, -0.124550, -0.018151,
+                                  -0.587641, 1.132900, -0.100579,
+                                  -0.072850, -0.008349, 1.118730);
+
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 extent = imageSize(guest_color);
+    if (any(greaterThanEqual(pixel, extent))) {
+        return;
+    }
+    vec3 sampled = all(equal(textureSize(dlss_color, 0), extent))
+        ? texelFetch(dlss_color, pixel, 0).rgb
+        : textureLod(dlss_color, (vec2(pixel) + 0.5) / vec2(extent), 0).rgb;
+    vec3 color = max(sampled, vec3(0.0));
+    imageStore(guest_color, pixel, vec4(BT2020_TO_BT709 * color, 1.0));
+}

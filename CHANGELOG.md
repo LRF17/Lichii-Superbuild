@@ -2,6 +2,107 @@
 
 All releases are unofficial builds. See the GitHub releases for assets and checksums.
 
+## v57
+
+- **Fixed: stopping a game no longer ends in a Userspace PANIC (upstream
+  #1450).** Guest threads are suspended before power-off, so services no longer
+  skip writing replies that the kernel still completes with success.
+- **Fixed: AMD driver crash at Mario Tennis Fever's match start (upstream
+  #1466).** Switch 2 geometry shaders can write 133 output components where
+  Vulkan devices allow 128; unread outputs are now pruned. Also lowers the
+  passthrough mask to only the attributes a geometry shader can declare.
+- **Correctness fixes:** a deleted buffer is cleared from every channel's
+  bindings (#1459); every device range inside a released span is released
+  (#1458); data the GPU's engines write keeps its pages tracked (#1436);
+  mesh-emulation buffers live until the submission that writes them (#1452);
+  the Custom RTC Date offset and its per-game state (#1465); Switch 1 `.nx`
+  archives detected as Switch 1 (#1456); the interpreter's zero register and
+  guest SIGILL handling (#1464); three shader-precache fixes (#1463); and
+  Switch 2 program module names (#1469).
+- **Better errors and logs:** the loader now names the missing key instead of
+  "bad header, redump" (#1457), refused non-IPv4 socket domains are logged
+  (#1352), and would-block socket reads no longer spam the log (#1384, v56).
+- Everything from v56 stays: the motion filter fix (PR #1396), LRF17's
+  half-float compositor fix (PR #15), the OoT low-RAM termination fix (PR
+  #1353), the 13 upstream game fixes, the status-bar upscaler button (PR #12),
+  the OoT video-memory fix (#1333), DLSS scene jitter and LOD bias (PR #10),
+  Help -> Check for Updates... and Open Releases Page..., #1234, #1216, #1210,
+  the one-shot saved OoT preset, #1199, #1180, #1155, #1129, #1110, Linux
+  pipeline preloading, the DLSS/HDR work (PR #7/#8/#9), native HDR, DLSS
+  presets E/F and the optional white-flash mitigation.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
+## v56
+
+- **Fixed: motion controls keep swinging for seconds after the controller is
+  put down (upstream PR #1396).** The motion filter's integral gain summed error
+  once per sample with no time scaling and no cap, so at high sample rates it
+  wound up and swung the orientation (in Controls' motion cubes and the in-game
+  pointer) for 1-4 seconds before snapping back. The proportional term alone
+  keeps orientation locked to gravity.
+- **Fixed: log spam from non-blocking socket reads (upstream #1384).** Games
+  poll their sockets hundreds of times a second; an `EAGAIN` / `WSAEWOULDBLOCK`
+  is normal and is no longer logged at all. `TIMEDOUT` and `INPROGRESS` stay at
+  debug level, real errors at error level.
+- Everything from v55 stays: LRF17's half-float compositor fix (PR #15), the
+  OoT low-RAM termination fix (PR #1353), the 13 upstream game fixes, the
+  status-bar upscaler button (PR #12), the OoT video-memory fix (#1333), DLSS
+  scene jitter and LOD bias (PR #10), Help -> Check for Updates... and Open
+  Releases Page..., #1234, #1216, #1210, the one-shot saved OoT preset, #1199,
+  #1180, #1155, #1129, #1110, Linux pipeline preloading, the DLSS/HDR work
+  (PR #7/#8/#9), native HDR, DLSS presets E/F and the optional white-flash
+  mitigation.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
+## v55
+
+- **PR #15 by LRF17: Ocarina of Time's upscaler replacement now accepts a
+  half-float compositor.** ShortFuse's "RenoDX Compositor" game patch turns the
+  compositor image into RGBA16F for a wider gamut; with it, NVIDIA DLSS and FSR
+  declined every frame and the game's own upscaler drew (the v53 status button
+  showed `DLSS (IDLE)`). The replacement now takes the tonemap target itself
+  when the upscale target is RGBA16F and hands it to the upscaler in BT.2020
+  through new wide-gamut colour/output shaders, converting the result back into
+  the game's target. Without the patch, images, shaders and the path are exactly
+  as they were. Validated in HDR with the RenoDX add-on: mean colours equal
+  within 1/255 (DLSS) and 2/255 (FSR 3.1) against the game's own upscale across
+  a 4x3 grid, with matching saturation.
+- Everything from v54 stays: the OoT low-RAM termination fix (PR #1353 /
+  issue #1346), the 13 upstream game fixes, LRF17's status-bar upscaler button
+  (PR #12), the OoT video-memory fix (#1333), DLSS scene jitter and LOD bias
+  (PR #10), Help -> Check for Updates... and Open Releases Page..., #1234,
+  #1216, #1210, the one-shot saved OoT preset, #1199, #1180, #1155, #1129,
+  #1110, Linux pipeline preloading, the DLSS/HDR work (PR #7/#8/#9), native
+  HDR, DLSS presets E/F and the optional white-flash mitigation.
+- Windows and Linux, standard and PGO. macOS arm64 builds remain on v34.
+
+## v54
+
+- **Fixed: Ocarina of Time could close without warning when host RAM was low
+  (upstream PR #1353, issue #1346).** The optional zero-page trim worker — the
+  Fritchii v5.6 port we have carried since v48 — let a `std::bad_alloc` from
+  its temporary page lists terminate the process. It now backs off for 60
+  seconds instead. Reported on build 150, RTX 3060, heading from Castle Town
+  fountain toward Hyrule Castle.
+- **New game rendering fixes from upstream:** Yoshi and the Mysterious Book's
+  black 3D world (#1363), Pokemon Pokopia's furniture placement guides (#1347),
+  The Duskbloods network test booting to its menus (#552, #828, #637) and its
+  TLD4.B/IMAD shader forms (#851), Metroid Prime 4's black world and shadows
+  (#1325), and Mario Kart World's dynamic FPS setting which could never leave
+  30 fps (#1332). Also: TLD4 with a register handle, 3D colour targets cleared
+  past the framebuffer's layers (#638), a stack-walk crash in the sampler
+  (#1349), the previous log no longer lost on a failed rotation (#889), and a
+  looping timer event's lateness measured from the end of a pause (#852).
+- Everything from v53 stays: LRF17's status-bar upscaler button (PR #12), the
+  OoT video-memory fix (#1333), DLSS scene jitter and LOD bias (PR #10),
+  Help -> Check for Updates... and Open Releases Page..., #1234, #1216, #1210,
+  the one-shot saved OoT preset, #1199, #1180, #1155, #1129, #1110, Linux
+  pipeline preloading, the DLSS/HDR work (PR #7/#8/#9), native HDR, DLSS
+  presets E/F and the optional white-flash mitigation.
+- Windows and Linux, standard and PGO. The Linux `.tar.gz` is now
+  self-contained (ships Qt and FFmpeg, #1255). macOS arm64 builds remain on
+  v34.
+
 ## v53
 
 - **New: status-bar upscaler button (PR #12 by LRF17).** The window now shows
